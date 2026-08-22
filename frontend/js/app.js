@@ -455,32 +455,164 @@ function renderActiveInvestmentsList() {
 }
 
 function renderInvestmentPlansCards() {
-  const grid = document.querySelector('#view-investments .grid-3');
-  grid.innerHTML = '';
+  const container = document.getElementById('packages-cards-container') || document.querySelector('#view-investments .packages-grid');
+  if (!container) return;
+  container.innerHTML = '';
 
-  const plansToRender = state.plans.length > 0 ? state.plans : [
-    { id: 'starter-plan', name: 'Starter Plan', weekly_roi_rate: 2.50, minimum_amount: 100, maximum_amount: 1000, duration_weeks: 120 },
-    { id: 'pro-plan', name: 'Pro Plan', weekly_roi_rate: 3.50, minimum_amount: 500, maximum_amount: 5000, duration_weeks: 120 },
-    { id: 'elite-plan', name: 'Elite Plan', weekly_roi_rate: 5.00, minimum_amount: 1000, maximum_amount: 10000, duration_weeks: 120 }
+  const defaultTiers = [
+    { id: 'package-1', name: 'Package 1', cost: 120, trading_capital: 120, max_return_factor: 3, max_total_return: 350 },
+    { id: 'package-2', name: 'Package 2', cost: 350, trading_capital: 300, max_return_factor: 3, max_total_return: 1000 },
+    { id: 'package-3', name: 'Package 3', cost: 575, trading_capital: 500, max_return_factor: 3, max_total_return: 1700 },
+    { id: 'package-4', name: 'Package 4', cost: 1100, trading_capital: 1000, max_return_factor: 3, max_total_return: 3300 },
+    { id: 'package-5', name: 'Package 5', cost: 5500, trading_capital: 5000, max_return_factor: 3, max_total_return: 16500 },
+    { id: 'package-6', name: 'Package 6', cost: 11000, trading_capital: 10000, max_return_factor: 3, max_total_return: 33000 },
   ];
 
+  const plansToRender = (state.plans && state.plans.length > 0) ? state.plans : defaultTiers;
+
   plansToRender.forEach((plan, idx) => {
-    const isPopular = idx === 1;
-    grid.innerHTML += `
-      <div class="plan-card ${isPopular ? 'popular' : ''}">
-        ${isPopular ? '<div class="popular-badge">Popular TIER</div>' : ''}
-        <div class="plan-name">${plan.name}</div>
-        <div class="plan-roi">${Number(plan.weekly_roi_rate).toFixed(2)}% <span>/ weekly ROI</span></div>
-        <ul class="plan-features">
-          <li>Min Investment <span>$${Number(plan.minimum_amount).toFixed(2)}</span></li>
-          <li>Max Investment <span>$${Number(plan.maximum_amount).toFixed(2)}</span></li>
-          <li>Max Total Return <span>300.00%</span></li>
-          <li>Duration <span>${plan.duration_weeks || 120} Weeks</span></li>
-        </ul>
-        <button class="btn btn-primary" style="width: 100%; justify-content: center;" 
-          onclick="openInvestModal('${plan.id}', '${plan.name}', ${plan.minimum_amount}, ${plan.maximum_amount})">
-          Choose ${plan.name}
-        </button>
+    const pkgNum = plan.name ? (plan.name.replace(/[^0-9]/g, '') || (idx + 1)) : (idx + 1);
+    const cost = Number(plan.cost || plan.minimum_amount || 120);
+    const tradingCap = Number(plan.trading_capital || cost);
+    const maxFactor = Number(plan.max_return_factor || 3);
+    const maxReturn = Number(plan.max_total_return || (tradingCap * maxFactor));
+    const profitCap = `${maxFactor}X`;
+    const duration = plan.duration_weeks ? `${plan.duration_weeks} WEEKS` : 'FLEXIBLE';
+
+    container.innerHTML += `
+      <div class="luxury-pkg-card" onclick="openInvestModal('${plan.id}', '${plan.name || ('Package ' + pkgNum)}', ${cost}, ${tradingCap}, ${maxReturn})" title="Click to Invest in ${plan.name}">
+        <!-- Top Right Gold Ribbon -->
+        <div class="pkg-ribbon">
+          <span class="pkg-ribbon-sub">PACKAGE</span>
+          <span class="pkg-ribbon-num">${pkgNum}</span>
+        </div>
+
+        <!-- Header: Brand Logo & Tagline -->
+        <div class="pkg-header">
+          <div class="pkg-brand">
+            <div class="pkg-logo-wrap">
+              <svg class="pkg-logo-icon" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#f3d078" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="#d4af37" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="#e5b955" stroke-width="2" stroke-linejoin="round"/>
+              </svg>
+              <span class="pkg-brand-title">FINOVO</span>
+            </div>
+            <span class="pkg-brand-tagline">Trade Smart. Grow Together.</span>
+          </div>
+        </div>
+
+        <!-- Subheading -->
+        <div class="pkg-subheading">INVESTMENT PLAN</div>
+
+        <!-- Main Invest -> You Get (Max) Box -->
+        <div class="pkg-invest-box">
+          <div class="pkg-invest-col">
+            <span class="pkg-invest-lbl">INVEST</span>
+            <span class="pkg-invest-val">$${cost.toLocaleString()}</span>
+          </div>
+          <div class="pkg-arrow">➔</div>
+          <div class="pkg-invest-col">
+            <span class="pkg-invest-lbl">YOU GET (MAX)</span>
+            <span class="pkg-invest-val gold">$${maxReturn.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <!-- 3-Column Stats Row -->
+        <div class="pkg-stats-row">
+          <!-- Trading Capital -->
+          <div class="pkg-stat-item">
+            <div class="pkg-stat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
+                <path d="M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6"></path>
+                <path d="M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path>
+              </svg>
+            </div>
+            <div class="pkg-stat-info">
+              <span class="pkg-stat-title">TRADING CAPITAL</span>
+              <span class="pkg-stat-value">$${tradingCap.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <!-- Profit Cap -->
+          <div class="pkg-stat-item">
+            <div class="pkg-stat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+              </svg>
+            </div>
+            <div class="pkg-stat-info">
+              <span class="pkg-stat-title">PROFIT CAP</span>
+              <span class="pkg-stat-value">${profitCap}</span>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div class="pkg-stat-item">
+            <div class="pkg-stat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </div>
+            <div class="pkg-stat-info">
+              <span class="pkg-stat-title">DURATION</span>
+              <span class="pkg-stat-value">${duration}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit Payout Gold Banner -->
+        <div class="pkg-payout-banner">PROFIT PAYOUT : MONTHLY</div>
+
+        <!-- Trust Badges Footer -->
+        <div class="pkg-trust-row">
+          <div class="pkg-trust-item">
+            <div class="pkg-trust-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+            </div>
+            <span class="pkg-trust-text">SECURE &amp; RELIABLE PLATFORM</span>
+          </div>
+          <div class="pkg-trust-item">
+            <div class="pkg-trust-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <span class="pkg-trust-text">TRANSPARENT SYSTEM</span>
+          </div>
+          <div class="pkg-trust-item">
+            <div class="pkg-trust-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+            </div>
+            <span class="pkg-trust-text">24/7 CUSTOMER SUPPORT</span>
+          </div>
+        </div>
+
+        <!-- Golden Wave Lines Background Overlay -->
+        <div class="pkg-wave-bg">
+          <svg viewBox="0 0 500 150" preserveAspectRatio="none">
+            <path d="M0,80 C150,150 350,0 500,80 L500,150 L0,150 Z" fill="none" stroke="url(#goldGrad-${idx})" stroke-width="1.5"></path>
+            <path d="M0,110 C200,40 300,140 500,90 L500,150 L0,150 Z" fill="none" stroke="url(#goldGrad-${idx})" stroke-width="1"></path>
+            <defs>
+              <linearGradient id="goldGrad-${idx}" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#aa7c11" stop-opacity="0.1"/>
+                <stop offset="50%" stop-color="#ffd700" stop-opacity="0.7"/>
+                <stop offset="100%" stop-color="#aa7c11" stop-opacity="0.1"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
       </div>
     `;
   });
@@ -1373,7 +1505,7 @@ function closeModal(modalId) {
 
 // ─── Investment Plan Modal & API Creation ─────────────────────────────────────
 
-function openInvestModal(planId, planName, minAmt, maxAmt) {
+function openInvestModal(planId, planName, cost = 120, tradingCapital = 120, maxReturn = 350) {
   if (state.user && state.user.kyc_status !== 'APPROVED') {
     const kycSt = state.user.kyc_status;
     const msg = kycSt === 'PENDING'
@@ -1384,12 +1516,23 @@ function openInvestModal(planId, planName, minAmt, maxAmt) {
     return;
   }
 
+  const foundPlan = (state.plans || []).find(p => p.id === planId);
+  const costVal = cost || (foundPlan ? (foundPlan.cost || foundPlan.minimum_amount) : 120);
+  const tradingCapVal = tradingCapital || (foundPlan ? foundPlan.trading_capital : costVal);
+  const maxRetVal = maxReturn || (foundPlan ? (foundPlan.max_total_return || (tradingCapVal * (foundPlan.max_return_factor || 3))) : (costVal * 3));
+
   document.getElementById('inv-plan-name').value = planId;
-  document.getElementById('inv-plan-display').value = planName;
+  document.getElementById('inv-plan-display').value = planName || (foundPlan ? foundPlan.name : 'Package');
+  
   const input = document.getElementById('inv-amount');
-  input.value = minAmt;
-  input.min = minAmt;
-  input.max = maxAmt;
+  if (input) input.value = costVal;
+
+  const tradingCapEl = document.getElementById('inv-trading-cap-display');
+  if (tradingCapEl) tradingCapEl.value = `$${Number(tradingCapVal).toFixed(2)}`;
+
+  const maxRetEl = document.getElementById('inv-max-return');
+  if (maxRetEl) maxRetEl.innerText = `$${Number(maxRetVal).toFixed(2)}`;
+
   // Clear deposit fields
   document.getElementById('inv-network').value = '';
   document.getElementById('inv-txhash').value = '';
@@ -1397,7 +1540,7 @@ function openInvestModal(planId, planName, minAmt, maxAmt) {
   document.getElementById('inv-proof').value = '';
   const depBox = document.getElementById('company-deposit-box');
   if (depBox) depBox.style.display = 'none';
-  updateMaxReturnCalc();
+  
   openModal('modal-invest');
 }
 
@@ -2202,20 +2345,27 @@ function renderAdminPlans(plans) {
   tbody.innerHTML = '';
 
   if (plans.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--mute);">No investment tiers created.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--mute);">No investment tiers created.</td></tr>`;
     return;
   }
 
   plans.forEach(p => {
+    const cost = Number(p.cost || p.minimum_amount || 0);
+    const tradingCap = Number(p.trading_capital || cost);
+    const factor = Number(p.max_return_factor || 3);
+    const maxRet = Number(p.max_total_return || (tradingCap * factor));
+
     tbody.innerHTML += `
       <tr>
         <td><b style="color:var(--text);">${p.name}</b></td>
-        <td style="font-family:var(--font-mono); color:var(--gold); font-weight:700;">${Number(p.weekly_roi_rate).toFixed(2)}% / wk</td>
-        <td style="font-family:var(--font-mono);">$${Number(p.minimum_amount).toFixed(0)} – $${Number(p.maximum_amount).toFixed(0)}</td>
-        <td style="font-family:var(--font-mono);">${p.duration_weeks || 120} Wks</td>
+        <td style="font-family:var(--font-mono); font-weight:700; color:#fff;">$${cost.toFixed(2)}</td>
+        <td style="font-family:var(--font-mono); font-weight:700; color:#10B981;">$${tradingCap.toFixed(2)}</td>
+        <td style="font-family:var(--font-mono); color:var(--gold); font-weight:700;">$${maxRet.toFixed(2)} (${factor}X)</td>
+        <td style="font-family:var(--font-mono);">${Number(p.weekly_roi_rate).toFixed(2)}% / wk</td>
         <td><span class="badge ${p.is_active ? 'badge-approved' : 'badge-pending'}">${p.is_active ? 'ACTIVE' : 'INACTIVE'}</span></td>
-        <td style="text-align:right;">
-          <button class="btn btn-sm btn-secondary" onclick="openPlanModal('${p.id}')">Edit Tier</button>
+        <td style="text-align:right; white-space:nowrap;">
+          <button class="btn btn-sm btn-secondary" onclick="openPlanModal('${p.id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" style="margin-left: 6px;" onclick="handleAdminDeletePlan('${p.id}', '${(p.name || '').replace(/'/g, "\\'")}')" title="Delete Plan">Delete</button>
         </td>
       </tr>
     `;
@@ -2720,13 +2870,45 @@ function openPlanModal(planId = null) {
   document.getElementById('adm-plan-modal-title').innerText = plan ? `Edit ${plan.name}` : 'Create Investment Plan';
   document.getElementById('adm-plan-name').value = plan ? plan.name : '';
   document.getElementById('adm-plan-desc').value = plan ? (plan.description || '') : '';
-  document.getElementById('adm-plan-roi').value = plan ? plan.weekly_roi_rate : '3.50';
-  document.getElementById('adm-plan-duration').value = plan ? plan.duration_weeks : '120';
-  document.getElementById('adm-plan-min').value = plan ? plan.minimum_amount : '100';
-  document.getElementById('adm-plan-max').value = plan ? plan.maximum_amount : '5000';
+  document.getElementById('adm-plan-cost').value = plan ? (plan.cost || plan.minimum_amount || '120') : '120';
+  document.getElementById('adm-plan-trading-cap').value = plan ? (plan.trading_capital || '120') : '120';
+  document.getElementById('adm-plan-factor').value = plan ? (plan.max_return_factor || '3.0') : '3.0';
+  document.getElementById('adm-plan-max-return').value = plan ? (plan.max_total_return || '350') : '350';
+  document.getElementById('adm-plan-roi').value = plan ? plan.weekly_roi_rate : '3.00';
+  document.getElementById('adm-plan-duration').value = plan ? (plan.duration_weeks || '0') : '0';
   document.getElementById('adm-plan-active').checked = plan ? plan.is_active : true;
 
+  const delBtn = document.getElementById('btn-adm-delete-plan');
+  if (delBtn) {
+    delBtn.style.display = plan ? 'inline-flex' : 'none';
+  }
+
   openModal('modal-admin-plan');
+}
+
+async function handleAdminModalDeletePlan() {
+  const planId = document.getElementById('adm-plan-id').value;
+  const name = document.getElementById('adm-plan-name').value || 'Plan';
+  if (!planId) return;
+  const success = await handleAdminDeletePlan(planId, name);
+  if (success) {
+    closeModal('modal-admin-plan');
+  }
+}
+
+async function handleAdminDeletePlan(planId, planName) {
+  if (!confirm(`Are you sure you want to delete "${planName}"? This action cannot be undone.`)) {
+    return false;
+  }
+  try {
+    const res = await apiCall(`/admin-panel/plans/${planId}/`, 'DELETE');
+    showToast(res?.detail || `Plan "${planName}" deleted successfully.`);
+    await loadAdminSettings();
+    return true;
+  } catch (err) {
+    showToast(err.message || 'Failed to delete plan', true);
+    return false;
+  }
 }
 
 async function handleAdminSavePlan(e) {
@@ -2734,19 +2916,23 @@ async function handleAdminSavePlan(e) {
   const planId = document.getElementById('adm-plan-id').value;
   const name = document.getElementById('adm-plan-name').value;
   const description = document.getElementById('adm-plan-desc').value;
-  const weekly_roi_rate = Number(document.getElementById('adm-plan-roi').value);
-  const duration_weeks = Number(document.getElementById('adm-plan-duration').value);
-  const minimum_amount = Number(document.getElementById('adm-plan-min').value);
-  const maximum_amount = Number(document.getElementById('adm-plan-max').value);
+  const cost = Number(document.getElementById('adm-plan-cost').value);
+  const trading_capital = Number(document.getElementById('adm-plan-trading-cap').value);
+  const max_return_factor = Number(document.getElementById('adm-plan-factor').value);
+  const max_total_return = Number(document.getElementById('adm-plan-max-return').value);
+  const weekly_roi_rate = Number(document.getElementById('adm-plan-roi').value || 0);
+  const duration_weeks = Number(document.getElementById('adm-plan-duration').value || 0);
   const is_active = document.getElementById('adm-plan-active').checked;
 
   const payload = {
     name,
     description,
+    cost,
+    trading_capital,
+    max_return_factor,
+    max_total_return,
     weekly_roi_rate,
     duration_weeks,
-    minimum_amount,
-    maximum_amount,
     is_active,
   };
 

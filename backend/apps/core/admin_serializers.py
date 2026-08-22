@@ -138,7 +138,7 @@ class AdminInvestmentSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'user_email', 'user_username', 'user_full_name',
             'user_active_level', 'user_parent_email',
             'plan_id', 'plan_name', 'plan_weekly_roi_rate', 'plan_duration_weeks',
-            'amount', 'max_return', 'total_credited', 'remaining_return', 'progress_percent',
+            'cost', 'trading_capital', 'amount', 'max_return', 'total_credited', 'remaining_return', 'progress_percent',
             'status', 'deposit_network', 'deposit_txn_hash', 'deposit_sender_address',
             'deposit_proof', 'deposit_proof_url', 'deposit_submitted_at', 'explorer_url',
             'approved_by_email', 'approved_at', 'rejection_reason',
@@ -256,8 +256,8 @@ class AdminPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
         fields = [
-            'id', 'name', 'description', 'minimum_amount', 'maximum_amount',
-            'max_total_return', 'weekly_roi_rate', 'duration_weeks', 'is_active',
+            'id', 'name', 'description', 'cost', 'trading_capital',
+            'max_return_factor', 'max_total_return', 'weekly_roi_rate', 'duration_weeks', 'is_active',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

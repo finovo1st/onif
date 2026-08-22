@@ -2167,4 +2167,315 @@ body {
   background: transparent;
   border-color: var(--line);
   color: var(--mute);
+}
+
+/* ==========================================================================
+   LUXURY INVESTMENT PACKAGE CARDS (Exact match with design image)
+   ========================================================================== */
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+  margin-bottom: 36px;
+}
+
+@media (min-width: 1024px) {
+  .packages-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.luxury-pkg-card {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, #161822 0%, #0d0e14 65%, #08090d 100%);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 16px;
+  padding: 24px 22px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(245, 207, 109, 0.25);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.luxury-pkg-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(245, 207, 109, 0.85);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(212, 175, 55, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Card Header: Brand Logo & Tagline + Ribbon */
+.pkg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: 52px;
+}
+
+.pkg-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pkg-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pkg-brand-title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.pkg-brand-tagline {
+  font-size: 10.5px;
+  color: #9ea4b4;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Gold Ribbon / Bookmark Badge */
+.pkg-ribbon {
+  position: absolute;
+  top: 0;
+  right: 22px;
+  width: 54px;
+  height: 60px;
+  background: linear-gradient(180deg, #ffd700 0%, #e2b755 45%, #c89327 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 6px;
+  color: #121008;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  z-index: 2;
+}
+
+.pkg-ribbon-sub {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #241a05;
+  line-height: 1;
+}
+
+.pkg-ribbon-num {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #0d0a03;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+}
+
+/* Subtitle divider: —— INVESTMENT PLAN —— */
+.pkg-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 14px 0 16px 0;
+  color: #dcb35c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pkg-subheading::before,
+.pkg-subheading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0) 0%, rgba(212, 175, 55, 0.5) 50%, rgba(212, 175, 55, 0) 100%);
+}
+
+/* Main Invest -> You Get (Max) Box */
+.pkg-invest-box {
+  background: rgba(13, 14, 19, 0.88);
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  border-radius: 10px;
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  text-align: center;
+  position: relative;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.pkg-invest-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pkg-invest-lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #adb2c4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pkg-invest-val {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.pkg-invest-val.gold {
+  color: #f7d57a;
+  text-shadow: 0 0 12px rgba(247, 213, 122, 0.25);
+}
+
+.pkg-arrow {
+  color: #e5b955;
+  font-size: 22px;
+  font-weight: 800;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3-Column Stats Row */
+.pkg-stats-row {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1fr;
+  gap: 8px;
+  margin: 16px 0 14px 0;
+  align-items: center;
+}
+
+.pkg-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pkg-stat-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: #e0b658;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pkg-stat-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pkg-stat-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: #8c92a4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pkg-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: var(--font-mono, monospace);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* Profit Payout Gold Banner */
+.pkg-payout-banner {
+  background: linear-gradient(90deg, #c4962c 0%, #f6d46d 50%, #c4962c 100%);
+  color: #0d0a03;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.35);
+  transition: filter 0.2s ease, transform 0.2s ease;
+  margin-top: 4px;
+}
+
+.luxury-pkg-card:hover .pkg-payout-banner {
+  filter: brightness(1.1);
+  transform: scale(1.01);
+}
+
+/* Trust / Security Badges Footer */
+.pkg-trust-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(212, 175, 55, 0.18);
+  position: relative;
+  z-index: 1;
+}
+
+.pkg-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pkg-trust-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #d4af37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pkg-trust-text {
+  font-size: 8px;
+  font-weight: 700;
+  color: #bcc1d4;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+
+/* Wave Glowing Background Lines Artwork */
+.pkg-wave-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  border-radius: 0 0 16px 16px;
+}
+
+.pkg-wave-bg svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.45;
 }

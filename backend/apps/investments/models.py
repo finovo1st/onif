@@ -27,19 +27,29 @@ class Plan(models.Model):
     name = models.CharField(max_length=100, verbose_name=_('Plan Name'))
     description = models.TextField(blank=True, verbose_name=_('Description'))
 
-    minimum_amount = models.DecimalField(
+    cost = models.DecimalField(
         max_digits=18,
         decimal_places=2,
         default=Decimal('120.00'),
         validators=[MinValueValidator(Decimal('0.01'))],
-        verbose_name=_('Minimum Investment Amount ($)'),
+        verbose_name=_('Plan Cost ($)'),
+        help_text=_('Fixed purchase amount the user pays for this package.'),
     )
-    maximum_amount = models.DecimalField(
+    trading_capital = models.DecimalField(
         max_digits=18,
         decimal_places=2,
-        default=Decimal('10000.00'),
+        default=Decimal('120.00'),
         validators=[MinValueValidator(Decimal('0.01'))],
-        verbose_name=_('Maximum Investment Amount ($)'),
+        verbose_name=_('Trading Capital ($)'),
+        help_text=_('Amount credited to the user total invested portfolio for trading & ROI.'),
+    )
+    max_return_factor = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('3.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name=_('Max Return Factor'),
+        help_text=_('Max return multiplier factor (e.g., 3.00 for 3x).'),
     )
     max_total_return = models.DecimalField(
         max_digits=18,
@@ -59,17 +69,17 @@ class Plan(models.Model):
     duration_weeks = models.PositiveIntegerField(
         default=0,
         verbose_name=_('Duration (Weeks)'),
-        help_text=_('0 means open-ended until max return is reached'),
+        help_text=_('0 means open-ended / flexible until max return is reached'),
     )
     is_active = models.BooleanField(default=True, db_index=True, verbose_name=_('Is Active'))
 
     class Meta:
         verbose_name = _('Investment Plan')
         verbose_name_plural = _('Investment Plans')
-        ordering = ['name']
+        ordering = ['cost']
 
     def __str__(self) -> str:
-        return f"{self.name} (min: ${self.minimum_amount})"
+        return f"{self.name} (${self.cost} - Trading Capital: ${self.trading_capital})"
 
 
 class Investment(models.Model):
@@ -117,11 +127,29 @@ class Investment(models.Model):
     )
 
     # Financial fields — stored at time of investment, not re-calculated from Plan
+    cost = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal('120.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name=_('Package Cost ($)'),
+        help_text=_('Amount paid by user for the investment package.'),
+    )
+    trading_capital = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal('120.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name=_('Trading Capital ($)'),
+        help_text=_('Amount credited to user total invested balance.'),
+    )
     amount = models.DecimalField(
         max_digits=18,
         decimal_places=2,
+        default=Decimal('120.00'),
         validators=[MinValueValidator(Decimal('0.01'))],
         verbose_name=_('Principal Amount ($)'),
+        help_text=_('Legacy field / synced with cost.'),
     )
     max_return = models.DecimalField(
         max_digits=18,

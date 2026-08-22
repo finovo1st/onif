@@ -7,17 +7,17 @@ from .models import Plan, Investment
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'minimum_amount', 'maximum_amount', 'max_total_return', 'weekly_roi_rate', 'is_active', 'created_at')
+    list_display = ('name', 'cost', 'trading_capital', 'max_return_factor', 'max_total_return', 'weekly_roi_rate', 'is_active', 'created_at')
     list_filter = ('is_active',)
     search_fields = ('name',)
-    ordering = ('minimum_amount',)
+    ordering = ('cost',)
     readonly_fields = ('id', 'created_at', 'updated_at')
 
 
 @admin.register(Investment)
 class InvestmentAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'user', 'plan', 'amount', 'status',
+        'id', 'user', 'plan', 'cost', 'trading_capital', 'status',
         'total_credited', 'max_return',
         'deposit_network', 'deposit_txn_hash',
         'start_date', 'end_date',
@@ -29,7 +29,7 @@ class InvestmentAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Investment Info', {
-            'fields': ('id', 'user', 'plan', 'amount', 'max_return', 'total_credited', 'status')
+            'fields': ('id', 'user', 'plan', 'cost', 'trading_capital', 'amount', 'max_return', 'total_credited', 'status')
         }),
         ('Approval', {
             'fields': ('approved_by', 'approved_at', 'rejection_reason')

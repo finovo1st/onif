@@ -8,8 +8,8 @@ class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
         fields = [
-            'id', 'name', 'description', 'minimum_amount', 'maximum_amount',
-            'max_total_return', 'weekly_roi_rate', 'duration_weeks',
+            'id', 'name', 'description', 'cost', 'trading_capital',
+            'max_return_factor', 'max_total_return', 'weekly_roi_rate', 'duration_weeks',
         ]
         read_only_fields = fields
 
@@ -23,14 +23,14 @@ class InvestmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investment
         fields = [
-            'id', 'plan', 'plan_name', 'amount', 'max_return', 'total_credited',
-            'remaining_return', 'profit', 'status',
+            'id', 'plan', 'plan_name', 'cost', 'trading_capital', 'amount',
+            'max_return', 'total_credited', 'remaining_return', 'profit', 'status',
             'deposit_network', 'deposit_txn_hash', 'deposit_sender_address',
             'deposit_proof', 'deposit_proof_url', 'deposit_submitted_at',
             'start_date', 'end_date', 'last_roi_date', 'created_at',
         ]
         read_only_fields = [
-            'id', 'plan_name', 'max_return', 'total_credited', 'remaining_return',
+            'id', 'plan_name', 'cost', 'trading_capital', 'max_return', 'total_credited', 'remaining_return',
             'profit', 'status', 'deposit_proof_url', 'deposit_submitted_at',
             'start_date', 'end_date', 'last_roi_date', 'created_at',
         ]
@@ -48,15 +48,16 @@ class InvestmentCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating a new investment.
 
-    The user picks a plan + amount and provides deposit proof (crypto payment
-    details) in the same request. The investment is created with status
-    DEPOSIT_PENDING until an admin approves the deposit.
+    The user picks a plan (which has a fixed cost and trading capital)
+    and provides deposit proof in the same request.
     """
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, required=False)
+    cost = serializers.DecimalField(max_digits=18, decimal_places=2, required=False)
 
     class Meta:
         model = Investment
         fields = [
-            'plan', 'amount',
+            'plan', 'cost', 'amount',
             'deposit_network', 'deposit_txn_hash',
             'deposit_sender_address', 'deposit_proof',
         ]
@@ -74,19 +75,9 @@ class InvestmentCreateSerializer(serializers.ModelSerializer):
             )
 
         plan = attrs['plan']
-        amount = attrs['amount']
 
         if not plan.is_active:
             raise serializers.ValidationError({'plan': 'This investment plan is not currently active.'})
-
-        if amount < plan.minimum_amount:
-            raise serializers.ValidationError(
-                {'amount': f'Minimum investment for this plan is ${plan.minimum_amount}.'}
-            )
-        if amount > plan.maximum_amount:
-            raise serializers.ValidationError(
-                {'amount': f'Maximum investment for this plan is ${plan.maximum_amount}.'}
-            )
 
         if not attrs.get('deposit_txn_hash') and not attrs.get('deposit_proof'):
             raise serializers.ValidationError(
@@ -98,11 +89,17 @@ class InvestmentCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         plan = validated_data['plan']
         user = self.context['request'].user
+        cost = validated_data.get('cost') or validated_data.get('amount') or plan.cost
+        trading_capital = plan.trading_capital
+        max_return = plan.max_total_return if plan.max_total_return else (trading_capital * plan.max_return_factor)
+
         return Investment.objects.create(
             user=user,
             plan=plan,
-            amount=validated_data['amount'],
-            max_return=plan.max_total_return,
+            cost=cost,
+            trading_capital=trading_capital,
+            amount=cost,
+            max_return=max_return,
             status=Investment.Status.DEPOSIT_PENDING,
             deposit_network=validated_data.get('deposit_network', ''),
             deposit_txn_hash=validated_data.get('deposit_txn_hash', ''),

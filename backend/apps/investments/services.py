@@ -72,9 +72,9 @@ def activate_investment(investment: Investment, admin_user) -> None:
 
     Actions:
       1. Set investment status → ACTIVE, record approval metadata.
-      2. Update wallet accumulators (total_deposited + total_invested).
-         Note: wallet.balance is NOT changed — the user funded this investment
-         directly with on-chain crypto; the balance is only for earned income.
+      2. Update wallet accumulators:
+         - total_deposited += investment.cost (total crypto paid by user)
+         - total_invested  += investment.trading_capital (trading capital credited to portfolio)
       3. Create an immutable WalletTransaction audit record (balance unchanged).
       4. Send in-app notification to the investor.
     """
@@ -86,8 +86,8 @@ def activate_investment(investment: Investment, admin_user) -> None:
 
     # Update wallet accumulators without changing spendable balance
     wallet = Wallet.objects.select_for_update().get_or_create(user=investment.user)[0]
-    wallet.total_deposited += investment.amount
-    wallet.total_invested += investment.amount
+    wallet.total_deposited += investment.cost
+    wallet.total_invested += investment.trading_capital
     wallet.save(update_fields=['total_deposited', 'total_invested', 'updated_at'])
 
     # Update 5-level ancestors team_total_investment
@@ -108,7 +108,7 @@ def activate_investment(investment: Investment, admin_user) -> None:
                 Wallet.objects.get_or_create(user_id=aid)
             
             Wallet.objects.filter(user_id__in=ancestor_ids).update(
-                team_total_investment=F('team_total_investment') + investment.amount
+                team_total_investment=F('team_total_investment') + investment.trading_capital
             )
 
     # Audit trail — balance_before == balance_after (no spendable change)
@@ -116,10 +116,10 @@ def activate_investment(investment: Investment, admin_user) -> None:
         wallet=wallet,
         transaction_type=WalletTransaction.TransactionType.CREDIT,
         category=WalletTransaction.Category.DEPOSIT,
-        amount=investment.amount,
+        amount=investment.cost,
         balance_before=wallet.balance,
         balance_after=wallet.balance,
-        description=f'Investment deposit verified for {investment.plan.name} plan',
+        description=f'Investment deposit verified for {investment.plan.name} plan (${investment.trading_capital} Trading Capital)',
         reference_id=str(investment.id),
     )
 
@@ -129,8 +129,8 @@ def activate_investment(investment: Investment, admin_user) -> None:
         user=investment.user,
         title='Investment Approved',
         message=(
-            f'Your deposit of ${investment.amount} has been verified. '
-            f'Your {investment.plan.name} investment is now active and earning ROI.'
+            f'Your deposit of ${investment.cost} has been verified. '
+            f'Your {investment.plan.name} investment (${investment.trading_capital} Trading Capital) is now active and earning ROI.'
         ),
         notification_type=Notification.NotificationType.INVESTMENT,
         reference_id=str(investment.id),
@@ -243,7 +243,7 @@ def distribute_direct_income(investment: Investment) -> list:
             current_user = sponsor
             continue
 
-        commission_amount = (investment.amount * rate).quantize(
+        commission_amount = (investment.cost * rate).quantize(
             Decimal('0.01'), rounding=ROUND_DOWN
         )
         if commission_amount <= Decimal('0.00'):
@@ -281,7 +281,8 @@ def distribute_roi_for_investment(investment: Investment) -> Decimal:
     """
     Calculate and credit the weekly ROI for a single ACTIVE investment.
 
-    - The investor's ROI is credited to their spendable wallet balance (withdrawable).
+    - The investor's ROI is calculated based on trading_capital.
+    - ROI is credited to investor's spendable wallet balance (withdrawable).
     - investment.total_credited tracks cumulative ROI paid out toward max_return.
     - Marks the investment COMPLETED if max_return is reached.
     - Distributes ROI-level commissions (1.5% up to 5 levels) to upline sponsors'
@@ -292,9 +293,9 @@ def distribute_roi_for_investment(investment: Investment) -> Decimal:
     if investment.status != Investment.Status.ACTIVE:
         return Decimal('0.00')
 
-    # Calculate weekly ROI
+    # Calculate weekly ROI based on trading capital
     roi_rate = investment.plan.weekly_roi_rate / Decimal('100')
-    calculated_roi = (investment.amount * roi_rate).quantize(
+    calculated_roi = (investment.trading_capital * roi_rate).quantize(
         Decimal('0.01'), rounding=ROUND_DOWN
     )
 

@@ -35,10 +35,10 @@ class AdminPanelTestCase(TestCase):
         # Create Plan
         self.plan = Plan.objects.create(
             name='Test Starter Plan',
-            description='Test Starter Plan description',
-            minimum_amount=Decimal('100.00'),
-            maximum_amount=Decimal('1000.00'),
-            max_total_return=Decimal('3000.00'),
+            cost=Decimal('100.00'),
+            trading_capital=Decimal('100.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('300.00'),
             weekly_roi_rate=Decimal('2.50'),
             duration_weeks=120,
             is_active=True
@@ -86,6 +86,8 @@ class AdminPanelTestCase(TestCase):
         inv = Investment.objects.create(
             user=self.regular_user,
             plan=self.plan,
+            cost=Decimal('200.00'),
+            trading_capital=Decimal('200.00'),
             amount=Decimal('200.00'),
             max_return=Decimal('600.00'),
             status=Investment.Status.DEPOSIT_PENDING,

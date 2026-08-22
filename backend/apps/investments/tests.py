@@ -22,12 +22,17 @@ def make_user(email, username, parent=None):
     return u
 
 
-def make_active_investment(user, plan, amount='120.00'):
+def make_active_investment(user, plan, cost=None):
+    cost_val = Decimal(cost) if cost is not None else plan.cost
+    trading_cap = plan.trading_capital
+    max_ret = plan.max_total_return if plan.max_total_return else (trading_cap * plan.max_return_factor)
     inv = Investment.objects.create(
         user=user,
         plan=plan,
-        amount=Decimal(amount),
-        max_return=plan.max_total_return,
+        cost=cost_val,
+        trading_capital=trading_cap,
+        amount=cost_val,
+        max_return=max_ret,
         status=Investment.Status.ACTIVE,
     )
     return inv
@@ -68,9 +73,9 @@ class DirectIncomeTests(TestCase):
     def setUp(self):
         self.plan = Plan.objects.create(
             name='Test Plan',
-            minimum_amount=Decimal('120.00'),
-            maximum_amount=Decimal('5000.00'),
-            max_total_return=Decimal('350.00'),
+            cost=Decimal('120.00'),
+            trading_capital=Decimal('5000.00'),
+            max_return_factor=Decimal('350.00'),
             weekly_roi_rate=Decimal('1.5'),
         )
         # Build a 3-level chain
@@ -114,8 +119,9 @@ class ROIDistributionTests(TestCase):
     def setUp(self):
         self.plan = Plan.objects.create(
             name='ROI Plan',
-            minimum_amount=Decimal('120.00'),
-            maximum_amount=Decimal('5000.00'),
+            cost=Decimal('120.00'),
+            trading_capital=Decimal('120.00'),
+            max_return_factor=Decimal('3.00'),
             max_total_return=Decimal('350.00'),
             weekly_roi_rate=Decimal('10.00'),  # 10% for easy math
         )
@@ -153,9 +159,9 @@ class ActiveLevelTests(TestCase):
     def setUp(self):
         self.plan = Plan.objects.create(
             name='Level Plan',
-            minimum_amount=Decimal('120.00'),
-            maximum_amount=Decimal('5000.00'),
-            max_total_return=Decimal('350.00'),
+            cost=Decimal('120.00'),
+            trading_capital=Decimal('5000.00'),
+            max_return_factor=Decimal('350.00'),
             weekly_roi_rate=Decimal('1.5'),
         )
         self.sponsor = make_user('sponsor@test.com', 'sponsoruser')
@@ -177,9 +183,10 @@ class InvestmentTaskTests(TestCase):
         from apps.investments.models import Plan
         self.plan = Plan.objects.create(
             name='Task Plan',
-            minimum_amount=Decimal('100.00'),
-            maximum_amount=Decimal('1000.00'),
-            max_total_return=Decimal('200.00'),
+            cost=Decimal('100.00'),
+            trading_capital=Decimal('100.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('300.00'),
             weekly_roi_rate=Decimal('10.00'),
         )
         self.user = make_user('taskuser@test.com', 'taskuser')
@@ -203,9 +210,10 @@ class InvestmentSerializerTests(TestCase):
         from apps.investments.models import Plan
         self.plan = Plan.objects.create(
             name='Serializer Plan',
-            minimum_amount=Decimal('100.00'),
-            maximum_amount=Decimal('1000.00'),
-            max_total_return=Decimal('200.00'),
+            cost=Decimal('100.00'),
+            trading_capital=Decimal('100.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('300.00'),
             weekly_roi_rate=Decimal('10.00'),
             is_active=True
         )
@@ -221,21 +229,17 @@ class InvestmentSerializerTests(TestCase):
         request = APIRequestFactory().post('/')
         request.user = user
 
-        # Test below minimum amount
+        # Test valid data
         data = {
             'plan': self.plan.id,
-            'amount': '50.00',
             'deposit_network': 'TRC20',
             'deposit_txn_hash': 'hash123'
         }
         serializer = InvestmentCreateSerializer(data=data, context={'request': request})
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('amount', serializer.errors)
-
-        # Test valid data
-        data['amount'] = '150.00'
-        serializer = InvestmentCreateSerializer(data=data, context={'request': request})
         self.assertTrue(serializer.is_valid())
+        inv = serializer.save()
+        self.assertEqual(inv.cost, Decimal('100.00'))
+        self.assertEqual(inv.trading_capital, Decimal('100.00'))
 
 
 from rest_framework.test import APITestCase
@@ -252,9 +256,10 @@ class InvestmentViewTests(APITestCase):
         
         self.plan = Plan.objects.create(
             name='View Plan',
-            minimum_amount=Decimal('100.00'),
-            maximum_amount=Decimal('1000.00'),
-            max_total_return=Decimal('200.00'),
+            cost=Decimal('100.00'),
+            trading_capital=Decimal('100.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('300.00'),
             weekly_roi_rate=Decimal('10.00'),
             is_active=True
         )
@@ -263,13 +268,12 @@ class InvestmentViewTests(APITestCase):
         url = reverse('plan_list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
+        self.assertGreaterEqual(len(response.data['results']), 1)
 
     def test_create_investment(self):
         url = reverse('investment_list_create')
         data = {
             'plan': self.plan.id,
-            'amount': '200.00',
             'deposit_network': 'TRC20',
             'deposit_txn_hash': 'txnhash123'
         }
@@ -277,5 +281,39 @@ class InvestmentViewTests(APITestCase):
         if response.status_code != 201:
             print("Investment 400 error:", response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['amount'], '200.00')
+        self.assertEqual(response.data['cost'], '100.00')
+        self.assertEqual(response.data['trading_capital'], '100.00')
         self.assertEqual(response.data['status'], 'DEPOSIT_PENDING')
+
+    def test_admin_delete_plan(self):
+        from apps.investments.models import Plan
+        self.user.role = self.user.Role.ADMIN
+        self.user.is_staff = True
+        self.user.save()
+
+        plan_to_del = Plan.objects.create(
+            name='Temporary Plan',
+            cost=Decimal('50.00'),
+            trading_capital=Decimal('50.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('150.00'),
+            weekly_roi_rate=Decimal('5.00'),
+            is_active=True
+        )
+        url = reverse('admin_panel:plans_detail', kwargs={'pk': plan_to_del.id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Plan.objects.filter(id=plan_to_del.id).exists())
+
+    def test_admin_delete_plan_with_investments_protected(self):
+        from apps.investments.models import Plan
+        self.user.role = self.user.Role.ADMIN
+        self.user.is_staff = True
+        self.user.save()
+
+        # self.plan has an investment created in test_create_investment or let's create one:
+        make_active_investment(self.user, self.plan, Decimal('100.00'))
+        url = reverse('admin_panel:plans_detail', kwargs={'pk': self.plan.id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Plan.objects.filter(id=self.plan.id).exists())

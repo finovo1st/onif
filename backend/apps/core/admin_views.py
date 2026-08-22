@@ -722,17 +722,30 @@ class AdminPlanListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = AdminPlanSerializer
     permission_classes = [IsAdminRoleOrStaff]
-    queryset = Plan.objects.all().order_by('minimum_amount')
+    queryset = Plan.objects.all().order_by('cost')
 
 
-class AdminPlanDetailView(generics.RetrieveUpdateAPIView):
+class AdminPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET   /api/v1/admin-panel/plans/{id}/
-    PATCH /api/v1/admin-panel/plans/{id}/
+    GET    /api/v1/admin-panel/plans/{id}/
+    PATCH  /api/v1/admin-panel/plans/{id}/
+    DELETE /api/v1/admin-panel/plans/{id}/
     """
     serializer_class = AdminPlanSerializer
     permission_classes = [IsAdminRoleOrStaff]
     queryset = Plan.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            name = instance.name
+            instance.delete()
+            return Response({'detail': f"Plan '{name}' deleted successfully."}, status=status.HTTP_200_OK)
+        except models.ProtectedError:
+            return Response(
+                {'detail': f"Cannot delete plan '{instance.name}' because existing investments are linked to it. You can set it to INACTIVE instead."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class AdminTriggerROIEngineView(APIView):

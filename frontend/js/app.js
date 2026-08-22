@@ -323,6 +323,17 @@ function renderAllViews() {
     const banner = document.getElementById('admin-investor-mode-banner');
     if (banner) banner.style.display = 'none';
     document.getElementById('sidebar-userrole').innerText = `Level ${state.user.active_level || 0} Unlock`;
+
+    // Ensure non-admin users always display a valid user view and NEVER the admin view
+    const activePageView = document.querySelector('.page-view.active');
+    const validViews = ['dashboard', 'investments', 'wallet', 'referrals', 'kyc', 'support'];
+    const currentHash = window.location.hash.replace('#', '').toLowerCase();
+
+    if (validViews.includes(currentHash)) {
+      switchNav(currentHash);
+    } else if (!activePageView || activePageView.id === 'view-admin' || !validViews.includes(activePageView.id.replace('view-', ''))) {
+      switchNav('dashboard');
+    }
   }
 
   // Update Topbar & Sidebar KYC Badges
@@ -1043,11 +1054,12 @@ async function handleSendReply(e) {
   }
 }
 
-// Navigation Handlers
-
-// 1. Admin Primary Topbar Navigation Switcher
+// Navigation Handler
 function switchAdminNav(tabName) {
-  if (!state.isAdmin) return;
+  if (!state.isAdmin) {
+    switchNav('dashboard');
+    return;
+  }
 
   // Activate #view-admin page
   document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
@@ -1084,8 +1096,12 @@ function switchAdminNav(tabName) {
 
 // 2. User Views / Sub-Menu Switcher
 function switchNav(viewName) {
-  if (viewName === 'admin' && state.isAdmin) {
-    switchAdminNav('overview');
+  if (viewName === 'admin') {
+    if (state.isAdmin) {
+      switchAdminNav('overview');
+    } else {
+      switchNav('dashboard');
+    }
     return;
   }
 
@@ -1102,7 +1118,7 @@ function switchNav(viewName) {
     // Highlight the "Investor Views" dropdown in topbar
     document.querySelectorAll('#top-nav-admin .nav-item').forEach(el => el.classList.remove('active'));
     const investorDropdown = document.getElementById('nav-adm-investor-sub');
-    if (investorDropdown) investorDropdown.classList.add('active');
+    if (investorDropdown) investorDropdown.classList.remove('active');
   } else {
     // Regular user nav highlight
     document.querySelectorAll('#top-nav-user .nav-item').forEach(el => el.classList.remove('active'));
@@ -1272,6 +1288,8 @@ async function handleLogin(e) {
       state.token = data.access;
       localStorage.setItem('finovo_token', data.access);
       showToast('Signed in successfully!');
+      const pwInput = document.getElementById('login-password');
+      if (pwInput) pwInput.value = '';
       await loadAllAPIData();
     }
   } catch (err) {
@@ -1489,6 +1507,66 @@ function handleLogout() {
   localStorage.removeItem('finovo_token');
   state.token = null;
   state.user = null;
+  state.isAdmin = false;
+  state.wallet = { balance: 0, total_deposited: 0, total_roi_earned: 0, total_direct_income: 0, total_referral_income: 0, total_withdrawn: 0 };
+  state.plans = [];
+  state.investments = [];
+  state.deposits = [];
+  state.withdrawals = [];
+  state.ledger = [];
+  state.team = [];
+  state.commissions = [];
+  state.tickets = [];
+  state.levelStats = [];
+  state.admin = {
+    overview: null,
+    investments: [],
+    withdrawals: [],
+    users: [],
+    tickets: [],
+    settings: [],
+    plans: [],
+  };
+
+  // Close any open modals
+  document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+
+  // Reset top navigation and action bars
+  const topNavUser = document.getElementById('top-nav-user');
+  const topNavAdmin = document.getElementById('top-nav-admin');
+  const userActions = document.getElementById('user-topbar-actions');
+  const adminActions = document.getElementById('admin-topbar-actions');
+  const banner = document.getElementById('admin-investor-mode-banner');
+
+  if (topNavUser) topNavUser.style.display = 'flex';
+  if (topNavAdmin) topNavAdmin.style.display = 'none';
+  if (userActions) userActions.style.display = 'flex';
+  if (adminActions) adminActions.style.display = 'none';
+  if (banner) banner.style.display = 'none';
+
+  // Reset active page view to dashboard
+  document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
+  const dashView = document.getElementById('view-dashboard');
+  if (dashView) dashView.classList.add('active');
+
+  // Reset nav items highlight
+  document.querySelectorAll('#top-nav-user .nav-item').forEach(el => el.classList.remove('active'));
+  const navDash = document.getElementById('nav-dashboard');
+  if (navDash) navDash.classList.add('active');
+
+  // Reset header page title
+  const titleEl = document.getElementById('header-page-title');
+  if (titleEl) titleEl.innerText = 'Dashboard Overview';
+
+  // Clear login password input
+  const loginPass = document.getElementById('login-password');
+  if (loginPass) loginPass.value = '';
+
+  // Clean URL hash if it's not a referral code
+  if (window.location.hash && !window.location.hash.includes('ref')) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
   showAuthOverlay();
   switchAuthTab('login');
   showToast('Signed out of session.');

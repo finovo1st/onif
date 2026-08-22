@@ -577,7 +577,7 @@ function renderInvestmentPlansCards() {
         </div>
 
         <!-- Profit Payout Gold Banner -->
-        <div class="pkg-payout-banner">PROFIT PAYOUT : MONTHLY</div>
+        <div class="pkg-payout-banner">PROFIT PAYOUT : WEEKLY</div>
 
         <!-- Trust Badges Footer -->
         <div class="pkg-trust-row">
@@ -1601,7 +1601,7 @@ function openInvestModal(planId, planName, cost = 120, tradingCapital = 120, max
 
   document.getElementById('inv-plan-name').value = planId;
   document.getElementById('inv-plan-display').value = planName || (foundPlan ? foundPlan.name : 'Package');
-  
+
   const input = document.getElementById('inv-amount');
   if (input) input.value = costVal;
 
@@ -1618,7 +1618,7 @@ function openInvestModal(planId, planName, cost = 120, tradingCapital = 120, max
   document.getElementById('inv-proof').value = '';
   const depBox = document.getElementById('company-deposit-box');
   if (depBox) depBox.style.display = 'none';
-  
+
   openModal('modal-invest');
 }
 

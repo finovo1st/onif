@@ -9,14 +9,20 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Mock demo user profile for offline demo mode
+  // Mock demo user profile matching the full web user model
   const demoUser = {
-    email: 'user@mail.com',
-    username: 'user',
-    first_name: 'First',
-    last_name: 'Last',
-    referral_code: '12345678',
+    id: 'usr-demo-001',
+    email: 'l1_alice@finovo.com',
+    username: 'alicesmith',
+    first_name: 'Alice',
+    last_name: 'Smith',
+    referral_code: 'ALICE123',
     active_level: 2,
+    kyc_status: 'APPROVED', // 'APPROVED', 'IN_REVIEW', 'UNVERIFIED', 'REJECTED'
+    kyc_document_type: 'PASSPORT',
+    kyc_document_number: 'P9842104A',
+    kyc_country: 'United Kingdom',
+    is_email_verified: true,
   };
 
   const login = async (email, password) => {
@@ -26,7 +32,7 @@ export const AuthProvider = ({ children }) => {
         setUser({ ...demoUser, email });
         setTokenState('demo-token-123');
         setLoading(false);
-        return;
+        return { success: true };
       }
 
       const res = await apiCall('/auth/login/', 'POST', { email, password });
@@ -34,11 +40,13 @@ export const AuthProvider = ({ children }) => {
         setAuthToken(res.access);
         setTokenState(res.access);
         await fetchProfile();
+        return { success: true };
       }
     } catch (err) {
       console.warn('Login API failed, falling back to Demo Mode:', err.message);
-      // Fallback to demo mode if server isn't reachable
+      // Fallback to offline demo mode
       enableDemoMode(email);
+      return { success: true, fallback: true };
     } finally {
       setLoading(false);
     }
@@ -51,8 +59,45 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         return { success: true };
       }
-      await apiCall('/auth/register/', 'POST', data);
-      return { success: true };
+      const res = await apiCall('/auth/register/', 'POST', data);
+      return res || { success: true };
+    } catch (err) {
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forgotPassword = async (emailOrUsername) => {
+    setLoading(true);
+    try {
+      if (isDemoMode) {
+        setLoading(false);
+        return { success: true };
+      }
+      const res = await apiCall('/auth/forgot-password/', 'POST', { email: emailOrUsername });
+      return res || { success: true };
+    } catch (err) {
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (emailOrUsername, otp, newPassword) => {
+    setLoading(true);
+    try {
+      if (isDemoMode) {
+        setLoading(false);
+        return { success: true };
+      }
+      const res = await apiCall('/auth/reset-password/', 'POST', {
+        email: emailOrUsername,
+        otp,
+        new_password: newPassword,
+        new_password2: newPassword,
+      });
+      return res || { success: true };
     } catch (err) {
       throw err;
     } finally {
@@ -63,10 +108,20 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = async () => {
     try {
       const profile = await apiCall('/auth/profile/');
-      setUser(profile);
+      if (profile) {
+        setUser(profile);
+      }
     } catch (err) {
       console.error('Fetch profile error:', err.message);
     }
+  };
+
+  const updateKYCState = (kycData) => {
+    setUser((prev) => ({
+      ...prev,
+      ...kycData,
+      kyc_status: kycData.kyc_status || 'IN_REVIEW',
+    }));
   };
 
   const logout = () => {
@@ -91,9 +146,12 @@ export const AuthProvider = ({ children }) => {
         isDemoMode,
         login,
         register,
+        forgotPassword,
+        resetPassword,
         logout,
         enableDemoMode,
         fetchProfile,
+        updateKYCState,
       }}
     >
       {children}

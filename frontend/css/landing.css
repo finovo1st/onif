@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* ── 1. Google Fonts Import ───────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ── 2. CSS Custom Properties ─────────────────────────────── */
 :root {
@@ -34,7 +34,7 @@
   --gold-glow:   rgba(198, 153, 61, 0.18);
 
   /* Typography */
-  --font-heading: 'Fraunces', Georgia, serif;
+  --font-heading: 'Inter', system-ui, sans-serif;
   --font-body:    'Inter', system-ui, sans-serif;
   --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
 

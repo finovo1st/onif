@@ -36,9 +36,14 @@ class WithdrawalSerializer(serializers.ModelSerializer):
         withdrawal_type = attrs.get('withdrawal_type', Withdrawal.WithdrawalType.PROFIT)
         amount = attrs['amount']
 
+        if withdrawal_type == Withdrawal.WithdrawalType.CAPITAL:
+            raise serializers.ValidationError(
+                {'withdrawal_type': 'Capital withdrawals are temporarily disabled.'}
+            )
+
         if withdrawal_type == Withdrawal.WithdrawalType.PROFIT:
-            min_withdrawal = Decimal(PlatformSettings.get('MIN_WITHDRAWAL', '10.00'))
-            fee = Decimal(PlatformSettings.get('WITHDRAWAL_FEE', '1.00'))
+            min_withdrawal = Decimal(PlatformSettings.get('MIN_PROFIT_WITHDRAWAL', '10.00'))
+            fee = Decimal(PlatformSettings.get('PROFIT_WITHDRAWAL_FEE', '1.00'))
             capital_charge = Decimal('0.00')
             if amount < min_withdrawal:
                 raise serializers.ValidationError(

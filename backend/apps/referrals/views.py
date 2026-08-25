@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Count, Subquery, OuterRef
 from apps.investments.models import Investment
+from apps.investments.services import _level_unlock_threshold
 from .models import ReferralCommission
 from .serializers import DirectMemberSerializer, ReferralCommissionSerializer
 
@@ -110,6 +111,7 @@ class LevelStatsView(APIView):
 
             stats.append({
                 'level': level,
+                'req': _level_unlock_threshold(level),
                 'total_refers': total_refers,
                 'total_investment': float(total_investment),
                 'direct_income': float(direct_income),

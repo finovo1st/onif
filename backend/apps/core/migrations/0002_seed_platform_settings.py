@@ -12,8 +12,8 @@ DEFAULT_SETTINGS = [
     ('MAX_TOTAL_RETURN',         '350.00',  'Maximum total return per investment (capital + profit) in USD'),
     ('NET_PROFIT',               '230.00',  'Net profit per investment cycle in USD'),
     # Withdrawal
-    ('MIN_WITHDRAWAL',           '10.00',   'Minimum profit withdrawal amount in USD'),
-    ('WITHDRAWAL_FEE',           '1.00',    'Flat fee per withdrawal transaction in USD'),
+    ('MIN_PROFIT_WITHDRAWAL',    '10.00',   'Minimum profit/wallet withdrawal amount in USD'),
+    ('PROFIT_WITHDRAWAL_FEE',    '1.00',    'Flat fee per profit/wallet withdrawal transaction in USD'),
     ('MIN_CAPITAL_WITHDRAWAL',   '100.00',  'Minimum capital withdrawal amount in USD'),
     ('CAPITAL_WITHDRAWAL_FEE',   '10.00',   'Fund-management charge for capital withdrawal in USD'),
     # Income rates (percentage)

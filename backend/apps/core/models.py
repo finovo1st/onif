@@ -14,8 +14,8 @@ class PlatformSettings(models.Model):
     Typical keys:
       MIN_INVESTMENT              = "120.00"
       MAX_TOTAL_RETURN            = "350.00"
-      WITHDRAWAL_FEE              = "1.00"
-      MIN_WITHDRAWAL              = "10.00"
+      PROFIT_WITHDRAWAL_FEE       = "1.00"
+      MIN_PROFIT_WITHDRAWAL       = "10.00"
       CAPITAL_WITHDRAWAL_FEE      = "10.00"
       MIN_CAPITAL_WITHDRAWAL      = "100.00"
       DIRECT_INCOME_RATE          = "2.00"      # % per level

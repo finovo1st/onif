@@ -266,6 +266,9 @@ async function loadAllAPIData() {
       if (overviewData.deposit_wallets) {
         state.depositWallets = overviewData.deposit_wallets;
       }
+      if (overviewData.settings) {
+        state.settings = overviewData.settings;
+      }
     }
 
     state.investments = Array.isArray(investmentsData) ? investmentsData : (investmentsData.results || []);
@@ -862,24 +865,25 @@ function renderReferralView() {
   const container = document.getElementById('referral-levels-list');
   container.innerHTML = '';
   const currentLvl = state.user.active_level || 0;
-  const thresholds = [
-    { lvl: 1, req: 2 },
-    { lvl: 2, req: 4 },
-    { lvl: 3, req: 6 },
-    { lvl: 4, req: 8 },
-    { lvl: 5, req: 10 }
+  
+  const levelsData = (state.levelStats && state.levelStats.length > 0) ? state.levelStats : [
+    { level: 1, req: 2, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 2, req: 4, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 3, req: 6, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 4, req: 8, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 5, req: 10, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 }
   ];
 
-  thresholds.forEach(t => {
-    const isUnlocked = currentLvl >= t.lvl;
-    const stats = state.levelStats?.find(s => s.level === t.lvl) || { total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 };
+  levelsData.forEach(stats => {
+    const isUnlocked = currentLvl >= stats.level;
+    const req = stats.req !== undefined ? stats.req : (stats.level * 2);
 
     container.innerHTML += `
       <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); margin-bottom: 12px; padding: 12px 16px; border: 1px solid var(--line-light);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <div>
-            <b>Level ${t.lvl}</b>
-            <div style="font-size: 12px; color: var(--text-muted);">Requires ${t.req} Active Direct Referrals</div>
+            <b>Level ${stats.level}</b>
+            <div style="font-size: 12px; color: var(--text-muted);">Requires ${req} Active Direct Referrals</div>
           </div>
           <span class="badge ${isUnlocked ? 'badge-approved' : 'badge-pending'}">${isUnlocked ? 'UNLOCKED' : 'LOCKED'}</span>
         </div>
@@ -1574,6 +1578,17 @@ function handleLogout() {
 
 // Modal Toggle Handlers
 function openModal(modalId) {
+  if (modalId === 'modal-withdraw' && state.settings) {
+    const profitFee = state.settings.PROFIT_WITHDRAWAL_FEE || 1.00;
+    const profitMin = state.settings.MIN_PROFIT_WITHDRAWAL || 10.00;
+    const capFee = state.settings.CAPITAL_WITHDRAWAL_FEE || 10.00;
+    const capMin = state.settings.MIN_CAPITAL_WITHDRAWAL || 100.00;
+    
+    const select = document.getElementById('wdr-type');
+    if (select && select.options.length >= 1) {
+      select.options[0].text = `Wallet Withdrawal (Fee $${Number(profitFee).toFixed(2)}, Min $${Number(profitMin).toFixed(2)})`;
+    }
+  }
   document.getElementById(modalId).classList.add('show');
 }
 
@@ -1738,7 +1753,11 @@ async function handleInvestSubmit(e) {
 function updateWithdrawalFeeCalc() {
   const type = document.getElementById('wdr-type').value;
   const amount = Number(document.getElementById('wdr-amount').value) || 0;
-  const fee = type === 'PROFIT' ? 1.00 : 10.00;
+  
+  const profitFee = state.settings?.PROFIT_WITHDRAWAL_FEE || 1.00;
+  const capFee = state.settings?.CAPITAL_WITHDRAWAL_FEE || 10.00;
+  const fee = type === 'PROFIT' ? profitFee : capFee;
+  
   const net = Math.max(0, amount - fee);
   document.getElementById('wdr-fee-preview').innerText = `$${fee.toFixed(2)}`;
   document.getElementById('wdr-net-preview').innerText = `$${net.toFixed(2)}`;

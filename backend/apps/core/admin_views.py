@@ -711,6 +711,13 @@ class AdminPlatformSettingUpdateView(APIView):
         setting.updated_by = request.user
         setting.save(update_fields=['value', 'updated_by', 'updated_at'])
 
+        # Recalculate user active levels if unlock thresholds are changed
+        if key.startswith('LEVEL') and key.endswith('UNLOCK_DIRECTS'):
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            for user in User.objects.all():
+                update_user_active_level(user)
+
         return Response({
             'detail': f"Setting '{key}' updated from '{old_val}' to '{setting.value}'.",
             'setting': AdminPlatformSettingSerializer(setting).data,

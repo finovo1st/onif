@@ -18,7 +18,7 @@ from apps.investments.services import (
     update_user_active_level,
 )
 from apps.transactions.models import Withdrawal, Deposit
-from apps.wallet.models import Wallet, WalletTransaction
+from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet
 from apps.wallet.services import credit_wallet, debit_wallet
 from apps.support.models import Ticket, TicketReply
 from apps.referrals.models import ReferralCommission
@@ -82,6 +82,7 @@ class AdminOverviewView(APIView):
         total_system_deposited = Wallet.objects.aggregate(total=Sum('total_deposited'))['total'] or Decimal('0.00')
         total_roi_earned = Wallet.objects.aggregate(total=Sum('total_roi_earned'))['total'] or Decimal('0.00')
         total_direct_income = Wallet.objects.aggregate(total=Sum('total_direct_income'))['total'] or Decimal('0.00')
+        company_wallet_balance = CompanyWallet.get_wallet().balance
 
         # Support Tickets
         open_tickets_count = Ticket.objects.filter(status=Ticket.Status.OPEN).count()
@@ -130,6 +131,7 @@ class AdminOverviewView(APIView):
                 'total_system_deposited': float(total_system_deposited),
                 'total_roi_earned': float(total_roi_earned),
                 'total_direct_income': float(total_direct_income),
+                'company_wallet_balance': float(company_wallet_balance),
             },
             'support': {
                 'open_tickets': open_tickets_count,

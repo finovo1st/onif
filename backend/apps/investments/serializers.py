@@ -98,7 +98,7 @@ class InvestmentCreateSerializer(serializers.ModelSerializer):
             plan=plan,
             cost=cost,
             trading_capital=trading_capital,
-            amount=cost,
+            amount=trading_capital,
             max_return=max_return,
             status=Investment.Status.DEPOSIT_PENDING,
             deposit_network=validated_data.get('deposit_network', ''),

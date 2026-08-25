@@ -70,7 +70,7 @@ class WithdrawalAdmin(admin.ModelAdmin):
     @admin.action(description='✅ Approve selected withdrawals & debit wallets')
     def approve_withdrawals(self, request, queryset):
         from apps.wallet.services import debit_wallet
-        from apps.wallet.models import WalletTransaction
+        from apps.wallet.models import WalletTransaction, CompanyWallet
 
         count = 0
         for withdrawal in queryset.filter(status=Withdrawal.Status.PENDING):
@@ -88,6 +88,18 @@ class WithdrawalAdmin(admin.ModelAdmin):
                         description=f'{withdrawal.withdrawal_type} withdrawal to {withdrawal.wallet_address[:12]}…',
                         reference_id=str(withdrawal.id),
                     )
+
+                    fee_amount = withdrawal.amount - withdrawal.net_amount
+                    if fee_amount > 0:
+                        from apps.wallet.services import credit_company_wallet
+                        from apps.wallet.models import CompanyWalletTransaction
+                        credit_company_wallet(
+                            amount=fee_amount,
+                            category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
+                            description=f"Fee for withdrawal {withdrawal.id}",
+                            reference_id=str(withdrawal.id),
+                        )
+
                     withdrawal.status = Withdrawal.Status.APPROVED
                     withdrawal.reviewed_by = request.user
                     withdrawal.reviewed_at = timezone.now()

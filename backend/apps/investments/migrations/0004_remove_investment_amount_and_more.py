@@ -52,6 +52,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='plan',
             name='trading_capital',
-            field=models.DecimalField(decimal_places=2, default=Decimal('120.00'), help_text='Amount credited to active investments', max_digits=18, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))], verbose_name='Trading Capital ($)'),
+            field=models.DecimalField(decimal_places=2, default=Decimal('100.00'), help_text='Amount credited to active investments', max_digits=18, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))], verbose_name='Trading Capital ($)'),
         ),
     ]

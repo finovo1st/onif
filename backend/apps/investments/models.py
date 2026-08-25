@@ -38,7 +38,7 @@ class Plan(models.Model):
     trading_capital = models.DecimalField(
         max_digits=18,
         decimal_places=2,
-        default=Decimal('120.00'),
+        default=Decimal('100.00'),
         validators=[MinValueValidator(Decimal('0.01'))],
         verbose_name=_('Trading Capital ($)'),
         help_text=_('Amount credited to the user total invested portfolio for trading & ROI.'),

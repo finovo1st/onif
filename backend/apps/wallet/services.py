@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
-from apps.wallet.models import Wallet, WalletTransaction
+from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet, CompanyWalletTransaction
 
 User = get_user_model()
 
@@ -104,6 +104,36 @@ def debit_wallet(
     return WalletTransaction.objects.create(
         wallet=wallet,
         transaction_type=WalletTransaction.TransactionType.DEBIT,
+        category=category,
+        amount=amount,
+        balance_before=balance_before,
+        balance_after=wallet.balance,
+        description=description,
+        reference_id=reference_id,
+    )
+
+
+@transaction.atomic
+def credit_company_wallet(
+    amount: Decimal,
+    category: str,
+    description: str = '',
+    reference_id: str = '',
+) -> CompanyWalletTransaction:
+    """
+    Credit `amount` to the singleton CompanyWallet.
+    Creates an immutable CompanyWalletTransaction ledger entry.
+    """
+    wallet = CompanyWallet.get_wallet()
+    wallet = CompanyWallet.objects.select_for_update().get(id=wallet.id)
+
+    balance_before = wallet.balance
+    wallet.balance += amount
+    wallet.save(update_fields=['balance', 'updated_at'])
+
+    return CompanyWalletTransaction.objects.create(
+        wallet=wallet,
+        transaction_type=CompanyWalletTransaction.TransactionType.CREDIT,
         category=category,
         amount=amount,
         balance_before=balance_before,

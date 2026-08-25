@@ -66,9 +66,9 @@ def get_or_create_admin():
 def get_or_create_plans():
     packages = {
         'Package 1': {
-            'description': 'Institutional starter tier. $120 Cost | $120 Trading Capital | Max Return $350.',
+            'description': 'Institutional starter tier. $120 Cost | $100 Trading Capital | Max Return $350.',
             'cost': Decimal('120.00'),
-            'trading_capital': Decimal('120.00'),
+            'trading_capital': Decimal('100.00'),
             'max_return_factor': Decimal('3.00'),
             'max_total_return': Decimal('350.00'),
             'weekly_roi_rate': Decimal('3.00'),

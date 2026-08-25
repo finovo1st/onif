@@ -9,7 +9,7 @@ def seed_packages(apps, schema_editor):
         {
             'name': 'Package 1',
             'cost': Decimal('120.00'),
-            'trading_capital': Decimal('120.00'),
+            'trading_capital': Decimal('100.00'),
             'max_return_factor': Decimal('3.00'),
             'max_total_return': Decimal('350.00'),
             'weekly_roi_rate': Decimal('3.00'),

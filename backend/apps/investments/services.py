@@ -18,7 +18,7 @@ from django.contrib.auth import get_user_model
 from apps.core.models import PlatformSettings
 from apps.investments.models import Investment
 from apps.referrals.models import ReferralCommission
-from apps.wallet.models import Wallet, WalletTransaction
+from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet
 from apps.wallet.services import credit_wallet
 
 User = get_user_model()
@@ -86,7 +86,7 @@ def activate_investment(investment: Investment, admin_user) -> None:
 
     # Update wallet accumulators without changing spendable balance
     wallet = Wallet.objects.select_for_update().get_or_create(user=investment.user)[0]
-    wallet.total_deposited += investment.cost
+    wallet.total_deposited += investment.trading_capital
     wallet.total_invested += investment.trading_capital
     wallet.save(update_fields=['total_deposited', 'total_invested', 'updated_at'])
 
@@ -116,7 +116,7 @@ def activate_investment(investment: Investment, admin_user) -> None:
         wallet=wallet,
         transaction_type=WalletTransaction.TransactionType.CREDIT,
         category=WalletTransaction.Category.DEPOSIT,
-        amount=investment.cost,
+        amount=investment.trading_capital,
         balance_before=wallet.balance,
         balance_after=wallet.balance,
         description=f'Investment deposit verified for {investment.plan.name} plan (${investment.trading_capital} Trading Capital)',
@@ -230,6 +230,9 @@ def distribute_direct_income(investment: Investment) -> list:
     max_levels = int(PlatformSettings.get('MAX_REFERRAL_LEVELS', '5'))
     commissions_created = []
 
+    overhead_pool = investment.cost - investment.trading_capital
+    total_distributed = Decimal('0.00')
+
     current_user = investment.user
     for level in range(1, max_levels + 1):
         sponsor = current_user.parent
@@ -261,6 +264,7 @@ def distribute_direct_income(investment: Investment) -> list:
 
         # Record commission
         if credited_amount > Decimal('0.00'):
+            total_distributed += credited_amount
             comm = ReferralCommission.objects.create(
                 user=sponsor,
                 from_user=investment.user,
@@ -272,6 +276,17 @@ def distribute_direct_income(investment: Investment) -> list:
             )
             commissions_created.append(comm)
         current_user = sponsor
+
+    company_remainder = overhead_pool - total_distributed
+    if company_remainder > Decimal('0.00'):
+        from apps.wallet.services import credit_company_wallet
+        from apps.wallet.models import CompanyWalletTransaction
+        credit_company_wallet(
+            amount=company_remainder,
+            category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER,
+            description=f"Overhead remainder from investment {investment.id}",
+            reference_id=str(investment.id),
+        )
 
     return commissions_created
 

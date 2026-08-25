@@ -471,7 +471,7 @@ function renderInvestmentPlansCards() {
   container.innerHTML = '';
 
   const defaultTiers = [
-    { id: 'package-1', name: 'Package 1', cost: 120, trading_capital: 120, max_return_factor: 3, max_total_return: 350 },
+    { id: 'package-1', name: 'Package 1', cost: 120, trading_capital: 100, max_return_factor: 3, max_total_return: 350 },
     { id: 'package-2', name: 'Package 2', cost: 350, trading_capital: 300, max_return_factor: 3, max_total_return: 1000 },
     { id: 'package-3', name: 'Package 3', cost: 575, trading_capital: 500, max_return_factor: 3, max_total_return: 1700 },
     { id: 'package-4', name: 'Package 4', cost: 1100, trading_capital: 1000, max_return_factor: 3, max_total_return: 3300 },
@@ -1876,6 +1876,9 @@ function renderAdminOverview(ov) {
   if (!ov) return;
 
   // Stat Cards
+  const admStatCompany = document.getElementById('adm-stat-company-wallet');
+  if (admStatCompany) admStatCompany.innerText = `$${Number(ov.finances.company_wallet_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   document.getElementById('adm-stat-users').innerText = ov.users.total;
   document.getElementById('adm-stat-users-sub').innerText = `${ov.users.verified} verified • ${ov.users.active} active investors • ${ov.users.pending_kyc} KYC pending`;
 
@@ -1917,6 +1920,9 @@ function renderAdminOverview(ov) {
   }
 
   // System Balances & Liabilities
+  const admFinCompany = document.getElementById('adm-fin-company');
+  if (admFinCompany) admFinCompany.innerText = `$${Number(ov.finances.company_wallet_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
   document.getElementById('adm-fin-balance').innerText = `$${Number(ov.finances.total_system_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('adm-fin-deposits').innerText = `$${Number(ov.finances.total_system_deposited).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('adm-fin-roi').innerText = `$${Number(ov.finances.total_roi_earned).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

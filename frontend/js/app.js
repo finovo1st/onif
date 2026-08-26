@@ -1639,12 +1639,40 @@ function openModal(modalId) {
       select.options[0].text = `Wallet Withdrawal (Fee $${Number(profitFee).toFixed(2)}, Min $${Number(profitMin).toFixed(2)})`;
     }
   }
-  document.getElementById(modalId).classList.add('show');
+  const modalEl = document.getElementById(modalId);
+  if (modalEl) {
+    modalEl.classList.add('show');
+    document.body.classList.add('modal-open');
+    modalEl.scrollTop = 0;
+  }
 }
 
 function closeModal(modalId) {
-  document.getElementById(modalId).classList.remove('show');
+  const modalEl = document.getElementById(modalId);
+  if (modalEl) {
+    modalEl.classList.remove('show');
+  }
+  if (document.querySelectorAll('.modal-backdrop.show').length === 0) {
+    document.body.classList.remove('modal-open');
+  }
 }
+
+// Global Modal Backdrop Click & Escape Key to close modals
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop') && e.target.classList.contains('show')) {
+    closeModal(e.target.id);
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' || e.key === 'Esc') {
+    const openModals = document.querySelectorAll('.modal-backdrop.show');
+    if (openModals.length > 0) {
+      const topModal = openModals[openModals.length - 1];
+      closeModal(topModal.id);
+    }
+  }
+});
 
 // ─── Investment Plan Modal & API Creation ─────────────────────────────────────
 

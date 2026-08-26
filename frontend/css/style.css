@@ -840,20 +840,28 @@ body {
 }
 
 /* ─── 15. Modals & Form Control ─────────────────────────────────── */
+body.modal-open {
+  overflow: hidden !important;
+}
+
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 200;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  padding: 32px 16px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-backdrop.show {
@@ -874,10 +882,36 @@ body {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 25px 60px rgba(0, 0, 0, 0.8);
   transform: translateY(16px);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .modal-backdrop.show .modal {
   transform: translateY(0);
+}
+
+.modal-backdrop::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-backdrop::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-backdrop::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+.modal-backdrop::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 16px 10px;
+  }
+  .modal {
+    padding: 22px 16px;
+  }
 }
 
 .modal-header {

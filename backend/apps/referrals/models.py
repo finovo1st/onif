@@ -48,14 +48,14 @@ class ReferralCommission(models.Model):
 
     Per SRS:
     - Direct Income: 2% up to 5 levels
-    - ROI Income:    1.5% up to 5 levels
+    - ROI Income:    75% up to 5 levels
 
     is_paid tracks whether the commission has been moved to wallet balance.
     """
 
     class CommissionType(models.TextChoices):
-        DIRECT = 'DIRECT', _('Direct Income (2%)')
-        ROI = 'ROI', _('ROI Income (1.5%)')
+        DIRECT = 'DIRECT', _('Direct Income')
+        ROI = 'ROI', _('ROI Income')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

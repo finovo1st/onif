@@ -23,6 +23,7 @@ let state = {
   },
   apiConnected: false,
   levelStats: [],
+  teamLevel: 'all',
   pagination: {
     team: { next: null, previous: null, count: 0 },
     adminUsers: { next: null, previous: null, count: 0 }
@@ -793,16 +794,53 @@ function debounceTeamSearch() {
   clearTimeout(teamSearchTimeout);
   teamSearchTimeout = setTimeout(() => {
     loadTeamData();
-  }, 500);
+  }, 350);
+}
+
+function filterTeamByLevel(level) {
+  state.teamLevel = level;
+  document.querySelectorAll('.team-level-pill').forEach(btn => {
+    btn.classList.remove('btn-primary', 'active');
+    btn.classList.add('btn-secondary');
+  });
+  const activeBtn = document.getElementById(`pill-lvl-${level}`);
+  if (activeBtn) {
+    activeBtn.classList.remove('btn-secondary');
+    activeBtn.classList.add('btn-primary', 'active');
+  }
+  loadTeamData();
+}
+
+function updateTeamLevelPills() {
+  let totalAll = 0;
+  if (state.levelStats && Array.isArray(state.levelStats)) {
+    state.levelStats.forEach(s => {
+      const pill = document.getElementById(`pill-lvl-${s.level}`);
+      if (pill) {
+        pill.innerText = `Level ${s.level} (${s.total_refers || 0})`;
+      }
+      totalAll += (s.total_refers || 0);
+    });
+  }
+  const pillAll = document.getElementById('pill-lvl-all');
+  if (pillAll) {
+    pillAll.innerText = `All Levels (${totalAll})`;
+  }
 }
 
 async function loadTeamData(overrideUrl = null) {
   let url = overrideUrl || '/referrals/team/';
   if (!overrideUrl) {
-    const searchVal = document.getElementById('referral-team-search')?.value || '';
-    if (searchVal) {
-      url += `?search=${encodeURIComponent(searchVal)}`;
+    const params = new URLSearchParams();
+    if (state.teamLevel && state.teamLevel !== 'all') {
+      params.set('level', state.teamLevel);
     }
+    const searchVal = document.getElementById('referral-team-search')?.value || '';
+    if (searchVal.trim()) {
+      params.set('search', searchVal.trim());
+    }
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
   }
   try {
     const data = await apiCall(url);
@@ -814,6 +852,7 @@ async function loadTeamData(overrideUrl = null) {
     }
     state.team = teamData;
     renderTeamTable();
+    updateTeamLevelPills();
   } catch (err) {
     showToast(err.message, true);
   }
@@ -825,12 +864,13 @@ function renderTeamTable() {
   teamTbody.innerHTML = '';
 
   if (state.team.length === 0) {
+    const isFiltered = state.teamLevel && state.teamLevel !== 'all';
     teamTbody.innerHTML = `
       <tr>
         <td colspan="8" style="padding: 0;">
           <div class="empty-state">
-            <div class="empty-state-title">No Team Members Yet</div>
-            <div class="empty-state-desc">Share your referral link to build your team and unlock up to 5 commission levels!</div>
+            <div class="empty-state-title">${isFiltered ? `No Members in Level ${state.teamLevel}` : 'No Team Members Yet'}</div>
+            <div class="empty-state-desc">${isFiltered ? `You currently have no downline members at Level ${state.teamLevel}.` : 'Share your referral link to build your team and unlock up to 5 commission levels!'}</div>
           </div>
         </td>
       </tr>
@@ -838,16 +878,21 @@ function renderTeamTable() {
   } else {
     state.team.forEach(m => {
       const dateJoined = m.date_joined ? new Date(m.date_joined).toLocaleDateString() : 'N/A';
+      const sponsorDisplay = m.sponsor_name || m.sponsor_email || (m.level === 1 ? 'You (Direct)' : 'Sponsor');
+      const levelBadgeClass = m.level === 1 ? 'badge-approved' : (m.level === 2 ? 'badge-active' : 'badge-pending');
       teamTbody.innerHTML += `
         <tr>
-          <td><b>${m.email}</b></td>
-          <td>${m.username || 'N/A'}</td>
-          <td style="font-size: 12px; color: var(--text-muted);">${dateJoined}</td>
-          <td><span class="badge badge-approved">Direct (Level 1)</span></td>
+          <td>
+            <b style="color: var(--text);">${escapeHtml(m.email)}</b>
+            <div style="font-size: 11.5px; color: var(--text-muted);">@${escapeHtml(m.username || 'member')}</div>
+          </td>
+          <td><span class="badge ${levelBadgeClass}" style="font-size: 11px;">Level ${m.level || 1}</span></td>
+          <td style="font-size: 12.5px; color: var(--text);">${escapeHtml(sponsorDisplay)}</td>
           <td style="font-family: var(--font-mono); font-weight: 600;">${m.total_refers || 0}</td>
-          <td style="font-family: var(--font-mono); font-weight: 600;">$${Number(m.investment_sum || 0).toFixed(2)}</td>
+          <td style="font-family: var(--font-mono); font-weight: 600; color: var(--gold);">$${Number(m.investment_sum || 0).toFixed(2)}</td>
           <td style="font-family: var(--font-mono); font-weight: 600; color: var(--up);">$${Number(m.direct_income_sum || 0).toFixed(2)}</td>
           <td style="font-family: var(--font-mono); font-weight: 600; color: var(--gold);">$${Number(m.roi_income_sum || 0).toFixed(2)}</td>
+          <td style="font-size: 12px; color: var(--text-muted);">${dateJoined}</td>
         </tr>
       `;
     });
@@ -909,8 +954,9 @@ function renderReferralView() {
     `;
   });
 
-  // Downline Team Table
+  // Downline Team Table & Level Filter Pills
   renderTeamTable();
+  updateTeamLevelPills();
 
   // Commissions Table
   const commTbody = document.getElementById('referral-commissions-tbody');
@@ -933,7 +979,7 @@ function renderReferralView() {
       const fromUser = c.from_user_email || (typeof c.from_user === 'object' ? c.from_user.email : c.from_user) || 'Downline User';
       commTbody.innerHTML += `
         <tr>
-          <td><b>${c.commission_type === 'DIRECT' ? 'Direct Income (2%)' : 'ROI Income (1.5%)'}</b></td>
+          <td><b>${c.commission_type === 'DIRECT' ? 'Direct Income' : 'ROI Income'}</b></td>
           <td><span class="badge badge-active">Level ${c.level}</span></td>
           <td style="font-size: 13px;">${fromUser}</td>
           <td style="color: var(--gold); font-weight: 700; font-family: var(--font-mono);">+$${Number(c.amount).toFixed(2)}</td>
@@ -2799,21 +2845,10 @@ async function openAdminUserTeamModal(userId) {
     const tbody = document.getElementById('adm-team-levels-tbody');
     tbody.innerHTML = '';
 
-    const rates = [
-      { direct: '2.0%', roi: '1.5%' },
-      { direct: '2.0%', roi: '1.5%' },
-      { direct: '2.0%', roi: '1.5%' },
-      { direct: '2.0%', roi: '1.5%' },
-      { direct: '2.0%', roi: '1.5%' },
-    ];
-
     levels.forEach(lvl => {
-      const idx = lvl.level - 1;
-      const rate = rates[idx] || { direct: '2.0%', roi: '1.5%' };
       tbody.innerHTML += `
         <tr>
           <td><span class="badge badge-approved" style="font-size:11px;">Level ${lvl.level}</span></td>
-          <td style="font-size:12px; color:var(--mute);">Direct: ${rate.direct} | ROI: ${rate.roi}</td>
           <td style="font-family:var(--font-mono); font-weight:700; color:var(--text);">${lvl.total_refers}</td>
           <td style="font-family:var(--font-mono); font-weight:600; color:var(--gold);">$${Number(lvl.total_investment || 0).toFixed(2)}</td>
           <td style="font-family:var(--font-mono); color:var(--accent);">$${Number(lvl.direct_income || 0).toFixed(2)}</td>

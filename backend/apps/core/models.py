@@ -19,7 +19,7 @@ class PlatformSettings(models.Model):
       CAPITAL_WITHDRAWAL_FEE      = "10.00"
       MIN_CAPITAL_WITHDRAWAL      = "100.00"
       DIRECT_INCOME_RATE          = "2.00"      # % per level
-      ROI_INCOME_RATE             = "1.50"      # % per level
+      ROI_INCOME_RATE             = "75.00"     # % per level
       MAX_REFERRAL_LEVELS         = "5"
       LEVEL1_UNLOCK_DIRECTS       = "2"
       LEVEL2_UNLOCK_DIRECTS       = "4"

@@ -154,6 +154,29 @@ class ROIDistributionTests(TestCase):
         roi = distribute_roi_for_investment(self.investment)
         self.assertEqual(roi, Decimal('0.00'))
 
+    def test_roi_commission_distributed_to_eligible_sponsor_at_75_percent(self):
+        # Create sponsor with an active plan and 2 active directs (meeting Level 1)
+        sponsor = make_user('roisponsor@test.com', 'roisponsor')
+        make_active_investment(sponsor, self.plan)
+
+        # Set investor's parent to sponsor
+        self.investor.parent = sponsor
+        self.investor.save(update_fields=['parent'])
+
+        # Add second child to sponsor to fulfill Level 1 unlock (>= 2 active directs)
+        child2 = make_user('child2@test.com', 'child2', parent=sponsor)
+        make_active_investment(child2, self.plan)
+
+        # Distribute ROI for investor ($12.00 ROI)
+        roi = distribute_roi_for_investment(self.investment)
+        self.assertEqual(roi, Decimal('12.00'))
+
+        # Sponsor should receive 75% of $12.00 = $9.00
+        comm = ReferralCommission.objects.filter(user=sponsor, commission_type=ReferralCommission.CommissionType.ROI).first()
+        self.assertIsNotNone(comm)
+        self.assertEqual(comm.amount, Decimal('9.00'))
+        self.assertEqual(comm.level, 1)
+
 
 class ActiveLevelTests(TestCase):
     def setUp(self):

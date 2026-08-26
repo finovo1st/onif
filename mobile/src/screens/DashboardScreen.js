@@ -270,8 +270,8 @@ export default function DashboardScreen({ onNavigate }) {
         </View>
 
         <Text style={styles.refExplainer}>
-          Share your link to earn <Text style={{ color: colors.textMain, fontWeight: '700' }}>2.0% Direct Commission</Text> +{' '}
-          <Text style={{ color: colors.textMain, fontWeight: '700' }}>1.5% Weekly ROI Level Income</Text> up to 5 levels deep.
+          Share your link to earn <Text style={{ color: colors.textMain, fontWeight: '700' }}>Direct Commission</Text> +{' '}
+          <Text style={{ color: colors.textMain, fontWeight: '700' }}>Weekly ROI Level Income</Text> up to 5 levels deep.
         </Text>
 
         <View style={styles.refBox}>

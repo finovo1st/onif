@@ -75,7 +75,7 @@ def distribute_weekly_roi_task(self):
     For each active investment:
     1. Calculate weekly ROI based on plan.weekly_roi_rate
     2. Credit investor's wallet (capped at remaining_return)
-    3. Distribute 1.5% ROI commissions up 5 levels
+    3. Distribute 75% ROI commissions up 5 levels
     4. Mark investment COMPLETED if max_return is reached
     """
     logger.info(f"[ROI Engine] Starting weekly ROI distribution at {timezone.now()}")

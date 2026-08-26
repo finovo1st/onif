@@ -592,8 +592,8 @@
               </div>
             </div>
             <p style="font-size: 13px; color: var(--mute); margin-bottom: 16px; line-height: 1.6;">
-              Share your link to earn <b style="color: var(--text);">2.0% Direct Commission</b> credited to your oldest
-              active plan + <b style="color: var(--text);">1.5% Weekly ROI Level Income</b> up to 5 levels. Commission
+              Share your link to earn <b style="color: var(--text);">Direct Commission</b> credited to your oldest
+              active plan + <b style="color: var(--text);">Weekly ROI Level Income</b> up to 5 levels. Commission
               income fills and accelerates your investment plan toward max return.
             </p>
             <div class="ref-box">
@@ -851,7 +851,7 @@
               <div
                 style="display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);">
                 <div>
-                  <span>Direct Income (2.0%)</span>
+                  <span>Direct Income</span>
                   <div style="font-size: 11px; color: var(--mute); margin-top: 3px;">Credited to your oldest active plan
                   </div>
                 </div>
@@ -861,7 +861,7 @@
               <div
                 style="display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);">
                 <div>
-                  <span>ROI Level Income (1.5%)</span>
+                  <span>ROI Level Income</span>
                   <div style="font-size: 11px; color: var(--mute); margin-top: 3px;">Fills your oldest active plan
                     weekly</div>
                 </div>
@@ -879,31 +879,42 @@
           </div>
         </div>
 
-        <!-- Direct Team Members Table -->
+        <!-- Downline Team Members Table -->
         <div class="card" style="margin-bottom: 24px;">
           <div class="section-header">
             <div>
-              <div class="eyebrow">Direct Team</div>
-              <h2 class="section-title">My Direct Downline Members</h2>
+              <div class="eyebrow">Team Network</div>
+              <h2 class="section-title">My Downline Team (5 Levels)</h2>
             </div>
           </div>
+
+          <!-- Level Filter Pills -->
+          <div class="team-level-filters" id="team-level-pills" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button type="button" class="btn btn-sm btn-primary active team-level-pill" onclick="filterTeamByLevel('all')" id="pill-lvl-all">All Levels (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('1')" id="pill-lvl-1">Level 1 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('2')" id="pill-lvl-2">Level 2 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('3')" id="pill-lvl-3">Level 3 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('4')" id="pill-lvl-4">Level 4 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('5')" id="pill-lvl-5">Level 5 (0)</button>
+          </div>
+
           <div class="filters-row" style="margin-bottom: 16px;">
             <input type="text" id="referral-team-search" class="admin-search-input"
-              placeholder="Search team by email or username..." onkeyup="debounceTeamSearch()"
-              style="width: 100%; max-width: 400px;">
+              placeholder="Search downline by email or username across all levels..." onkeyup="debounceTeamSearch()"
+              style="width: 100%; max-width: 450px;">
           </div>
           <div class="table-responsive">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>User Email</th>
-                  <th>Username</th>
+                  <th>Member</th>
+                  <th>Level</th>
+                  <th>Referred By</th>
+                  <th>Directs</th>
+                  <th>Total Invested</th>
+                  <th>Direct Earned</th>
+                  <th>ROI Earned</th>
                   <th>Joined Date</th>
-                  <th>Direct Level</th>
-                  <th>Team Size</th>
-                  <th>Investment</th>
-                  <th>Direct Comm.</th>
-                  <th>ROI Comm.</th>
                 </tr>
               </thead>
               <tbody id="referral-team-tbody">
@@ -2789,7 +2800,6 @@
             <thead>
               <tr>
                 <th>Level</th>
-                <th>Commission Rates</th>
                 <th>Referrals Count</th>
                 <th>Total Investment</th>
                 <th>Direct Earned</th>
@@ -2967,7 +2977,7 @@
         <ul style="font-size: 12px; color: var(--mute); line-height: 1.8; margin-left: 18px; margin-bottom: 16px;">
           <li>Credits weekly return to each investor's spendable wallet balance</li>
           <li>Fills up investor plans toward their maximum cap (300%)</li>
-          <li>Distributes 1.5% weekly ROI level commissions up to 5 levels to upline sponsors' oldest active plans</li>
+          <li>Distributes weekly ROI level commissions up to 5 levels to upline sponsors' oldest active plans</li>
           <li>Completes fully matured investment plans</li>
         </ul>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">

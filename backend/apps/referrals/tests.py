@@ -25,3 +25,40 @@ class ReferralsModelTests(TestCase):
         )
         self.assertFalse(comm.is_paid)
         self.assertEqual(comm.amount, Decimal('2.40'))
+
+
+from rest_framework.test import APITestCase
+from rest_framework import status
+from django.urls import reverse
+
+class TeamViewTests(APITestCase):
+    def setUp(self):
+        self.top_user = User.objects.create_user(email='top@example.com', username='topuser', password='Pass123!')
+        self.l1_user = User.objects.create_user(email='l1@example.com', username='l1user', password='Pass123!', parent=self.top_user)
+        self.l2_user = User.objects.create_user(email='l2@example.com', username='l2user', password='Pass123!', parent=self.l1_user)
+        self.l3_user = User.objects.create_user(email='l3@example.com', username='l3user', password='Pass123!', parent=self.l2_user)
+        self.client.force_authenticate(user=self.top_user)
+
+    def test_get_all_downline_levels(self):
+        url = reverse('referral_team')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results'] if 'results' in response.data else response.data
+        self.assertEqual(len(results), 3)
+        
+        # Check levels
+        emails_to_level = {m['email']: m['level'] for m in results}
+        self.assertEqual(emails_to_level['l1@example.com'], 1)
+        self.assertEqual(emails_to_level['l2@example.com'], 2)
+        self.assertEqual(emails_to_level['l3@example.com'], 3)
+
+    def test_filter_by_specific_level(self):
+        url = reverse('referral_team')
+        # Filter Level 2 only
+        response = self.client.get(f"{url}?level=2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results'] if 'results' in response.data else response.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['email'], 'l2@example.com')
+        self.assertEqual(results[0]['level'], 2)
+        self.assertEqual(results[0]['sponsor_email'], 'l1@example.com')

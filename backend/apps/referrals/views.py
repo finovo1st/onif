@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
-from django.db.models import Sum, Count, Subquery, OuterRef
+from django.db.models import Sum, Count, Subquery, OuterRef, Case, When, Value, IntegerField
 from apps.investments.models import Investment
 from apps.investments.services import _level_unlock_threshold
 from .models import ReferralCommission
@@ -13,40 +13,79 @@ User = get_user_model()
 
 
 class MyTeamView(generics.ListAPIView):
-    """GET /api/v1/referrals/team/ — My direct downline members."""
+    """GET /api/v1/referrals/team/ — Multi-level downline team members (Levels 1–5)."""
     serializer_class = DirectMemberSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ['email', 'username']
-    ordering_fields = ['date_joined']
-    ordering = ['-date_joined']
+    search_fields = ['email', 'username', 'first_name', 'last_name']
+    ordering_fields = ['date_joined', 'level', 'investment_sum']
+    ordering = ['level', '-date_joined']
 
     def get_queryset(self):
-        # 1. Total Refers
+        user = self.request.user
+
+        # 1. Discover descendants per level up to 5 levels
+        l1_ids = list(User.objects.filter(parent=user).values_list('id', flat=True))
+        l2_ids = list(User.objects.filter(parent_id__in=l1_ids).values_list('id', flat=True)) if l1_ids else []
+        l3_ids = list(User.objects.filter(parent_id__in=l2_ids).values_list('id', flat=True)) if l2_ids else []
+        l4_ids = list(User.objects.filter(parent_id__in=l3_ids).values_list('id', flat=True)) if l3_ids else []
+        l5_ids = list(User.objects.filter(parent_id__in=l4_ids).values_list('id', flat=True)) if l4_ids else []
+
+        level_param = str(self.request.query_params.get('level', 'all')).strip().lower()
+        if level_param == '1':
+            target_ids = l1_ids
+        elif level_param == '2':
+            target_ids = l2_ids
+        elif level_param == '3':
+            target_ids = l3_ids
+        elif level_param == '4':
+            target_ids = l4_ids
+        elif level_param == '5':
+            target_ids = l5_ids
+        else:
+            target_ids = l1_ids + l2_ids + l3_ids + l4_ids + l5_ids
+
+        if not target_ids:
+            return User.objects.none()
+
+        # Build level expression for annotation
+        level_whens = []
+        if l1_ids:
+            level_whens.append(When(id__in=l1_ids, then=Value(1)))
+        if l2_ids:
+            level_whens.append(When(id__in=l2_ids, then=Value(2)))
+        if l3_ids:
+            level_whens.append(When(id__in=l3_ids, then=Value(3)))
+        if l4_ids:
+            level_whens.append(When(id__in=l4_ids, then=Value(4)))
+        if l5_ids:
+            level_whens.append(When(id__in=l5_ids, then=Value(5)))
+
+        level_expr = Case(*level_whens, default=Value(1), output_field=IntegerField())
+
+        # 2. Subqueries for member stats
         refers_sq = User.objects.filter(parent=OuterRef('pk')).values('parent').annotate(total=Count('pk')).values('total')
         
-        # 2. Investment Sum
         inv_sq = Investment.objects.filter(
             user=OuterRef('pk'),
             status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
         ).values('user').annotate(total=Sum('amount')).values('total')
         
-        # 3. Direct Income Sum
         dir_sq = ReferralCommission.objects.filter(
             from_user=OuterRef('pk'), 
-            user=self.request.user, 
+            user=user, 
             commission_type=ReferralCommission.CommissionType.DIRECT,
             is_paid=True
         ).values('from_user').annotate(total=Sum('amount')).values('total')
         
-        # 4. ROI Income Sum
         roi_sq = ReferralCommission.objects.filter(
             from_user=OuterRef('pk'), 
-            user=self.request.user, 
+            user=user, 
             commission_type=ReferralCommission.CommissionType.ROI,
             is_paid=True
         ).values('from_user').annotate(total=Sum('amount')).values('total')
 
-        return self.request.user.direct_children.annotate(
+        return User.objects.filter(id__in=target_ids).select_related('parent').annotate(
+            level=level_expr,
             total_refers=Subquery(refers_sq),
             investment_sum=Subquery(inv_sq),
             direct_income_sum=Subquery(dir_sq),

@@ -95,6 +95,8 @@ export default function ReferralsScreen() {
     },
   ]);
 
+  const [selectedLevel, setSelectedLevel] = useState('all');
+
   const loadReferralData = async () => {
     if (isDemoMode) return;
     try {
@@ -110,10 +112,12 @@ export default function ReferralsScreen() {
       }
 
       const teamData = await apiCall('/referrals/team/').catch(() => []);
-      if (Array.isArray(teamData) && teamData.length > 0) setTeam(teamData);
+      const teamList = Array.isArray(teamData) ? teamData : (teamData?.results || []);
+      if (teamList.length > 0) setTeam(teamList);
 
       const commData = await apiCall('/referrals/commissions/').catch(() => []);
-      if (Array.isArray(commData) && commData.length > 0) setCommissions(commData);
+      const commList = Array.isArray(commData) ? commData : (commData?.results || []);
+      if (commList.length > 0) setCommissions(commList);
     } catch (err) {
       console.warn('Referrals data load error:', err.message);
     }
@@ -135,19 +139,20 @@ export default function ReferralsScreen() {
 
   const currentLevel = summary.active_level || user?.active_level || 2;
   const levels = [
-    { lvl: 1, req: 2, type: 'Direct 2.0%' },
-    { lvl: 2, req: 4, type: 'ROI 1.5%' },
-    { lvl: 3, req: 6, type: 'ROI 1.5%' },
-    { lvl: 4, req: 8, type: 'ROI 1.5%' },
-    { lvl: 5, req: 10, type: 'ROI 1.5%' },
+    { lvl: 1, req: 2, type: 'Direct Income' },
+    { lvl: 2, req: 4, type: 'ROI Income' },
+    { lvl: 3, req: 6, type: 'ROI Income' },
+    { lvl: 4, req: 8, type: 'ROI Income' },
+    { lvl: 5, req: 10, type: 'ROI Income' },
   ];
 
   const filteredTeam = team.filter((m) => {
     const q = searchQuery.toLowerCase();
-    return (
+    const matchesQuery =
       (m.email && m.email.toLowerCase().includes(q)) ||
-      (m.username && m.username.toLowerCase().includes(q))
-    );
+      (m.username && m.username.toLowerCase().includes(q));
+    const matchesLevel = selectedLevel === 'all' || String(m.level || 1) === String(selectedLevel);
+    return matchesQuery && matchesLevel;
   });
 
   return (
@@ -254,7 +259,7 @@ export default function ReferralsScreen() {
         <View style={styles.summaryItem}>
           <View>
             <Text style={{ color: colors.textMain, fontWeight: '600', fontSize: 13 }}>
-              Direct Income (2.0%)
+              Direct Income
             </Text>
             <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
               Credited to your oldest active plan
@@ -266,7 +271,7 @@ export default function ReferralsScreen() {
         <View style={styles.summaryItem}>
           <View>
             <Text style={{ color: colors.textMain, fontWeight: '600', fontSize: 13 }}>
-              ROI Level Income (1.5%)
+              ROI Level Income
             </Text>
             <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
               Fills your oldest active plan weekly
@@ -282,14 +287,45 @@ export default function ReferralsScreen() {
         </View>
       </View>
 
-      {/* Direct Team Members Table */}
+      {/* Downline Team Members Table */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View>
-            <Text style={styles.eyebrow}>TEAM MEMBERS</Text>
-            <Text style={styles.cardTitle}>My Direct Downline ({filteredTeam.length})</Text>
+            <Text style={styles.eyebrow}>TEAM NETWORK</Text>
+            <Text style={styles.cardTitle}>My Downline Team ({filteredTeam.length})</Text>
           </View>
         </View>
+
+        {/* Level Filter Horizontal Bar */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+          {['all', '1', '2', '3', '4', '5'].map((lvl) => {
+            const isSel = selectedLevel === lvl;
+            const label = lvl === 'all' ? 'All Levels' : `Level ${lvl}`;
+            return (
+              <TouchableOpacity
+                key={lvl}
+                onPress={() => setSelectedLevel(lvl)}
+                style={{
+                  backgroundColor: isSel ? colors.goldSoft : 'rgba(255,255,255,0.06)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  marginRight: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    color: isSel ? '#000' : colors.textMain,
+                    fontSize: 12,
+                    fontWeight: isSel ? '700' : '500',
+                  }}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         {/* Search input */}
         <TextInput
@@ -302,25 +338,30 @@ export default function ReferralsScreen() {
 
         {filteredTeam.length === 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: 13, paddingVertical: 12 }}>
-            No direct downline members matching search.
+            No downline members found for this level/search.
           </Text>
         ) : (
           filteredTeam.map((m, idx) => (
             <View key={m.id || idx} style={styles.memberRow}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13 }}>
-                  {m.email}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13 }}>
+                    {m.email}
+                  </Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.goldSoft, backgroundColor: 'rgba(198,153,61,0.15)', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 }}>
+                    L{m.level || 1}
+                  </Text>
+                </View>
                 <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
-                  @{m.username || 'member'} • Joined {m.date_joined || 'Recent'}
+                  @{m.username || 'member'} • Sponsor: {m.sponsor_name || m.sponsor_email || (m.level === 1 ? 'Direct' : 'Sponsor')}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: colors.goldSoft, fontWeight: '700', fontSize: 13 }}>
-                  Invested: ${Number(m.total_invested || 0).toFixed(2)}
+                  ${Number(m.investment_sum || m.total_invested || 0).toFixed(2)}
                 </Text>
                 <Text style={{ color: colors.accentGreenSoft, fontSize: 11, marginTop: 2 }}>
-                  Comm: +${Number((m.direct_comm_generated || 0) + (m.roi_comm_generated || 0)).toFixed(2)}
+                  Comm: +${Number((m.direct_income_sum || m.direct_comm_generated || 0) + (m.roi_income_sum || m.roi_comm_generated || 0)).toFixed(2)}
                 </Text>
               </View>
             </View>

@@ -141,3 +141,39 @@ def credit_company_wallet(
         description=description,
         reference_id=reference_id,
     )
+
+
+@transaction.atomic
+def debit_company_wallet(
+    amount: Decimal,
+    category: str,
+    description: str = '',
+    reference_id: str = '',
+) -> CompanyWalletTransaction:
+    """
+    Debit `amount` from the singleton CompanyWallet.
+    Creates an immutable CompanyWalletTransaction ledger entry.
+    """
+    wallet = CompanyWallet.get_wallet()
+    wallet = CompanyWallet.objects.select_for_update().get(id=wallet.id)
+
+    if wallet.balance < amount:
+        raise ValueError(
+            f"Insufficient company wallet balance: has ${wallet.balance}, needs ${amount}"
+        )
+
+    balance_before = wallet.balance
+    wallet.balance -= amount
+    wallet.save(update_fields=['balance', 'updated_at'])
+
+    return CompanyWalletTransaction.objects.create(
+        wallet=wallet,
+        transaction_type=CompanyWalletTransaction.TransactionType.DEBIT,
+        category=category,
+        amount=amount,
+        balance_before=balance_before,
+        balance_after=wallet.balance,
+        description=description,
+        reference_id=reference_id,
+    )
+

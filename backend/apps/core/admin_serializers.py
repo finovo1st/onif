@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from apps.investments.models import Investment, Plan
 from apps.transactions.models import Withdrawal, Deposit
-from apps.wallet.models import Wallet, WalletTransaction
+from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet, CompanyWalletTransaction
 from apps.support.models import Ticket, TicketReply
 from apps.core.models import PlatformSettings, AuditLog
 
@@ -261,3 +261,33 @@ class AdminPlanSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class AdminCompanyWalletTransactionSerializer(serializers.ModelSerializer):
+    """Admin view for company funds ledger transactions."""
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    transaction_type_display = serializers.CharField(source='get_transaction_type_display', read_only=True)
+
+    class Meta:
+        model = CompanyWalletTransaction
+        fields = [
+            'id',
+            'transaction_type',
+            'transaction_type_display',
+            'category',
+            'category_display',
+            'amount',
+            'balance_before',
+            'balance_after',
+            'description',
+            'reference_id',
+            'created_at',
+        ]
+
+
+class AdminCompanyFundsAdjustmentSerializer(serializers.Serializer):
+    """Manual admin credit or debit adjustment to company funds."""
+    action = serializers.ChoiceField(choices=['CREDIT', 'DEBIT'])
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=Decimal('0.01'))
+    reason = serializers.CharField(max_length=255, required=True)
+

@@ -18,8 +18,8 @@ from apps.investments.services import (
     update_user_active_level,
 )
 from apps.transactions.models import Withdrawal, Deposit
-from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet
-from apps.wallet.services import credit_wallet, debit_wallet
+from apps.wallet.models import Wallet, WalletTransaction, CompanyWallet, CompanyWalletTransaction
+from apps.wallet.services import credit_wallet, debit_wallet, credit_company_wallet, debit_company_wallet
 from apps.support.models import Ticket, TicketReply
 from apps.referrals.models import ReferralCommission
 from apps.core.models import PlatformSettings, AuditLog
@@ -34,6 +34,8 @@ from apps.core.admin_serializers import (
     AdminTicketReplySerializer,
     AdminPlatformSettingSerializer,
     AdminPlanSerializer,
+    AdminCompanyWalletTransactionSerializer,
+    AdminCompanyFundsAdjustmentSerializer,
 )
 
 User = get_user_model()
@@ -332,6 +334,16 @@ class AdminWithdrawalApproveView(APIView):
                 description=f"{withdrawal.withdrawal_type} withdrawal to {withdrawal.wallet_address[:12]}...",
                 reference_id=str(withdrawal.id),
             )
+
+            # Credit fee to Company Wallet if applicable
+            fee_amount = withdrawal.amount - withdrawal.net_amount
+            if fee_amount > Decimal('0.00'):
+                credit_company_wallet(
+                    amount=fee_amount,
+                    category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
+                    description=f"Fee collected for {withdrawal.withdrawal_type} withdrawal {withdrawal.id}",
+                    reference_id=str(withdrawal.id),
+                )
 
             withdrawal.status = Withdrawal.Status.APPROVED
             withdrawal.reviewed_by = request.user
@@ -791,3 +803,142 @@ class AdminTriggerROIEngineView(APIView):
             'investments_processed': total_investments_processed,
             'total_roi_distributed': float(total_roi_distributed),
         })
+
+
+class AdminCompanyFundsLedgerView(generics.ListAPIView):
+    """
+    GET /api/v1/admin-panel/funds/
+    Returns paginated list of company wallet ledger transactions.
+    Supports filtering by ?category=, ?transaction_type=, and ?search=
+    """
+    permission_classes = [IsAdminRoleOrStaff]
+    serializer_class = AdminCompanyWalletTransactionSerializer
+
+    def get_queryset(self):
+        qs = CompanyWalletTransaction.objects.all().order_by('-created_at')
+
+        category = self.request.query_params.get('category')
+        if category and category != 'all':
+            qs = qs.filter(category=category.upper())
+
+        txn_type = self.request.query_params.get('transaction_type')
+        if txn_type and txn_type != 'all':
+            qs = qs.filter(transaction_type=txn_type.upper())
+
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(reference_id__icontains=search) |
+                Q(description__icontains=search) |
+                Q(id__icontains=search)
+            )
+
+        return qs
+
+
+class AdminCompanyFundsSummaryView(APIView):
+    """
+    GET /api/v1/admin-panel/funds/summary/
+    Returns high-level KPI telemetry for the company funds treasury.
+    """
+    permission_classes = [IsAdminRoleOrStaff]
+
+    def get(self, request):
+        wallet = CompanyWallet.get_wallet()
+        qs = CompanyWalletTransaction.objects.all()
+
+        total_credits = qs.filter(
+            transaction_type=CompanyWalletTransaction.TransactionType.CREDIT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_debits = qs.filter(
+            transaction_type=CompanyWalletTransaction.TransactionType.DEBIT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_investment_remainders = qs.filter(
+            category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_withdrawal_fees = qs.filter(
+            category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_adjustments = qs.filter(
+            category=CompanyWalletTransaction.Category.ADJUSTMENT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_count = qs.count()
+
+        return Response({
+            'balance': float(wallet.balance),
+            'total_credits': float(total_credits),
+            'total_debits': float(total_debits),
+            'total_investment_remainders': float(total_investment_remainders),
+            'total_withdrawal_fees': float(total_withdrawal_fees),
+            'total_adjustments': float(total_adjustments),
+            'total_count': total_count,
+            'updated_at': wallet.updated_at,
+        })
+
+
+class AdminCompanyFundsAdjustView(APIView):
+    """
+    POST /api/v1/admin-panel/funds/adjust/
+    Allows admin to perform audited credit or debit adjustments to company funds.
+    """
+    permission_classes = [IsSuperAdminOnly]
+
+    def post(self, request):
+        serializer = AdminCompanyFundsAdjustmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data['action']
+        amount = serializer.validated_data['amount']
+        reason = serializer.validated_data['reason']
+
+        with db_transaction.atomic():
+            wallet = CompanyWallet.get_wallet()
+            balance_before = wallet.balance
+
+            if action == 'CREDIT':
+                txn = credit_company_wallet(
+                    amount=amount,
+                    category=CompanyWalletTransaction.Category.ADJUSTMENT,
+                    description=f"Admin Manual Credit: {reason}",
+                    reference_id=f"ADM-ADJ-{uuid.uuid4().hex[:8].upper()}",
+                )
+            else:
+                if wallet.balance < amount:
+                    return Response(
+                        {'detail': f"Insufficient company funds: available ${wallet.balance}, requested debit ${amount}"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                txn = debit_company_wallet(
+                    amount=amount,
+                    category=CompanyWalletTransaction.Category.ADJUSTMENT,
+                    description=f"Admin Manual Debit: {reason}",
+                    reference_id=f"ADM-ADJ-{uuid.uuid4().hex[:8].upper()}",
+                )
+
+            # Audit Log
+            AuditLog.objects.create(
+                user=request.user,
+                action=AuditLog.Action.WALLET_ADJUSTED,
+                ip_address=request.META.get('REMOTE_ADDR'),
+                new_value={
+                    'company_wallet': True,
+                    'action': action,
+                    'amount': str(amount),
+                    'balance_before': str(balance_before),
+                    'balance_after': str(txn.balance_after),
+                    'reason': reason,
+                    'transaction_id': str(txn.id),
+                }
+            )
+
+        return Response({
+            'detail': f"Company wallet {action.lower()} of ${amount} applied successfully.",
+            'balance': float(txn.balance_after),
+            'transaction': AdminCompanyWalletTransactionSerializer(txn).data,
+        }, status=status.HTTP_200_OK)
+

@@ -341,6 +341,13 @@
           </svg>
           <span>Overview</span>
         </a>
+        <a class="nav-item" onclick="switchAdminNav('funds')" id="nav-adm-funds">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>Company Funds</span>
+        </a>
         <a class="nav-item" onclick="switchAdminNav('investments')" id="nav-adm-investments">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -1397,17 +1404,16 @@
         <!-- 1. ADMIN OVERVIEW SUB-PAGE -->
         <div id="adm-content-overview" class="admin-subpage active">
           <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="card stat-card admin-stat-card highlight-gold">
+            <div class="card stat-card admin-stat-card highlight-gold" onclick="switchAdminNav('funds')" style="cursor: pointer;" title="Click to view Company Funds Ledger">
               <div>
                 <div class="stat-title">Company Wallet</div>
                 <div class="stat-value" id="adm-stat-company-wallet" style="color: var(--gold);">$0.00</div>
-                <div class="stat-subtext">System liability</div>
+                <div class="stat-subtext">Corporate treasury • View ledger →</div>
               </div>
               <div class="stat-icon icon-invest">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                 </svg>
               </div>
             </div>
@@ -1585,7 +1591,163 @@
           </div>
         </div>
 
-        <!-- 2. ADMIN INVESTMENTS & DEPOSIT PROOFS SUB-PAGE -->
+        <!-- 2. COMPANY FUNDS & TREASURY LEDGER SUB-PAGE -->
+        <div id="adm-content-funds" class="admin-subpage">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="section-header" style="flex-wrap: wrap; gap: 12px; margin-bottom: 0;">
+              <div>
+                <div class="eyebrow">Corporate Treasury</div>
+                <h2 class="section-title">Company Funds &amp; Treasury Ledger</h2>
+                <p style="font-size: 13px; color: var(--mute); margin-top: 4px; margin-bottom: 0;">
+                  Real-time ledger audit trail for platform retainers, package spreads (Cost − Trading Capital), withdrawal fees, and audited treasury balance adjustments.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn btn-sm btn-secondary" onclick="loadAdminFunds(null, true)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  Refresh
+                </button>
+                <button class="btn btn-sm btn-gold" onclick="openAdminFundsAdjustModal()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Manual Treasury Adjustment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="card stat-card admin-stat-card highlight-gold">
+              <div>
+                <div class="stat-title">Treasury Balance</div>
+                <div class="stat-value" id="adm-funds-stat-balance" style="color: var(--gold);">$0.00</div>
+                <div class="stat-subtext" id="adm-funds-stat-updated">Live Company Balance</div>
+              </div>
+              <div class="stat-icon icon-invest">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </div>
+            </div>
+
+            <div class="card stat-card admin-stat-card">
+              <div>
+                <div class="stat-title">Investment Retainers</div>
+                <div class="stat-value" id="adm-funds-stat-remainders" style="color: #34d399;">$0.00</div>
+                <div class="stat-subtext">Package margin spread</div>
+              </div>
+              <div class="stat-icon icon-invest">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <div class="card stat-card admin-stat-card">
+              <div>
+                <div class="stat-title">Withdrawal Fees</div>
+                <div class="stat-value" id="adm-funds-stat-fees" style="color: #60a5fa;">$0.00</div>
+                <div class="stat-subtext">Platform fees collected</div>
+              </div>
+              <div class="stat-icon icon-wdr">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+            </div>
+
+            <div class="card stat-card admin-stat-card">
+              <div>
+                <div class="stat-title">Ledger Entries</div>
+                <div class="stat-value" id="adm-funds-stat-count">0</div>
+                <div class="stat-subtext">Immutable audit entries</div>
+              </div>
+              <div class="stat-icon icon-pending">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex: 1;">
+                <div class="admin-search-wrap" style="flex: 1; min-width: 240px;">
+                  <input type="text" id="adm-funds-search" class="form-control"
+                    placeholder="Search Reference ID, Description, or Tx ID..."
+                    oninput="debounceAdminSearch('funds')">
+                </div>
+                <select id="adm-funds-filter-category" class="form-control admin-filter-select"
+                  onchange="filterAdminFunds()" style="min-width: 180px;">
+                  <option value="all">All Categories</option>
+                  <option value="INVESTMENT_REMAINDER">Investment Remainder</option>
+                  <option value="WITHDRAWAL_FEE">Withdrawal Fee</option>
+                  <option value="ADJUSTMENT">Admin Adjustment</option>
+                </select>
+                <select id="adm-funds-filter-type" class="form-control admin-filter-select"
+                  onchange="filterAdminFunds()" style="min-width: 140px;">
+                  <option value="all">All Types</option>
+                  <option value="CREDIT">Credit (+)</option>
+                  <option value="DEBIT">Debit (-)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm btn-secondary" onclick="resetAdminFundsFilters()">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Company Ledger History Table -->
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Audit Trail</div>
+                <h2 class="section-title">Company Treasury Ledger Entries</h2>
+              </div>
+              <div id="adm-funds-count-badge" class="badge badge-approved" style="font-size: 11px;">0 Records</div>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Amount ($)</th>
+                    <th>Balance Before ($)</th>
+                    <th>Balance After ($)</th>
+                    <th>Reference ID</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-funds-tbody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+            <div id="adm-funds-pagination" class="pagination-controls">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. ADMIN INVESTMENTS & DEPOSIT PROOFS SUB-PAGE -->
         <div id="adm-content-investments" class="admin-subpage">
           <div class="card">
             <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
@@ -2987,6 +3149,40 @@
             Now</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- A9. Company Funds Treasury Manual Adjustment Modal -->
+  <div id="modal-admin-funds-adjust" class="modal-backdrop">
+    <div class="modal" style="max-width: 500px; width: 100%;">
+      <div class="modal-header">
+        <h3 class="modal-title">Company Treasury Adjustment</h3>
+        <button class="modal-close" onclick="closeModal('modal-admin-funds-adjust')">&times;</button>
+      </div>
+      <form onsubmit="handleCompanyFundsAdjustSubmit(event)">
+        <p style="font-size: 12.5px; color: var(--mute); margin-bottom: 16px; line-height: 1.5;">
+          Inject or deduct funds from the singleton Company Wallet. All manual adjustments are permanently recorded in the immutable ledger and audit logs.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Adjustment Action <span style="color: var(--accent-danger);">*</span></label>
+          <select id="adm-funds-adj-action" class="form-control" required>
+            <option value="CREDIT">CREDIT (+) — Add funds to company wallet</option>
+            <option value="DEBIT">DEBIT (-) — Deduct funds from company wallet</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount ($) <span style="color: var(--accent-danger);">*</span></label>
+          <input type="number" id="adm-funds-adj-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 500.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason / Justification <span style="color: var(--accent-danger);">*</span></label>
+          <textarea id="adm-funds-adj-reason" class="form-control" rows="3" placeholder="Reason for treasury balance adjustment..." required></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-admin-funds-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="adm-funds-adj-submit-btn">Apply Treasury Adjustment</button>
+        </div>
+      </form>
     </div>
   </div>
 

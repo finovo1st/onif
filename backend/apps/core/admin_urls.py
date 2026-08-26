@@ -22,6 +22,9 @@ from .admin_views import (
     AdminPlanListCreateView,
     AdminPlanDetailView,
     AdminTriggerROIEngineView,
+    AdminCompanyFundsLedgerView,
+    AdminCompanyFundsSummaryView,
+    AdminCompanyFundsAdjustView,
 )
 
 app_name = 'admin_panel'
@@ -29,6 +32,11 @@ app_name = 'admin_panel'
 urlpatterns = [
     # Overview
     path('overview/', AdminOverviewView.as_view(), name='overview'),
+
+    # Company Funds & Treasury Ledger
+    path('funds/', AdminCompanyFundsLedgerView.as_view(), name='funds_ledger'),
+    path('funds/summary/', AdminCompanyFundsSummaryView.as_view(), name='funds_summary'),
+    path('funds/adjust/', AdminCompanyFundsAdjustView.as_view(), name='funds_adjust'),
 
     # Investments & Deposit Approvals
     path('investments/', AdminInvestmentListView.as_view(), name='investments_list'),

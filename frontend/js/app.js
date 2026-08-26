@@ -26,7 +26,8 @@ let state = {
   teamLevel: 'all',
   pagination: {
     team: { next: null, previous: null, count: 0 },
-    adminUsers: { next: null, previous: null, count: 0 }
+    adminUsers: { next: null, previous: null, count: 0 },
+    adminFunds: { next: null, previous: null, count: 0 }
   },
 };
 
@@ -1134,6 +1135,7 @@ function switchAdminNav(tabName) {
 
   const titles = {
     overview: 'Admin Command Center • Platform Telemetry',
+    funds: 'Corporate Treasury & Company Funds Ledger History',
     investments: 'Deposit & Investment Verifications',
     withdrawals: 'Withdrawal & Payout Processing',
     users: 'User Directory & Balance Control',
@@ -1570,6 +1572,8 @@ function handleLogout() {
   state.levelStats = [];
   state.admin = {
     overview: null,
+    funds: [],
+    fundsSummary: null,
     investments: [],
     withdrawals: [],
     users: [],
@@ -1876,6 +1880,8 @@ function showToast(message, isError = false) {
 
 state.admin = {
   overview: null,
+  funds: [],
+  fundsSummary: null,
   investments: [],
   withdrawals: [],
   users: [],
@@ -1889,7 +1895,8 @@ let adminSearchDebounceTimer = null;
 function debounceAdminSearch(type) {
   clearTimeout(adminSearchDebounceTimer);
   adminSearchDebounceTimer = setTimeout(() => {
-    if (type === 'investments') loadAdminInvestments();
+    if (type === 'funds') loadAdminFunds();
+    else if (type === 'investments') loadAdminInvestments();
     else if (type === 'withdrawals') loadAdminWithdrawals();
     else if (type === 'users') loadAdminUsers();
     else if (type === 'tickets') loadAdminTickets();
@@ -1904,6 +1911,17 @@ function copyElementText(elementId) {
   showToast('Copied to clipboard!');
 }
 
+function copyDirectText(text, msg = 'Copied to clipboard!') {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => {
+      showToast('Copied: ' + text);
+    });
+  } else {
+    showToast('Copied: ' + text);
+  }
+}
+
 // ─── Sub-Tab Navigation Switcher ───
 function switchAdminTab(tabName) {
   document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
@@ -1916,6 +1934,7 @@ function switchAdminTab(tabName) {
   if (page) page.classList.add('active');
 
   if (tabName === 'overview') loadAdminData();
+  else if (tabName === 'funds') { loadAdminFunds(); loadAdminFundsSummary(); }
   else if (tabName === 'investments') loadAdminInvestments();
   else if (tabName === 'withdrawals') loadAdminWithdrawals();
   else if (tabName === 'users') loadAdminUsers();
@@ -2100,7 +2119,204 @@ function renderOverviewTicketsQueue(items) {
   });
 }
 
-// ─── 2. Admin Investments & Deposit Proofs ───
+// ─── 2. Admin Company Funds & Treasury Ledger ───
+function filterAdminFunds() {
+  loadAdminFunds();
+}
+
+function resetAdminFundsFilters() {
+  const searchInput = document.getElementById('adm-funds-search');
+  const catFilter = document.getElementById('adm-funds-filter-category');
+  const typeFilter = document.getElementById('adm-funds-filter-type');
+  if (searchInput) searchInput.value = '';
+  if (catFilter) catFilter.value = 'all';
+  if (typeFilter) typeFilter.value = 'all';
+  loadAdminFunds();
+}
+
+async function loadAdminFunds(overrideUrl = null, force = false) {
+  if (!state.isAdmin) return;
+
+  let url = overrideUrl;
+  if (typeof url !== 'string') {
+    const category = document.getElementById('adm-funds-filter-category')?.value || 'all';
+    const txnType = document.getElementById('adm-funds-filter-type')?.value || 'all';
+    const search = document.getElementById('adm-funds-search')?.value.trim() || '';
+
+    url = `/admin-panel/funds/?`;
+    if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+    if (txnType && txnType !== 'all') url += `&transaction_type=${encodeURIComponent(txnType)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+  }
+
+  try {
+    const data = await apiCall(url);
+    const funds = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.adminFunds = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.adminFunds = { next: null, previous: null, count: funds.length };
+    }
+
+    state.admin.funds = funds;
+    renderAdminFunds(funds);
+    renderPaginationControls('adm-funds-pagination', state.pagination.adminFunds, loadAdminFunds);
+
+    const countBadge = document.getElementById('adm-funds-count-badge');
+    if (countBadge) countBadge.innerText = `${state.pagination.adminFunds.count || funds.length} Records`;
+
+    // Load summary metrics as well
+    loadAdminFundsSummary();
+
+    if (force) showToast('Company Funds ledger refreshed.');
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function loadAdminFundsSummary() {
+  if (!state.isAdmin) return;
+
+  try {
+    const summary = await apiCall('/admin-panel/funds/summary/');
+    state.admin.fundsSummary = summary;
+    renderAdminFundsSummary(summary);
+  } catch (err) {
+    console.error('Failed to load company funds summary:', err);
+  }
+}
+
+function renderAdminFundsSummary(summary) {
+  if (!summary) return;
+
+  const balEl = document.getElementById('adm-funds-stat-balance');
+  if (balEl) balEl.innerText = `$${Number(summary.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const remEl = document.getElementById('adm-funds-stat-remainders');
+  if (remEl) remEl.innerText = `$${Number(summary.total_investment_remainders || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const feeEl = document.getElementById('adm-funds-stat-fees');
+  if (feeEl) feeEl.innerText = `$${Number(summary.total_withdrawal_fees || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const cntEl = document.getElementById('adm-funds-stat-count');
+  if (cntEl) cntEl.innerText = summary.total_count || 0;
+
+  const updEl = document.getElementById('adm-funds-stat-updated');
+  if (updEl && summary.updated_at) {
+    updEl.innerText = `Live Updated: ${new Date(summary.updated_at).toLocaleTimeString()}`;
+  }
+}
+
+function renderAdminFunds(funds) {
+  const tbody = document.getElementById('adm-funds-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!funds || funds.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:36px; color:var(--mute);">No company ledger transactions found for the selected criteria.</td></tr>`;
+    return;
+  }
+
+  funds.forEach(txn => {
+    const isCredit = txn.transaction_type === 'CREDIT';
+    const typeBadge = isCredit
+      ? `<span class="badge badge-approved" style="font-size:10px; font-weight:700;">+ CREDIT</span>`
+      : `<span class="badge badge-pending" style="font-size:10px; font-weight:700; background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.3);">- DEBIT</span>`;
+
+    let catBadgeClass = 'badge-approved';
+    let catLabel = txn.category_display || txn.category;
+    if (txn.category === 'INVESTMENT_REMAINDER') {
+      catBadgeClass = 'badge-approved';
+    } else if (txn.category === 'WITHDRAWAL_FEE') {
+      catBadgeClass = 'badge-kyc-approved';
+    } else if (txn.category === 'ADJUSTMENT') {
+      catBadgeClass = 'badge-admin';
+    }
+
+    const catBadge = `<span class="badge ${catBadgeClass}" style="font-size:10px;">${catLabel}</span>`;
+    const amountColor = isCredit ? '#34d399' : '#f87171';
+    const amountSign = isCredit ? '+' : '-';
+    const dateStr = txn.created_at ? new Date(txn.created_at).toLocaleString() : 'N/A';
+    const refId = txn.reference_id || 'N/A';
+    const refShort = refId.length > 16 ? `${refId.slice(0, 8)}...${refId.slice(-6)}` : refId;
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-size:12px; color:var(--mute); font-family:var(--font-mono); white-space:nowrap;">${dateStr}</td>
+        <td>${typeBadge}</td>
+        <td>${catBadge}</td>
+        <td style="font-family:var(--font-mono); font-weight:700; color:${amountColor}; font-size:13.5px; white-space:nowrap;">
+          ${amountSign}$${Number(txn.amount).toFixed(2)}
+        </td>
+        <td style="font-family:var(--font-mono); color:var(--mute); font-size:12.5px;">$${Number(txn.balance_before).toFixed(2)}</td>
+        <td style="font-family:var(--font-mono); font-weight:600; color:var(--gold); font-size:12.5px;">$${Number(txn.balance_after).toFixed(2)}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text);" title="${refId}">${refShort}</span>
+            ${refId !== 'N/A' ? `<button type="button" class="btn btn-sm btn-secondary" style="padding:2px 5px; font-size:9px;" onclick="copyDirectText('${refId}', 'Reference ID copied')">Copy</button>` : ''}
+          </div>
+        </td>
+        <td style="font-size:12.5px; color:var(--text); max-width:280px; word-break:break-word;">${txn.description || '—'}</td>
+      </tr>
+    `;
+  });
+}
+
+function openAdminFundsAdjustModal() {
+  const actionSel = document.getElementById('adm-funds-adj-action');
+  const amountInp = document.getElementById('adm-funds-adj-amount');
+  const reasonInp = document.getElementById('adm-funds-adj-reason');
+  if (actionSel) actionSel.value = 'CREDIT';
+  if (amountInp) amountInp.value = '';
+  if (reasonInp) reasonInp.value = '';
+  openModal('modal-admin-funds-adjust');
+}
+
+async function handleCompanyFundsAdjustSubmit(event) {
+  event.preventDefault();
+  const action = document.getElementById('adm-funds-adj-action').value;
+  const amount = document.getElementById('adm-funds-adj-amount').value;
+  const reason = document.getElementById('adm-funds-adj-reason').value.trim();
+
+  if (!amount || Number(amount) <= 0) {
+    showToast('Please enter a valid positive adjustment amount.', true);
+    return;
+  }
+  if (!reason) {
+    showToast('Please provide a justification reason for this adjustment.', true);
+    return;
+  }
+
+  const submitBtn = document.getElementById('adm-funds-adj-submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Processing...';
+  }
+
+  try {
+    const res = await apiCall('/admin-panel/funds/adjust/', 'POST', {
+      action,
+      amount: parseFloat(amount),
+      reason,
+    });
+
+    showToast(res.detail || 'Company wallet adjustment applied successfully.');
+    closeModal('modal-admin-funds-adjust');
+
+    // Reload funds ledger, summary and general admin telemetry
+    loadAdminFunds();
+    loadAdminData();
+  } catch (err) {
+    showToast(err.message, true);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Apply Treasury Adjustment';
+    }
+  }
+}
+
+// ─── 3. Admin Investments & Deposit Proofs ───
 function filterAdminInvestments() {
   loadAdminInvestments();
 }
@@ -2265,16 +2481,18 @@ function renderPaginationControls(containerId, paginationState, loadFunction) {
     return;
   }
 
-  let pageInfo = `Total: ${paginationState.count} items`;
+  let pageInfo = `Total Records: <b>${paginationState.count}</b>`;
 
   container.innerHTML = `
     <div class="pagination-info">${pageInfo}</div>
-    <button class="pagination-btn" id="${containerId}-prev" ${!paginationState.previous ? 'disabled' : ''}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M15 18l-6-6 6-6"/></svg> Previous
-    </button>
-    <button class="pagination-btn" id="${containerId}-next" ${!paginationState.next ? 'disabled' : ''}>
-      Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
+    <div class="pagination-buttons">
+      <button type="button" class="pagination-btn" id="${containerId}-prev" ${!paginationState.previous ? 'disabled' : ''}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><path d="M15 18l-6-6 6-6"/></svg> Previous
+      </button>
+      <button type="button" class="pagination-btn" id="${containerId}-next" ${!paginationState.next ? 'disabled' : ''}>
+        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px;"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
   `;
 
   const prevBtn = document.getElementById(`${containerId}-prev`);

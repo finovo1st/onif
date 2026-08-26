@@ -282,10 +282,11 @@ def distribute_direct_income(investment: Investment) -> list:
     if company_remainder > Decimal('0.00'):
         from apps.wallet.services import credit_company_wallet
         from apps.wallet.models import CompanyWalletTransaction
+        user_account_info = f"{investment.user.email} (Account ID: #{str(investment.user.id)[:8]})"
         credit_company_wallet(
             amount=company_remainder,
             category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER,
-            description=f"Overhead remainder from investment {investment.id}",
+            description=f"Overhead remainder from {investment.plan.name} (${investment.amount}) activated by {user_account_info}",
             reference_id=str(investment.id),
         )
 

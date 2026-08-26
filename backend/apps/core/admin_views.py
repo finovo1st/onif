@@ -338,10 +338,11 @@ class AdminWithdrawalApproveView(APIView):
             # Credit fee to Company Wallet if applicable
             fee_amount = withdrawal.amount - withdrawal.net_amount
             if fee_amount > Decimal('0.00'):
+                user_account_info = f"{withdrawal.user.email} (Account ID: #{str(withdrawal.user.id)[:8]})"
                 credit_company_wallet(
                     amount=fee_amount,
                     category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
-                    description=f"Fee collected for {withdrawal.withdrawal_type} withdrawal {withdrawal.id}",
+                    description=f"Fee collected from {withdrawal.withdrawal_type} withdrawal #{str(withdrawal.id)[:8]} by {user_account_info}",
                     reference_id=str(withdrawal.id),
                 )
 
@@ -900,11 +901,12 @@ class AdminCompanyFundsAdjustView(APIView):
             wallet = CompanyWallet.get_wallet()
             balance_before = wallet.balance
 
+            admin_info = f"{request.user.email} (Admin ID: #{str(request.user.id)[:8]})"
             if action == 'CREDIT':
                 txn = credit_company_wallet(
                     amount=amount,
                     category=CompanyWalletTransaction.Category.ADJUSTMENT,
-                    description=f"Admin Manual Credit: {reason}",
+                    description=f"Admin Manual Credit by {admin_info}: {reason}",
                     reference_id=f"ADM-ADJ-{uuid.uuid4().hex[:8].upper()}",
                 )
             else:
@@ -916,7 +918,7 @@ class AdminCompanyFundsAdjustView(APIView):
                 txn = debit_company_wallet(
                     amount=amount,
                     category=CompanyWalletTransaction.Category.ADJUSTMENT,
-                    description=f"Admin Manual Debit: {reason}",
+                    description=f"Admin Manual Debit by {admin_info}: {reason}",
                     reference_id=f"ADM-ADJ-{uuid.uuid4().hex[:8].upper()}",
                 )
 

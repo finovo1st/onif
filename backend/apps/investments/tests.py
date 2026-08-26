@@ -1,6 +1,9 @@
 from decimal import Decimal
+from unittest.mock import patch
+from datetime import date
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.investments.models import Plan, Investment
 from apps.investments.services import (
@@ -34,6 +37,7 @@ def make_active_investment(user, plan, cost=None):
         amount=cost_val,
         max_return=max_ret,
         status=Investment.Status.ACTIVE,
+        start_date=timezone.now().date(),
     )
     return inv
 
@@ -91,26 +95,25 @@ class DirectIncomeTests(TestCase):
         investment = make_active_investment(self.investor, self.plan, '120.00')
 
         commissions = distribute_direct_income(investment)
-        # level2 has 1 active direct (investor) → Level1 threshold = 2 directs
-        # so only level2 (relative level 1) is eligible IF they have >= 2 active directs
-        # With 1 active direct (investor), level2 meets LEVEL1 (threshold=2)? No, threshold=2 requires 2.
-        # So 0 commissions expected (investor's level2 parent has only 1 active direct)
-        # Let's assert no crash and result is a list
-        self.assertIsInstance(commissions, list)
+        # level2 has 1 active direct (investor). Level 1 threshold = 0 directs.
+        # So level2 will receive Level 1 direct income from this investment.
+        self.assertEqual(len(commissions), 1)
+        self.assertEqual(commissions[0].amount, Decimal('100.00'))
 
     def test_direct_income_with_eligible_sponsor(self):
-        # Add a second direct child to level2 so they meet level 1 threshold (2 directs)
+        # Add a second direct child to level2
         extra_user = make_user('extra@test.com', 'extra', parent=self.level2)
         make_active_investment(extra_user, self.plan)
 
         investment = make_active_investment(self.investor, self.plan, '120.00')
         commissions = distribute_direct_income(investment)
 
-        # level2 now has 2 active directs (extra_user + investor) → meets L1 threshold
-        self.assertGreater(len(commissions), 0)
+        # level2 now has 2 active directs (extra_user + investor) → unlocks Level 2
+        # But this investment is on level 1 relative to them, so they get 1 commission.
+        self.assertEqual(len(commissions), 1)
 
-        # Check commission amount: 2% of 120 = 2.40
-        self.assertEqual(commissions[0].amount, Decimal('2.40'))
+        # Check commission amount: 2% of 5000 = 100.00
+        self.assertEqual(commissions[0].amount, Decimal('100.00'))
         self.assertEqual(commissions[0].user, self.level2)
         self.assertEqual(commissions[0].commission_type, ReferralCommission.CommissionType.DIRECT)
 
@@ -128,7 +131,9 @@ class ROIDistributionTests(TestCase):
         self.investor = make_user('roi@test.com', 'roiuser')
         self.investment = make_active_investment(self.investor, self.plan)
 
-    def test_roi_credited_to_wallet(self):
+    @patch('apps.investments.services._get_profit_days')
+    def test_roi_credited_to_wallet(self, mock_profit_days):
+        mock_profit_days.return_value = 5  # 5 profit days (full week)
         roi = distribute_roi_for_investment(self.investment)
         # 10% of 120 = 12.00
         self.assertEqual(roi, Decimal('12.00'))
@@ -136,7 +141,9 @@ class ROIDistributionTests(TestCase):
         self.assertEqual(wallet.balance, Decimal('12.00'))
         self.assertEqual(wallet.total_roi_earned, Decimal('12.00'))
 
-    def test_investment_marked_completed_when_max_return_reached(self):
+    @patch('apps.investments.services._get_profit_days')
+    def test_investment_marked_completed_when_max_return_reached(self, mock_profit_days):
+        mock_profit_days.return_value = 5
         # Set total_credited close to max_return so next ROI tips it over
         self.investment.total_credited = Decimal('345.00')
         self.investment.save()
@@ -148,13 +155,17 @@ class ROIDistributionTests(TestCase):
         self.investment.refresh_from_db()
         self.assertEqual(self.investment.status, Investment.Status.COMPLETED)
 
-    def test_completed_investment_skipped(self):
+    @patch('apps.investments.services._get_profit_days')
+    def test_completed_investment_skipped(self, mock_profit_days):
+        mock_profit_days.return_value = 5
         self.investment.status = Investment.Status.COMPLETED
         self.investment.save()
         roi = distribute_roi_for_investment(self.investment)
         self.assertEqual(roi, Decimal('0.00'))
 
-    def test_roi_commission_distributed_to_eligible_sponsor_at_75_percent(self):
+    @patch('apps.investments.services._get_profit_days')
+    def test_roi_commission_distributed_to_eligible_sponsor_at_75_percent(self, mock_profit_days):
+        mock_profit_days.return_value = 5
         # Create sponsor with an active plan and 2 active directs (meeting Level 1)
         sponsor = make_user('roisponsor@test.com', 'roisponsor')
         make_active_investment(sponsor, self.plan)
@@ -177,6 +188,25 @@ class ROIDistributionTests(TestCase):
         self.assertEqual(comm.amount, Decimal('9.00'))
         self.assertEqual(comm.level, 1)
 
+    @patch('apps.investments.services._get_profit_days')
+    def test_prorated_roi(self, mock_profit_days):
+        # Joined mid-week, got 3 profit days
+        mock_profit_days.return_value = 3
+        roi = distribute_roi_for_investment(self.investment)
+        # Full week ROI = 12.00. 3 days = 12.00 * (3/5) = 7.20
+        self.assertEqual(roi, Decimal('7.20'))
+
+    def test_get_profit_days_helper(self):
+        from apps.investments.services import _get_profit_days
+        # Wed Oct 4 to Sat Oct 7
+        d1 = date(2023, 10, 4)
+        d2 = date(2023, 10, 7)
+        self.assertEqual(_get_profit_days(d1, d2), 3) # Wed, Thu, Fri
+        
+        # Sun Oct 1 to Sat Oct 7
+        d3 = date(2023, 10, 1)
+        self.assertEqual(_get_profit_days(d3, d2), 5) # Mon-Fri
+
 
 class ActiveLevelTests(TestCase):
     def setUp(self):
@@ -189,16 +219,16 @@ class ActiveLevelTests(TestCase):
         )
         self.sponsor = make_user('sponsor@test.com', 'sponsoruser')
 
-    def test_active_level_zero_with_no_directs(self):
+    def test_active_level_one_with_no_directs(self):
         level = update_user_active_level(self.sponsor)
-        self.assertEqual(level, 0)
+        self.assertEqual(level, 1)
 
-    def test_active_level_one_with_two_active_directs(self):
+    def test_active_level_two_with_two_active_directs(self):
         for i in range(2):
             child = make_user(f'child{i}@test.com', f'child{i}', parent=self.sponsor)
             make_active_investment(child, self.plan)
         level = update_user_active_level(self.sponsor)
-        self.assertEqual(level, 1)
+        self.assertEqual(level, 2)
 
 
 class InvestmentTaskTests(TestCase):
@@ -215,7 +245,9 @@ class InvestmentTaskTests(TestCase):
         self.user = make_user('taskuser@test.com', 'taskuser')
         self.investment = make_active_investment(self.user, self.plan, '100.00')
 
-    def test_distribute_weekly_roi_task(self):
+    @patch('apps.investments.services._get_profit_days')
+    def test_distribute_weekly_roi_task(self, mock_profit_days):
+        mock_profit_days.return_value = 5
         from apps.investments.tasks import distribute_weekly_roi_task
         from apps.wallet.models import Wallet
 

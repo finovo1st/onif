@@ -19,12 +19,12 @@ class ReferralsModelTests(TestCase):
         comm = ReferralCommission.objects.create(
             user=self.sponsor,
             from_user=self.ref_user,
-            amount=Decimal('2.40'),
+            amount=Decimal('100.00'),
             level=1,
             commission_type=ReferralCommission.CommissionType.DIRECT
         )
         self.assertFalse(comm.is_paid)
-        self.assertEqual(comm.amount, Decimal('2.40'))
+        self.assertEqual(comm.amount, Decimal('100.00'))
 
 
 from rest_framework.test import APITestCase

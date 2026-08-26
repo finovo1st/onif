@@ -10,6 +10,7 @@ Pure Python business logic for:
 
 All DB operations are atomic.
 """
+from datetime import timedelta, date
 from decimal import Decimal, ROUND_DOWN
 from django.db import transaction
 from django.utils import timezone
@@ -31,11 +32,11 @@ def _get_setting(key: str, default: str) -> Decimal:
 def _level_unlock_threshold(level: int) -> int:
     """Return the number of active directs needed to unlock income at this level."""
     mapping = {
-        1: int(PlatformSettings.get('LEVEL1_UNLOCK_DIRECTS', '2')),
-        2: int(PlatformSettings.get('LEVEL2_UNLOCK_DIRECTS', '4')),
-        3: int(PlatformSettings.get('LEVEL3_UNLOCK_DIRECTS', '6')),
-        4: int(PlatformSettings.get('LEVEL4_UNLOCK_DIRECTS', '8')),
-        5: int(PlatformSettings.get('LEVEL5_UNLOCK_DIRECTS', '10')),
+        1: int(PlatformSettings.get('LEVEL1_UNLOCK_DIRECTS', '0')),
+        2: int(PlatformSettings.get('LEVEL2_UNLOCK_DIRECTS', '2')),
+        3: int(PlatformSettings.get('LEVEL3_UNLOCK_DIRECTS', '4')),
+        4: int(PlatformSettings.get('LEVEL4_UNLOCK_DIRECTS', '6')),
+        5: int(PlatformSettings.get('LEVEL5_UNLOCK_DIRECTS', '8')),
     }
     return mapping.get(level, 999)
 
@@ -246,7 +247,7 @@ def distribute_direct_income(investment: Investment) -> list:
             current_user = sponsor
             continue
 
-        commission_amount = (investment.cost * rate).quantize(
+        commission_amount = (investment.trading_capital * rate).quantize(
             Decimal('0.01'), rounding=ROUND_DOWN
         )
         if commission_amount <= Decimal('0.00'):
@@ -291,12 +292,24 @@ def distribute_direct_income(investment: Investment) -> list:
     return commissions_created
 
 
+def _get_profit_days(start_date: date, end_date: date) -> int:
+    """Return the number of weekdays (Mon-Fri) between start_date and end_date (inclusive)."""
+    days = 0
+    current = start_date
+    while current <= end_date:
+        if current.weekday() < 5:  # 0=Mon, ..., 4=Fri
+            days += 1
+        current += timedelta(days=1)
+    return days
+
+
 @transaction.atomic
 def distribute_roi_for_investment(investment: Investment) -> Decimal:
     """
-    Calculate and credit the weekly ROI for a single ACTIVE investment.
+    Calculate and credit the prorated weekly ROI for a single ACTIVE investment.
 
     - The investor's ROI is calculated based on trading_capital.
+    - ROI is prorated based on profit days (Monday to Friday).
     - ROI is credited to investor's spendable wallet balance (withdrawable).
     - investment.total_credited tracks cumulative ROI paid out toward max_return.
     - Marks the investment COMPLETED if max_return is reached.
@@ -308,9 +321,23 @@ def distribute_roi_for_investment(investment: Investment) -> Decimal:
     if investment.status != Investment.Status.ACTIVE:
         return Decimal('0.00')
 
-    # Calculate weekly ROI based on trading capital
-    roi_rate = investment.plan.weekly_roi_rate / Decimal('100')
-    calculated_roi = (investment.trading_capital * roi_rate).quantize(
+    # Determine date range for ROI calculation
+    current_date = timezone.now().date()
+    if investment.last_roi_date:
+        calc_start = investment.last_roi_date + timedelta(days=1)
+    else:
+        calc_start = investment.start_date
+        
+    profit_days = _get_profit_days(calc_start, current_date)
+    
+    if profit_days <= 0:
+        return Decimal('0.00')
+
+    # Daily ROI rate = Weekly ROI rate / 5 (profit days)
+    daily_roi_rate = (investment.plan.weekly_roi_rate / Decimal('5')) / Decimal('100')
+    
+    # Calculate prorated ROI based on trading capital
+    calculated_roi = (investment.trading_capital * daily_roi_rate * Decimal(profit_days)).quantize(
         Decimal('0.01'), rounding=ROUND_DOWN
     )
 

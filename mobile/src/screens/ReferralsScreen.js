@@ -139,11 +139,11 @@ export default function ReferralsScreen() {
 
   const currentLevel = summary.active_level || user?.active_level || 2;
   const levels = [
-    { lvl: 1, req: 2, type: 'Direct Income' },
-    { lvl: 2, req: 4, type: 'ROI Income' },
-    { lvl: 3, req: 6, type: 'ROI Income' },
-    { lvl: 4, req: 8, type: 'ROI Income' },
-    { lvl: 5, req: 10, type: 'ROI Income' },
+    { lvl: 1, req: 0, type: 'Direct Income' },
+    { lvl: 2, req: 2, type: 'ROI Income' },
+    { lvl: 3, req: 4, type: 'ROI Income' },
+    { lvl: 4, req: 6, type: 'ROI Income' },
+    { lvl: 5, req: 8, type: 'ROI Income' },
   ];
 
   const filteredTeam = team.filter((m) => {

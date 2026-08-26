@@ -21,11 +21,11 @@ DEFAULT_SETTINGS = [
     ('ROI_INCOME_RATE',          '75.00',   'ROI income rate per referral level (%)'),
     # Referral levels
     ('MAX_REFERRAL_LEVELS',      '5',       'Maximum referral income depth levels'),
-    ('LEVEL1_UNLOCK_DIRECTS',    '2',       'Active direct members required to unlock Level 1 income'),
-    ('LEVEL2_UNLOCK_DIRECTS',    '4',       'Active direct members required to unlock Level 2 income'),
-    ('LEVEL3_UNLOCK_DIRECTS',    '6',       'Active direct members required to unlock Level 3 income'),
-    ('LEVEL4_UNLOCK_DIRECTS',    '8',       'Active direct members required to unlock Level 4 income'),
-    ('LEVEL5_UNLOCK_DIRECTS',    '10',      'Active direct members required to unlock Level 5 income'),
+    ('LEVEL1_UNLOCK_DIRECTS',    '0',       'Active direct members required to unlock Level 1 income'),
+    ('LEVEL2_UNLOCK_DIRECTS',    '2',       'Active direct members required to unlock Level 2 income'),
+    ('LEVEL3_UNLOCK_DIRECTS',    '4',       'Active direct members required to unlock Level 3 income'),
+    ('LEVEL4_UNLOCK_DIRECTS',    '6',       'Active direct members required to unlock Level 4 income'),
+    ('LEVEL5_UNLOCK_DIRECTS',    '8',       'Active direct members required to unlock Level 5 income'),
     # ROI distribution schedule
     ('ROI_DISTRIBUTION_DAY',     '5',       'Weekday for ROI distribution: 0=Mon … 5=Sat, 6=Sun'),
     # Supported networks

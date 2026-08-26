@@ -21,11 +21,11 @@ class PlatformSettings(models.Model):
       DIRECT_INCOME_RATE          = "2.00"      # % per level
       ROI_INCOME_RATE             = "75.00"     # % per level
       MAX_REFERRAL_LEVELS         = "5"
-      LEVEL1_UNLOCK_DIRECTS       = "2"
-      LEVEL2_UNLOCK_DIRECTS       = "4"
-      LEVEL3_UNLOCK_DIRECTS       = "6"
-      LEVEL4_UNLOCK_DIRECTS       = "8"
-      LEVEL5_UNLOCK_DIRECTS       = "10"
+      LEVEL1_UNLOCK_DIRECTS       = "0"
+      LEVEL2_UNLOCK_DIRECTS       = "2"
+      LEVEL3_UNLOCK_DIRECTS       = "4"
+      LEVEL4_UNLOCK_DIRECTS       = "6"
+      LEVEL5_UNLOCK_DIRECTS       = "8"
       ROI_DISTRIBUTION_DAY        = "6"         # 6 = Saturday (weekday index)
     """
 

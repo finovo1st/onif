@@ -259,6 +259,22 @@ class InvestmentTaskTests(TestCase):
         wallet = Wallet.objects.get(user=self.user)
         self.assertEqual(wallet.balance, Decimal('10.00'))
 
+    @patch('apps.investments.services._get_profit_days')
+    def test_distribute_weekly_roi_task_partial_days(self, mock_profit_days):
+        # 3 profit days: 3 * (10.00 / 5) = $6.00
+        mock_profit_days.return_value = 3
+        from apps.investments.tasks import distribute_weekly_roi_task
+        from apps.wallet.models import Wallet
+
+        result = distribute_weekly_roi_task()
+        self.assertEqual(result['processed'], 1)
+        self.assertEqual(result['completed'], 0)
+        self.assertEqual(result['errors'], 0)
+
+        wallet = Wallet.objects.get(user=self.user)
+        self.assertEqual(wallet.balance, Decimal('6.00'))
+
+
 
 class InvestmentSerializerTests(TestCase):
     def setUp(self):
@@ -372,3 +388,30 @@ class InvestmentViewTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(Plan.objects.filter(id=self.plan.id).exists())
+
+    def test_admin_trigger_roi_full_week(self):
+        self.user.role = self.user.Role.ADMIN
+        self.user.is_staff = True
+        self.user.save()
+
+        inv = make_active_investment(self.user, self.plan, Decimal('100.00'))
+        url = reverse('admin_panel:trigger_roi')
+        response = self.client.post(url, {'mode': 'full_week'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'full_week')
+        self.assertEqual(response.data['total_roi_distributed'], 10.0)
+
+    @patch('apps.investments.services._get_profit_days')
+    def test_admin_trigger_roi_by_day(self, mock_profit_days):
+        mock_profit_days.return_value = 2 # 2 days = 2 * (10% / 5) * 100 = $4.00
+        self.user.role = self.user.Role.ADMIN
+        self.user.is_staff = True
+        self.user.save()
+
+        inv = make_active_investment(self.user, self.plan, Decimal('100.00'))
+        url = reverse('admin_panel:trigger_roi')
+        response = self.client.post(url, {'mode': 'by_day'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'by_day')
+        self.assertEqual(response.data['total_roi_distributed'], 4.0)
+

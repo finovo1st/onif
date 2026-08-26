@@ -455,13 +455,21 @@
         </div>
 
         <!-- Admin Quick Action (shown when admin) -->
-        <div id="admin-topbar-actions" style="display: none;">
-          <button class="btn btn-sm btn-gold" onclick="openModal('modal-admin-trigger-roi')"
-            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+        <div id="admin-topbar-actions" style="display: none; gap: 8px;">
+          <button class="btn btn-sm btn-gold" onclick="openTriggerROIModal('full_week')"
+            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;" title="Trigger 1 full week ROI for all active investments regardless of elapsed days">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
             Trigger ROI
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="openTriggerROIModal('by_day')"
+            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;" title="Trigger ROI with days logic (prorated by elapsed weekdays Mon–Fri)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Trigger ROI (By Day)
           </button>
         </div>
 
@@ -1385,7 +1393,7 @@
             <p class="admin-main-subtitle">Manage deposits, execute withdrawals, inspect users, and configure live
               system rules.</p>
           </div>
-          <div class="admin-header-actions">
+          <div class="admin-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-sm btn-secondary" onclick="loadAdminData(true)" title="Refresh all admin telemetry">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="23 4 23 10 17 10"></polyline>
@@ -1394,8 +1402,18 @@
               </svg>
               Refresh Telemetry
             </button>
-            <button class="btn btn-sm btn-gold" onclick="openModal('modal-admin-trigger-roi')">
-              Trigger Weekly ROI
+            <button class="btn btn-sm btn-gold" onclick="openTriggerROIModal('full_week')" title="Trigger 1 full week ROI for all users regardless of days">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Trigger ROI
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="openTriggerROIModal('by_day')" style="border-color: rgba(212,175,55,0.35); color: var(--gold-soft);" title="Trigger ROI with days logic (prorated Mon–Fri)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Trigger ROI (By Day)
             </button>
           </div>
         </div>
@@ -3127,16 +3145,20 @@
 
   <!-- A8. Trigger ROI Confirmation Modal -->
   <div id="modal-admin-trigger-roi" class="modal-backdrop">
-    <div class="modal" style="max-width: 480px; width: 100%;">
+    <div class="modal" style="max-width: 500px; width: 100%;">
       <div class="modal-header">
-        <h3 class="modal-title" style="color: var(--gold);">Trigger Weekly ROI Distribution</h3>
+        <h3 class="modal-title" id="adm-roi-modal-title" style="color: var(--gold);">Trigger ROI Distribution</h3>
         <button class="modal-close" onclick="closeModal('modal-admin-trigger-roi')">&times;</button>
       </div>
       <div>
-        <p style="font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 14px;">
+        <input type="hidden" id="adm-roi-mode" value="full_week">
+        <div id="adm-roi-mode-badge-wrap" style="margin-bottom: 12px;">
+          <span class="badge badge-approved" id="adm-roi-mode-badge-text" style="font-size: 11px; padding: 4px 10px;">Full Week Mode (100% Rate)</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 14px;" id="adm-roi-modal-desc">
           This will execute the Weekly ROI calculation engine for <b>all active investments</b> across the platform:
         </p>
-        <ul style="font-size: 12px; color: var(--mute); line-height: 1.8; margin-left: 18px; margin-bottom: 16px;">
+        <ul style="font-size: 12px; color: var(--mute); line-height: 1.8; margin-left: 18px; margin-bottom: 16px;" id="adm-roi-modal-bullets">
           <li>Credits weekly return to each investor's spendable wallet balance</li>
           <li>Fills up investor plans toward their maximum cap (300%)</li>
           <li>Distributes weekly ROI level commissions up to 5 levels to upline sponsors' oldest active plans</li>
@@ -3145,7 +3167,7 @@
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
           <button type="button" class="btn btn-secondary"
             onclick="closeModal('modal-admin-trigger-roi')">Cancel</button>
-          <button type="button" class="btn btn-gold" onclick="submitTriggerROIEngine()">Execute Distribution
+          <button type="button" class="btn btn-gold" id="adm-roi-modal-submit-btn" onclick="submitTriggerROIEngine()">Execute Distribution
             Now</button>
         </div>
       </div>
@@ -3190,7 +3212,7 @@
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 
 </html>

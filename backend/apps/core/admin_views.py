@@ -773,18 +773,23 @@ class AdminPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdminTriggerROIEngineView(APIView):
     """
     POST /api/v1/admin-panel/actions/trigger-roi/
-    Manually calculates and distributes weekly ROI to all ACTIVE investments.
+    Body (optional): { "mode": "full_week" | "by_day" }
+    Manually calculates and distributes ROI to all ACTIVE investments.
     """
     permission_classes = [IsSuperAdminOnly]
 
     def post(self, request):
+        mode = request.data.get('mode', 'full_week')
+        if mode not in ['full_week', 'by_day']:
+            mode = 'full_week'
+
         active_investments = Investment.objects.filter(status=Investment.Status.ACTIVE).select_related('user', 'plan')
         total_investments_processed = 0
         total_roi_distributed = Decimal('0.00')
 
         with db_transaction.atomic():
             for inv in active_investments:
-                roi_paid = distribute_roi_for_investment(inv)
+                roi_paid = distribute_roi_for_investment(inv, mode=mode)
                 if roi_paid > Decimal('0.00'):
                     total_roi_distributed += roi_paid
                     total_investments_processed += 1
@@ -794,13 +799,16 @@ class AdminTriggerROIEngineView(APIView):
                 action=AuditLog.Action.ROI_DISTRIBUTED,
                 ip_address=request.META.get('REMOTE_ADDR'),
                 new_value={
+                    'mode': mode,
                     'investments_processed': total_investments_processed,
                     'total_roi_distributed': str(total_roi_distributed),
                 }
             )
 
+        mode_label = "Daily (prorated)" if mode == "by_day" else "Full Week"
         return Response({
-            'detail': f"Weekly ROI distribution executed successfully.",
+            'detail': f"{mode_label} ROI distribution executed successfully.",
+            'mode': mode,
             'investments_processed': total_investments_processed,
             'total_roi_distributed': float(total_roi_distributed),
         })

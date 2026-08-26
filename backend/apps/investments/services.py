@@ -305,12 +305,14 @@ def _get_profit_days(start_date: date, end_date: date) -> int:
 
 
 @transaction.atomic
-def distribute_roi_for_investment(investment: Investment) -> Decimal:
+def distribute_roi_for_investment(investment: Investment, mode: str = 'by_day') -> Decimal:
     """
-    Calculate and credit the prorated weekly ROI for a single ACTIVE investment.
+    Calculate and credit ROI for a single ACTIVE investment.
 
-    - The investor's ROI is calculated based on trading_capital.
-    - ROI is prorated based on profit days (Monday to Friday).
+    Modes:
+      - 'by_day' (default): prorated by profit days (Monday to Friday) between last_roi_date/start_date and today.
+      - 'full_week': credits 1 full week's ROI (investment.plan.weekly_roi_rate) regardless of elapsed days.
+
     - ROI is credited to investor's spendable wallet balance (withdrawable).
     - investment.total_credited tracks cumulative ROI paid out toward max_return.
     - Marks the investment COMPLETED if max_return is reached.
@@ -322,25 +324,32 @@ def distribute_roi_for_investment(investment: Investment) -> Decimal:
     if investment.status != Investment.Status.ACTIVE:
         return Decimal('0.00')
 
-    # Determine date range for ROI calculation
-    current_date = timezone.now().date()
-    if investment.last_roi_date:
-        calc_start = investment.last_roi_date + timedelta(days=1)
-    else:
-        calc_start = investment.start_date
+    if mode == 'by_day':
+        # Determine date range for ROI calculation
+        current_date = timezone.now().date()
+        if investment.last_roi_date:
+            calc_start = investment.last_roi_date + timedelta(days=1)
+        else:
+            calc_start = investment.start_date
+            
+        profit_days = _get_profit_days(calc_start, current_date)
         
-    profit_days = _get_profit_days(calc_start, current_date)
-    
-    if profit_days <= 0:
-        return Decimal('0.00')
+        if profit_days <= 0:
+            return Decimal('0.00')
 
-    # Daily ROI rate = Weekly ROI rate / 5 (profit days)
-    daily_roi_rate = (investment.plan.weekly_roi_rate / Decimal('5')) / Decimal('100')
-    
-    # Calculate prorated ROI based on trading capital
-    calculated_roi = (investment.trading_capital * daily_roi_rate * Decimal(profit_days)).quantize(
-        Decimal('0.01'), rounding=ROUND_DOWN
-    )
+        # Daily ROI rate = Weekly ROI rate / 5 (profit days)
+        daily_roi_rate = (investment.plan.weekly_roi_rate / Decimal('5')) / Decimal('100')
+        
+        # Calculate prorated ROI based on trading capital
+        calculated_roi = (investment.trading_capital * daily_roi_rate * Decimal(profit_days)).quantize(
+            Decimal('0.01'), rounding=ROUND_DOWN
+        )
+    else:
+        # Full week ROI calculation regardless of elapsed days
+        weekly_roi_rate = investment.plan.weekly_roi_rate / Decimal('100')
+        calculated_roi = (investment.trading_capital * weekly_roi_rate).quantize(
+            Decimal('0.01'), rounding=ROUND_DOWN
+        )
 
     # Cap at remaining_return
     remaining = investment.remaining_return
@@ -354,7 +363,7 @@ def distribute_roi_for_investment(investment: Investment) -> Decimal:
         user=investment.user,
         amount=roi_amount,
         category=WalletTransaction.Category.ROI,
-        description=f'Weekly ROI from investment #{str(investment.id)[:8]}',
+        description=f'{"Daily" if mode == "by_day" else "Weekly"} ROI from investment #{str(investment.id)[:8]}',
         reference_id=str(investment.id),
     )
 

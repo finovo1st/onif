@@ -69,16 +69,16 @@ def distribute_direct_income_task(self, investment_id: str):
 @shared_task(bind=True, max_retries=3, default_retry_delay=300)
 def distribute_weekly_roi_task(self):
     """
-    Celery beat task: distribute weekly ROI for all ACTIVE investments.
+    Celery beat task: distribute ROI for all ACTIVE investments using daywise calculation.
     Scheduled every Saturday (configured in CELERY_BEAT_SCHEDULE).
 
     For each active investment:
-    1. Calculate weekly ROI based on plan.weekly_roi_rate
+    1. Calculate prorated ROI based on elapsed Monday-to-Friday profit days (weekly_roi_rate / 5 * profit_days)
     2. Credit investor's wallet (capped at remaining_return)
-    3. Distribute 75% ROI commissions up 5 levels
+    3. Distribute 75% ROI commissions up 5 levels to oldest active plans
     4. Mark investment COMPLETED if max_return is reached
     """
-    logger.info(f"[ROI Engine] Starting weekly ROI distribution at {timezone.now()}")
+    logger.info(f"[ROI Engine] Starting weekly ROI distribution (daywise) at {timezone.now()}")
 
     active_investments = Investment.objects.filter(
         status=Investment.Status.ACTIVE
@@ -90,7 +90,7 @@ def distribute_weekly_roi_task(self):
 
     for investment in active_investments:
         try:
-            roi_credited = distribute_roi_for_investment(investment)
+            roi_credited = distribute_roi_for_investment(investment, mode='by_day')
 
             if roi_credited > 0:
                 total += 1

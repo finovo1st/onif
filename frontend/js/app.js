@@ -3335,15 +3335,72 @@ async function handleAdminSavePlan(e) {
   }
 }
 
-// Trigger Weekly ROI Distribution
+// Trigger ROI Distribution Modal & Engine
+function openTriggerROIModal(mode = 'full_week') {
+  const isFullWeek = mode === 'full_week';
+  const modeInput = document.getElementById('adm-roi-mode');
+  if (modeInput) modeInput.value = isFullWeek ? 'full_week' : 'by_day';
+
+  const titleEl = document.getElementById('adm-roi-modal-title');
+  if (titleEl) {
+    titleEl.innerText = isFullWeek ? 'Trigger ROI (Full Week)' : 'Trigger ROI (By Day Prorated)';
+  }
+
+  const badgeEl = document.getElementById('adm-roi-mode-badge-text');
+  if (badgeEl) {
+    badgeEl.innerText = isFullWeek ? 'Full Week Mode (100% Weekly Rate)' : 'Daily Mode (Prorated Mon–Fri)';
+    badgeEl.className = `badge ${isFullWeek ? 'badge-approved' : 'badge-pending'}`;
+  }
+
+  const descEl = document.getElementById('adm-roi-modal-desc');
+  if (descEl) {
+    descEl.innerHTML = isFullWeek
+      ? 'This will execute <b>1 Full Week ROI (100% of weekly rate)</b> for all active investments regardless of start date or elapsed days:'
+      : 'This will execute <b>Daily Prorated ROI (weekly rate ÷ 5 per weekday)</b> based on elapsed weekdays (Mon–Fri) since plan start or last ROI date:';
+  }
+
+  const bulletsEl = document.getElementById('adm-roi-modal-bullets');
+  if (bulletsEl) {
+    bulletsEl.innerHTML = isFullWeek
+      ? `
+        <li>Credits full 100% weekly ROI return directly to each investor's spendable wallet balance</li>
+        <li>Ignores weekday counts — triggers immediate full weekly cycle for all active plans</li>
+        <li>Fills up investor plans toward their maximum return cap</li>
+        <li>Distributes 75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
+        <li>Completes plans that reach their maximum return</li>
+      `
+      : `
+        <li>Calculates profit days (Monday to Friday) between last ROI date / start date and today</li>
+        <li>Credits (Weekly Rate ÷ 5 × profit days) to each investor's spendable wallet balance</li>
+        <li>Fills up investor plans toward their maximum return cap</li>
+        <li>Distributes 75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
+        <li>Completes plans that reach their maximum return</li>
+      `;
+  }
+
+  openModal('modal-admin-trigger-roi');
+}
+
 async function submitTriggerROIEngine() {
+  const mode = document.getElementById('adm-roi-mode')?.value || 'full_week';
+  const btn = document.getElementById('adm-roi-modal-submit-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Executing ROI Engine…';
+  }
+
   try {
-    const res = await apiCall('/admin-panel/actions/trigger-roi/', 'POST', {});
-    showToast(`ROI Run Complete: ${res.investments_processed} investment(s) processed. Total $${Number(res.total_roi_distributed).toFixed(2)} distributed.`);
+    const res = await apiCall('/admin-panel/actions/trigger-roi/', 'POST', { mode });
+    showToast(`${res.detail || 'ROI Run Complete'}: ${res.investments_processed} investment(s) processed. Total $${Number(res.total_roi_distributed).toFixed(2)} distributed.`);
     closeModal('modal-admin-trigger-roi');
     await loadAdminData();
   } catch (err) {
     showToast(err.message, true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Execute Distribution Now';
+    }
   }
 }
 

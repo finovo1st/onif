@@ -388,9 +388,19 @@ def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> 
     Distribute ROI income commissions up the sponsor chain (5 levels, 75%).
 
     Each sponsor's commission fills their OLDEST active investment plan.
+    Any undistributed / unclaimed commission across the 5 levels is credited to the Company Wallet.
     """
     rate = _get_setting('ROI_INCOME_RATE', '75.00') / Decimal('100')
     max_levels = int(PlatformSettings.get('MAX_REFERRAL_LEVELS', '5'))
+
+    commission_per_level = (roi_amount * rate).quantize(
+        Decimal('0.01'), rounding=ROUND_DOWN
+    )
+    if commission_per_level <= Decimal('0.00'):
+        return
+
+    total_potential_commission = commission_per_level * Decimal(max_levels)
+    total_distributed = Decimal('0.00')
 
     current_user = investment.user
     for level in range(1, max_levels + 1):
@@ -405,23 +415,17 @@ def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> 
             current_user = sponsor
             continue
 
-        commission_amount = (roi_amount * rate).quantize(
-            Decimal('0.01'), rounding=ROUND_DOWN
-        )
-        if commission_amount <= Decimal('0.00'):
-            current_user = sponsor
-            continue
-
         # Credit sponsor's OLDEST active plan
         credited_amount = credit_oldest_active_plan(
             user=sponsor,
-            amount=commission_amount,
+            amount=commission_per_level,
             category=WalletTransaction.Category.REFERRAL_INCOME,
             description=f'Level-{level} ROI commission from {investment.user.email}',
             reference_id=str(investment.id),
         )
 
         if credited_amount > Decimal('0.00'):
+            total_distributed += credited_amount
             ReferralCommission.objects.create(
                 user=sponsor,
                 from_user=investment.user,
@@ -432,3 +436,15 @@ def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> 
                 is_paid=True,
             )
         current_user = sponsor
+
+    company_remainder = total_potential_commission - total_distributed
+    if company_remainder > Decimal('0.00'):
+        from apps.wallet.services import credit_company_wallet
+        from apps.wallet.models import CompanyWalletTransaction
+        user_account_info = f"{investment.user.email} (Account ID: #{str(investment.user.id)[:8]})"
+        credit_company_wallet(
+            amount=company_remainder,
+            category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER,
+            description=f"Undistributed ROI commission remainder from investment #{str(investment.id)[:8]} ({user_account_info})",
+            reference_id=str(investment.id),
+        )

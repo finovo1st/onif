@@ -415,3 +415,24 @@ class InvestmentViewTests(APITestCase):
         self.assertEqual(response.data['mode'], 'by_day')
         self.assertEqual(response.data['total_roi_distributed'], 4.0)
 
+    def test_undistributed_roi_commissions_credited_to_company_wallet(self):
+        from apps.wallet.models import CompanyWallet, CompanyWalletTransaction
+        # User has no sponsor -> all 5 levels (5 * 75% of $10 ROI = 5 * $7.50 = $37.50) go to company wallet
+        company_wallet = CompanyWallet.get_wallet()
+        initial_balance = company_wallet.balance
+
+        inv = make_active_investment(self.user, self.plan, Decimal('100.00'))
+        distribute_roi_for_investment(inv, mode='full_week')
+
+        company_wallet.refresh_from_db()
+        expected_roi_remainder = Decimal('37.50') # 5 * (10.00 * 0.75)
+        self.assertEqual(company_wallet.balance, initial_balance + expected_roi_remainder)
+        self.assertTrue(
+            CompanyWalletTransaction.objects.filter(
+                wallet=company_wallet,
+                category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER,
+                amount=expected_roi_remainder
+            ).exists()
+        )
+
+

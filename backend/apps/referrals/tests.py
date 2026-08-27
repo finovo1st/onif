@@ -62,3 +62,31 @@ class TeamViewTests(APITestCase):
         self.assertEqual(results[0]['email'], 'l2@example.com')
         self.assertEqual(results[0]['level'], 2)
         self.assertEqual(results[0]['sponsor_email'], 'l1@example.com')
+
+
+class LevelStatsViewTests(APITestCase):
+    def setUp(self):
+        self.top_user = User.objects.create_user(email='topstats@example.com', username='topstats', password='Pass123!')
+        self.client.force_authenticate(user=self.top_user)
+
+    def test_level_stats_separate_direct_and_roi_thresholds(self):
+        url = reverse('referral_levels')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
+        self.assertEqual(len(data), 5)
+
+        # Expected direct requirements: 0, 2, 4, 6, 8
+        # Expected ROI requirements: 2, 4, 6, 8, 10
+        expected_dirs = [0, 2, 4, 6, 8]
+        expected_rois = [2, 4, 6, 8, 10]
+
+        for i, item in enumerate(data):
+            self.assertEqual(item['level'], i + 1)
+            self.assertEqual(item['dir_req'], expected_dirs[i])
+            self.assertEqual(item['roi_req'], expected_rois[i])
+
+        # Top user has 0 active directs: Level 1 direct is unlocked, ROI is locked
+        self.assertTrue(data[0]['is_direct_unlocked'])
+        self.assertFalse(data[0]['is_roi_unlocked'])
+

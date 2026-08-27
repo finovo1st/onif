@@ -19,7 +19,19 @@ DEFAULT_SETTINGS = [
     # Income rates (percentage)
     ('DIRECT_INCOME_RATE',       '2.00',    'Direct income rate per referral level (%)'),
     ('ROI_INCOME_RATE',          '75.00',   'ROI income rate per referral level (%)'),
-    # Referral levels
+    # Referral levels - Direct Income (0, 2, 4, 6, 8)
+    ('DIR_LEVEL1_UNLOCK_DIRECTS', '0',       'Active direct members required to unlock Level 1 Direct Income'),
+    ('DIR_LEVEL2_UNLOCK_DIRECTS', '2',       'Active direct members required to unlock Level 2 Direct Income'),
+    ('DIR_LEVEL3_UNLOCK_DIRECTS', '4',       'Active direct members required to unlock Level 3 Direct Income'),
+    ('DIR_LEVEL4_UNLOCK_DIRECTS', '6',       'Active direct members required to unlock Level 4 Direct Income'),
+    ('DIR_LEVEL5_UNLOCK_DIRECTS', '8',       'Active direct members required to unlock Level 5 Direct Income'),
+    # Referral levels - ROI Referral Income (2, 4, 6, 8, 10)
+    ('ROI_LEVEL1_UNLOCK_DIRECTS', '2',       'Active direct members required to unlock Level 1 ROI Referral Income'),
+    ('ROI_LEVEL2_UNLOCK_DIRECTS', '4',       'Active direct members required to unlock Level 2 ROI Referral Income'),
+    ('ROI_LEVEL3_UNLOCK_DIRECTS', '6',       'Active direct members required to unlock Level 3 ROI Referral Income'),
+    ('ROI_LEVEL4_UNLOCK_DIRECTS', '8',       'Active direct members required to unlock Level 4 ROI Referral Income'),
+    ('ROI_LEVEL5_UNLOCK_DIRECTS', '10',      'Active direct members required to unlock Level 5 ROI Referral Income'),
+    # Legacy fallback keys
     ('MAX_REFERRAL_LEVELS',      '5',       'Maximum referral income depth levels'),
     ('LEVEL1_UNLOCK_DIRECTS',    '0',       'Active direct members required to unlock Level 1 income'),
     ('LEVEL2_UNLOCK_DIRECTS',    '2',       'Active direct members required to unlock Level 2 income'),

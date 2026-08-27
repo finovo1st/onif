@@ -111,14 +111,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url', 'kyc_submitted_at',
             'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified', 'is_2fa_enabled',
-            'referral_code', 'parent_email', 'active_level',
+            'referral_code', 'parent_email', 'active_level', 'active_direct_level', 'active_roi_level',
             'date_joined', 'created_at',
         ]
         read_only_fields = [
             'id', 'email', 'role', 'is_staff', 'is_superuser', 'kyc_status',
             'kyc_document_type', 'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url',
             'kyc_submitted_at', 'kyc_reviewed_at', 'kyc_rejection_reason',
-            'is_email_verified', 'referral_code', 'active_level',
+            'is_email_verified', 'referral_code', 'active_level', 'active_direct_level', 'active_roi_level',
             'date_joined', 'created_at', 'parent_email',
         ]
 

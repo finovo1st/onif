@@ -36,7 +36,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url', 'kyc_submitted_at',
             'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified',
-            'referral_code', 'parent_email', 'active_level',
+            'referral_code', 'parent_email', 'active_level', 'active_roi_level',
             'wallet_balance', 'total_invested', 'total_withdrawn', 'active_investments_count',
             'total_roi_earned', 'total_direct_income', 'total_referral_income',
             'team_total_members', 'team_total_investment',
@@ -122,6 +122,7 @@ class AdminInvestmentSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     user_active_level = serializers.IntegerField(source='user.active_level', read_only=True)
+    user_active_roi_level = serializers.IntegerField(source='user.active_roi_level', read_only=True)
     user_parent_email = serializers.SerializerMethodField()
     plan_name = serializers.CharField(source='plan.name', read_only=True)
     plan_weekly_roi_rate = serializers.FloatField(source='plan.weekly_roi_rate', read_only=True)
@@ -136,7 +137,7 @@ class AdminInvestmentSerializer(serializers.ModelSerializer):
         model = Investment
         fields = [
             'id', 'user_id', 'user_email', 'user_username', 'user_full_name',
-            'user_active_level', 'user_parent_email',
+            'user_active_level', 'user_active_roi_level', 'user_parent_email',
             'plan_id', 'plan_name', 'plan_weekly_roi_rate', 'plan_duration_weeks',
             'cost', 'trading_capital', 'amount', 'max_return', 'total_credited', 'remaining_return', 'progress_percent',
             'status', 'deposit_network', 'deposit_txn_hash', 'deposit_sender_address',

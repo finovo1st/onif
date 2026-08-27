@@ -480,7 +480,7 @@ class AdminUserTeamStatsView(APIView):
 
         for level in range(1, 6):
             if current_parents:
-                level_users = list(User.objects.filter(parent_id__in=current_parents).values('id', 'email', 'first_name', 'last_name', 'username', 'created_at', 'active_level'))
+                level_users = list(User.objects.filter(parent_id__in=current_parents).values('id', 'email', 'first_name', 'last_name', 'username', 'created_at', 'active_level', 'active_roi_level'))
                 level_user_ids = [u['id'] for u in level_users]
             else:
                 level_users = []
@@ -526,6 +526,7 @@ class AdminUserTeamStatsView(APIView):
                     'full_name': f"{u['first_name']} {u['last_name']}".strip() or u['email'],
                     'created_at': u['created_at'].isoformat() if u['created_at'] else None,
                     'active_level': u['active_level'],
+                    'active_roi_level': u.get('active_roi_level', 0),
                 } for u in level_users[:25]]
             })
 
@@ -537,6 +538,8 @@ class AdminUserTeamStatsView(APIView):
                 'email': user.email,
                 'full_name': user.full_name,
                 'active_level': user.active_level,
+                'active_direct_level': user.active_level,
+                'active_roi_level': getattr(user, 'active_roi_level', 0),
                 'referral_code': user.referral_code,
             },
             'summary': {
@@ -725,11 +728,11 @@ class AdminPlatformSettingUpdateView(APIView):
         setting.save(update_fields=['value', 'updated_by', 'updated_at'])
 
         # Recalculate user active levels if unlock thresholds are changed
-        if key.startswith('LEVEL') and key.endswith('UNLOCK_DIRECTS'):
+        if (key.startswith('LEVEL') or key.startswith('DIR_LEVEL') or key.startswith('ROI_LEVEL')) and key.endswith('UNLOCK_DIRECTS'):
             from django.contrib.auth import get_user_model
             User = get_user_model()
-            for user in User.objects.all():
-                update_user_active_level(user)
+            for u in User.objects.all():
+                update_user_active_level(u)
 
         return Response({
             'detail': f"Setting '{key}' updated from '{old_val}' to '{setting.value}'.",

@@ -163,12 +163,47 @@ class ROIDistributionTests(TestCase):
         roi = distribute_roi_for_investment(self.investment)
         self.assertEqual(roi, Decimal('0.00'))
 
+    def test_single_referral_earns_direct_income_but_roi_is_blocked_until_two_directs(self):
+        # Sponsor has 1 active investment
+        sponsor = make_user('single_sponsor@test.com', 'single_sponsor')
+        sponsor_inv = make_active_investment(sponsor, self.plan)
+
+        # 1. Sponsor refers 1 user (investor)
+        self.investor.parent = sponsor
+        self.investor.save(update_fields=['parent'])
+
+        # Direct income IS earned on 1 referral (Level 1 requires 0 directs)
+        dir_commissions = distribute_direct_income(self.investment)
+        self.assertEqual(len(dir_commissions), 1)
+        self.assertEqual(dir_commissions[0].commission_type, ReferralCommission.CommissionType.DIRECT)
+        self.assertEqual(dir_commissions[0].user, sponsor)
+
+        # Weekly ROI commission is BLOCKED because sponsor has only 1 direct (Level 1 ROI requires 2 directs)
+        distribute_roi_for_investment(self.investment, mode='full_week')
+        roi_comm = ReferralCommission.objects.filter(user=sponsor, commission_type=ReferralCommission.CommissionType.ROI).first()
+        self.assertIsNone(roi_comm)  # Blocked!
+
+        # 2. Sponsor refers a 2nd user with active investment
+        child2 = make_user('single_child2@test.com', 'single_child2', parent=sponsor)
+        make_active_investment(child2, self.plan)
+
+        # Sponsor now has 2 active directs -> Level 1 ROI is now UNLOCKED!
+        # Reset investment total_credited so it can earn ROI again
+        self.investment.total_credited = Decimal('0.00')
+        self.investment.status = Investment.Status.ACTIVE
+        self.investment.save()
+
+        distribute_roi_for_investment(self.investment, mode='full_week')
+        roi_comm_unlocked = ReferralCommission.objects.filter(user=sponsor, commission_type=ReferralCommission.CommissionType.ROI).first()
+        self.assertIsNotNone(roi_comm_unlocked)  # Unlocked!
+        self.assertEqual(roi_comm_unlocked.amount, Decimal('9.00'))  # 75% of $12.00 ROI
+
     @patch('apps.investments.services._get_profit_days')
     def test_roi_commission_distributed_to_eligible_sponsor_at_75_percent(self, mock_profit_days):
         mock_profit_days.return_value = 5
         # Create sponsor with an active plan and 2 active directs (meeting Level 1)
         sponsor = make_user('roisponsor@test.com', 'roisponsor')
-        make_active_investment(sponsor, self.plan)
+        sponsor_inv = make_active_investment(sponsor, self.plan)
 
         # Set investor's parent to sponsor
         self.investor.parent = sponsor
@@ -280,6 +315,8 @@ class ActiveLevelTests(TestCase):
     def test_active_level_one_with_no_directs(self):
         level = update_user_active_level(self.sponsor)
         self.assertEqual(level, 1)
+        self.assertEqual(self.sponsor.active_level, 1)
+        self.assertEqual(self.sponsor.active_roi_level, 0)
 
     def test_active_level_two_with_two_active_directs(self):
         for i in range(2):
@@ -287,6 +324,8 @@ class ActiveLevelTests(TestCase):
             make_active_investment(child, self.plan)
         level = update_user_active_level(self.sponsor)
         self.assertEqual(level, 2)
+        self.assertEqual(self.sponsor.active_level, 2)
+        self.assertEqual(self.sponsor.active_roi_level, 1)
 
 
 class InvestmentTaskTests(TestCase):

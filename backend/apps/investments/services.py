@@ -29,16 +29,35 @@ def _get_setting(key: str, default: str) -> Decimal:
     return Decimal(PlatformSettings.get(key, default))
 
 
-def _level_unlock_threshold(level: int) -> int:
-    """Return the number of active directs needed to unlock income at this level."""
+def _dir_level_unlock_threshold(level: int) -> int:
+    """Return the number of active directs needed to unlock Direct Income at this level (0, 2, 4, 6, 8)."""
     mapping = {
-        1: int(PlatformSettings.get('LEVEL1_UNLOCK_DIRECTS', '0')),
-        2: int(PlatformSettings.get('LEVEL2_UNLOCK_DIRECTS', '2')),
-        3: int(PlatformSettings.get('LEVEL3_UNLOCK_DIRECTS', '4')),
-        4: int(PlatformSettings.get('LEVEL4_UNLOCK_DIRECTS', '6')),
-        5: int(PlatformSettings.get('LEVEL5_UNLOCK_DIRECTS', '8')),
+        1: int(PlatformSettings.get('DIR_LEVEL1_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL1_UNLOCK_DIRECTS', '0'))),
+        2: int(PlatformSettings.get('DIR_LEVEL2_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL2_UNLOCK_DIRECTS', '2'))),
+        3: int(PlatformSettings.get('DIR_LEVEL3_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL3_UNLOCK_DIRECTS', '4'))),
+        4: int(PlatformSettings.get('DIR_LEVEL4_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL4_UNLOCK_DIRECTS', '6'))),
+        5: int(PlatformSettings.get('DIR_LEVEL5_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL5_UNLOCK_DIRECTS', '8'))),
     }
     return mapping.get(level, 999)
+
+
+def _roi_level_unlock_threshold(level: int) -> int:
+    """Return the number of active directs needed to unlock ROI Referral Income at this level (2, 4, 6, 8, 10)."""
+    mapping = {
+        1: int(PlatformSettings.get('ROI_LEVEL1_UNLOCK_DIRECTS', '2')),
+        2: int(PlatformSettings.get('ROI_LEVEL2_UNLOCK_DIRECTS', '4')),
+        3: int(PlatformSettings.get('ROI_LEVEL3_UNLOCK_DIRECTS', '6')),
+        4: int(PlatformSettings.get('ROI_LEVEL4_UNLOCK_DIRECTS', '8')),
+        5: int(PlatformSettings.get('ROI_LEVEL5_UNLOCK_DIRECTS', '10')),
+    }
+    return mapping.get(level, 999)
+
+
+def _level_unlock_threshold(level: int, income_type: str = 'dir') -> int:
+    """Legacy helper: return active directs needed for direct or roi income."""
+    if income_type == 'roi':
+        return _roi_level_unlock_threshold(level)
+    return _dir_level_unlock_threshold(level)
 
 
 def _count_active_directs(user) -> int:
@@ -50,20 +69,38 @@ def _count_active_directs(user) -> int:
 
 def update_user_active_level(user) -> int:
     """
-    Recalculate and persist the user's active_level.
-    Returns the new level (0–5).
+    Recalculate and persist the user's active_level (Direct: 0,2,4,6,8) and active_roi_level (ROI: 2,4,6,8,10).
+    Returns the new active direct level (0–5).
     """
     active_directs = _count_active_directs(user)
-    new_level = 0
+    new_dir_level = 0
     for lvl in range(1, 6):
-        if active_directs >= _level_unlock_threshold(lvl):
-            new_level = lvl
+        if active_directs >= _dir_level_unlock_threshold(lvl):
+            new_dir_level = lvl
         else:
             break
-    if user.active_level != new_level:
-        User.objects.filter(pk=user.pk).update(active_level=new_level)
-        user.active_level = new_level
-    return new_level
+
+    new_roi_level = 0
+    for lvl in range(1, 6):
+        if active_directs >= _roi_level_unlock_threshold(lvl):
+            new_roi_level = lvl
+        else:
+            break
+
+    update_fields = []
+    if user.active_level != new_dir_level:
+        user.active_level = new_dir_level
+        update_fields.append('active_level')
+    if getattr(user, 'active_roi_level', None) != new_roi_level:
+        user.active_roi_level = new_roi_level
+        update_fields.append('active_roi_level')
+
+    if update_fields:
+        User.objects.filter(pk=user.pk).update(
+            active_level=new_dir_level,
+            active_roi_level=new_roi_level
+        )
+    return new_dir_level
 
 
 @transaction.atomic
@@ -239,9 +276,9 @@ def distribute_direct_income(investment: Investment) -> list:
         if sponsor is None:
             break
 
-        # Check level unlock
+        # Check level unlock (Direct: 0, 2, 4, 6, 8 directs)
         active_directs = _count_active_directs(sponsor)
-        required = _level_unlock_threshold(level)
+        required = _dir_level_unlock_threshold(level)
         if active_directs < required:
             current_user = sponsor
             continue
@@ -413,9 +450,9 @@ def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> 
         if sponsor is None:
             break
 
-        # Level unlock check
+        # Level unlock check (ROI: 2, 4, 6, 8, 10 directs)
         active_directs = _count_active_directs(sponsor)
-        required = _level_unlock_threshold(level)
+        required = _roi_level_unlock_threshold(level)
         if active_directs < required:
             current_user = sponsor
             continue

@@ -502,7 +502,7 @@ def run_seed():
         directs_count = leader.direct_children.count()
         active_directs = leader.direct_children.filter(investments__status=Investment.Status.ACTIVE).distinct().count()
         print(f"\n  👤 {leader.full_name} ({leader.email})")
-        print(f"     Rank: Level {leader.active_level} Sponsor | Directs: {active_directs} Active / {directs_count} Total")
+        print(f"     Rank: Direct Lvl {leader.active_level} / ROI Lvl {getattr(leader, 'active_roi_level', 0)} Sponsor | Directs: {active_directs} Active / {directs_count} Total")
         print(f"     Direct Earnings: ${wallet.total_direct_income:,.2f} | Available Balance: ${wallet.balance:,.2f}")
         print(f"     Own Capital: ${wallet.total_invested:,.2f} | Downline Team Volume: ${wallet.team_total_investment:,.2f}")
 

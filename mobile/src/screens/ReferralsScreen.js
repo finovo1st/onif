@@ -137,13 +137,14 @@ export default function ReferralsScreen() {
     Alert.alert('Copied to Clipboard', `${label}: ${text}`);
   };
 
-  const currentLevel = summary.active_level || user?.active_level || 2;
+  const currentDirLevel = summary.active_level || user?.active_level || 0;
+  const currentRoiLevel = summary.active_roi_level || user?.active_roi_level || 0;
   const levels = [
-    { lvl: 1, req: 0, type: 'Direct Income' },
-    { lvl: 2, req: 2, type: 'ROI Income' },
-    { lvl: 3, req: 4, type: 'ROI Income' },
-    { lvl: 4, req: 6, type: 'ROI Income' },
-    { lvl: 5, req: 8, type: 'ROI Income' },
+    { lvl: 1, dirReq: 0, roiReq: 2 },
+    { lvl: 2, dirReq: 2, roiReq: 4 },
+    { lvl: 3, dirReq: 4, roiReq: 6 },
+    { lvl: 4, dirReq: 6, roiReq: 8 },
+    { lvl: 5, dirReq: 8, roiReq: 10 },
   ];
 
   const filteredTeam = team.filter((m) => {
@@ -168,7 +169,7 @@ export default function ReferralsScreen() {
         <Text style={styles.eyebrow}>AFFILIATE &amp; PARTNERSHIP DESK</Text>
         <Text style={styles.screenTitle}>Referral Network (5 Levels)</Text>
         <Text style={styles.screenSubtitle}>
-          Earn direct sales commissions and up to 5 tiers of weekly downline ROI yield sharing.
+          Earn direct sales commissions (0, 2, 4, 6, 8 directs) and up to 5 tiers of weekly downline ROI yield (2, 4, 6, 8, 10 directs).
         </Text>
       </View>
 
@@ -216,31 +217,51 @@ export default function ReferralsScreen() {
         </Text>
 
         {levels.map((item) => {
-          const isUnlocked = currentLevel >= item.lvl;
+          const isDirUnlocked = currentDirLevel >= item.lvl;
+          const isRoiUnlocked = currentRoiLevel >= item.lvl;
           return (
             <View key={item.lvl} style={styles.levelRow}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13 }}>
-                  Tier Level {item.lvl} ({item.type})
+                  Tier Level {item.lvl}
                 </Text>
                 <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
-                  Requires {item.req} Active Directs
+                  Direct: {item.dirReq} Directs • ROI: {item.roiReq} Directs
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.tierBadge,
-                  isUnlocked ? styles.tierBadgeUnlocked : styles.tierBadgeLocked,
-                ]}
-              >
-                <Text
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <View
                   style={[
-                    styles.tierBadgeText,
-                    { color: isUnlocked ? colors.accentGreenSoft : colors.textDim },
+                    styles.tierBadge,
+                    isDirUnlocked ? styles.tierBadgeUnlocked : styles.tierBadgeLocked,
+                    { paddingHorizontal: 6, paddingVertical: 3 }
                   ]}
                 >
-                  {isUnlocked ? 'UNLOCKED' : 'LOCKED'}
-                </Text>
+                  <Text
+                    style={[
+                      styles.tierBadgeText,
+                      { color: isDirUnlocked ? colors.accentGreenSoft : colors.textDim, fontSize: 10 },
+                    ]}
+                  >
+                    DIR {isDirUnlocked ? 'UNLOCKED' : 'LOCKED'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.tierBadge,
+                    isRoiUnlocked ? styles.tierBadgeUnlocked : styles.tierBadgeLocked,
+                    { paddingHorizontal: 6, paddingVertical: 3 }
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.tierBadgeText,
+                      { color: isRoiUnlocked ? colors.goldSoft : colors.textDim, fontSize: 10 },
+                    ]}
+                  >
+                    ROI {isRoiUnlocked ? 'UNLOCKED' : 'LOCKED'}
+                  </Text>
+                </View>
               </View>
             </View>
           );

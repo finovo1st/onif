@@ -138,6 +138,13 @@ class User(AbstractUser):
     active_level = models.PositiveIntegerField(
         default=0, verbose_name=_('Active Direct Level')
     )
+    active_roi_level = models.PositiveIntegerField(
+        default=0, verbose_name=_('Active ROI Level')
+    )
+
+    @property
+    def active_direct_level(self) -> int:
+        return self.active_level
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

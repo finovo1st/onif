@@ -910,28 +910,39 @@ function renderReferralView() {
   // Level Unlock Progress List
   const container = document.getElementById('referral-levels-list');
   container.innerHTML = '';
-  const currentLvl = state.user.active_level || 0;
+  const currentDirLvl = state.user.active_level || 0;
+  const currentRoiLvl = state.user.active_roi_level || 0;
   
   const levelsData = (state.levelStats && state.levelStats.length > 0) ? state.levelStats : [
-    { level: 1, req: 2, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
-    { level: 2, req: 4, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
-    { level: 3, req: 6, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
-    { level: 4, req: 8, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
-    { level: 5, req: 10, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 }
+    { level: 1, dir_req: 0, roi_req: 2, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 2, dir_req: 2, roi_req: 4, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 3, dir_req: 4, roi_req: 6, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 4, dir_req: 6, roi_req: 8, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 },
+    { level: 5, dir_req: 8, roi_req: 10, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 }
   ];
 
   levelsData.forEach(stats => {
-    const isUnlocked = currentLvl >= stats.level;
-    const req = stats.req !== undefined ? stats.req : (stats.level * 2);
+    const dirReq = stats.dir_req !== undefined ? stats.dir_req : (stats.level === 1 ? 0 : (stats.level - 1) * 2);
+    const roiReq = stats.roi_req !== undefined ? stats.roi_req : (stats.level * 2);
+
+    const isDirUnlocked = stats.is_direct_unlocked !== undefined ? stats.is_direct_unlocked : (currentDirLvl >= stats.level);
+    const isRoiUnlocked = stats.is_roi_unlocked !== undefined ? stats.is_roi_unlocked : (currentRoiLvl >= stats.level);
 
     container.innerHTML += `
-      <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); margin-bottom: 12px; padding: 12px 16px; border: 1px solid var(--line-light);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); margin-bottom: 12px; padding: 14px 16px; border: 1px solid var(--line-light);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
           <div>
-            <b>Level ${stats.level}</b>
-            <div style="font-size: 12px; color: var(--text-muted);">Requires ${req} Active Direct Referrals</div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--text);">Level ${stats.level}</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">2.00% Direct Sponsor Commission • 75.00% ROI Referral Yield</div>
           </div>
-          <span class="badge ${isUnlocked ? 'badge-approved' : 'badge-pending'}">${isUnlocked ? 'UNLOCKED' : 'LOCKED'}</span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="badge ${isDirUnlocked ? 'badge-approved' : 'badge-pending'}" style="font-size: 11px; padding: 4px 8px;" title="Direct Income requires ${dirReq} active directs">
+              Direct: ${dirReq} Directs ${isDirUnlocked ? 'UNLOCKED' : 'LOCKED'}
+            </span>
+            <span class="badge ${isRoiUnlocked ? 'badge-approved' : 'badge-pending'}" style="font-size: 11px; padding: 4px 8px;" title="ROI Referral Income requires ${roiReq} active directs">
+              ROI: ${roiReq} Directs ${isRoiUnlocked ? 'UNLOCKED' : 'LOCKED'}
+            </span>
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; border-top: 1px solid var(--line-light); padding-top: 12px;">
           <div>
@@ -3081,7 +3092,7 @@ async function openAdminUserTeamModal(userId) {
     const levels = data.levels || [];
 
     document.getElementById('adm-team-modal-name').innerText = `Team Network: ${u.full_name || u.email}`;
-    document.getElementById('adm-team-modal-sub').innerText = `${u.email} • Ref Code: ${u.referral_code || 'N/A'} • Active Level: ${u.active_level}`;
+    document.getElementById('adm-team-modal-sub').innerText = `${u.email} • Ref Code: ${u.referral_code || 'N/A'} • Direct Rank: Lvl ${u.active_level || 0} • ROI Rank: Lvl ${u.active_roi_level || 0}`;
 
     document.getElementById('adm-team-stat-members').innerText = summary.total_team_members;
     document.getElementById('adm-team-stat-investment').innerText = `$${Number(summary.total_team_investment || 0).toFixed(2)}`;

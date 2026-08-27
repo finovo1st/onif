@@ -20,12 +20,18 @@ class PlatformSettings(models.Model):
       MIN_CAPITAL_WITHDRAWAL      = "100.00"
       DIRECT_INCOME_RATE          = "2.00"      # % per level
       ROI_INCOME_RATE             = "75.00"     # % per level
-      MAX_REFERRAL_LEVELS         = "5"
-      LEVEL1_UNLOCK_DIRECTS       = "0"
-      LEVEL2_UNLOCK_DIRECTS       = "2"
-      LEVEL3_UNLOCK_DIRECTS       = "4"
-      LEVEL4_UNLOCK_DIRECTS       = "6"
-      LEVEL5_UNLOCK_DIRECTS       = "8"
+      # Direct Income Level Unlocks (0, 2, 4, 6, 8 directs)
+      DIR_LEVEL1_UNLOCK_DIRECTS   = "0"
+      DIR_LEVEL2_UNLOCK_DIRECTS   = "2"
+      DIR_LEVEL3_UNLOCK_DIRECTS   = "4"
+      DIR_LEVEL4_UNLOCK_DIRECTS   = "6"
+      DIR_LEVEL5_UNLOCK_DIRECTS   = "8"
+      # ROI Referral Income Level Unlocks (2, 4, 6, 8, 10 directs)
+      ROI_LEVEL1_UNLOCK_DIRECTS   = "2"
+      ROI_LEVEL2_UNLOCK_DIRECTS   = "4"
+      ROI_LEVEL3_UNLOCK_DIRECTS   = "6"
+      ROI_LEVEL4_UNLOCK_DIRECTS   = "8"
+      ROI_LEVEL5_UNLOCK_DIRECTS   = "10"
       ROI_DISTRIBUTION_DAY        = "6"         # 6 = Saturday (weekday index)
     """
 

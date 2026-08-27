@@ -62,7 +62,7 @@ class Plan(models.Model):
     weekly_roi_rate = models.DecimalField(
         max_digits=7,
         decimal_places=4,
-        default=Decimal('0.0000'),
+        default=Decimal('2.0000'),
         verbose_name=_('Weekly ROI Rate (%)'),
         help_text=_('Percentage credited to wallet each Saturday'),
     )

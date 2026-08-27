@@ -177,14 +177,13 @@ def credit_oldest_active_plan(
         if credited > Decimal('0.00'):
             # Apply credit to this investment
             inv.total_credited += credited
-            inv.last_roi_date = timezone.now().date()
             
             completed = inv.total_credited >= inv.max_return
             if completed:
                 inv.status = Investment.Status.COMPLETED
                 inv.end_date = timezone.now().date()
                 
-            inv.save(update_fields=['total_credited', 'last_roi_date', 'status', 'end_date', 'updated_at'])
+            inv.save(update_fields=['total_credited', 'status', 'end_date', 'updated_at'])
             
             # Credit the actual wallet balance
             credit_wallet(
@@ -321,6 +320,12 @@ def distribute_roi_for_investment(investment: Investment, mode: str = 'by_day') 
 
     Returns the actual ROI amount credited to the investor (may be less if capped).
     """
+    # Reload investment with select_for_update to avoid stale in-memory state and race conditions
+    try:
+        investment = Investment.objects.select_for_update().select_related('user', 'plan').get(pk=investment.pk)
+    except Investment.DoesNotExist:
+        return Decimal('0.00')
+
     if investment.status != Investment.Status.ACTIVE:
         return Decimal('0.00')
 

@@ -188,6 +188,64 @@ class ROIDistributionTests(TestCase):
         self.assertEqual(comm.amount, Decimal('9.00'))
         self.assertEqual(comm.level, 1)
 
+        # Verify sponsor's oldest active investment plan progress (total_credited) was updated
+        sponsor_inv.refresh_from_db()
+        self.assertEqual(sponsor_inv.total_credited, Decimal('9.00'))
+        # Ensure last_roi_date on sponsor's investment was NOT modified by downline commission
+        self.assertIsNone(sponsor_inv.last_roi_date)
+
+    def test_downline_roi_commission_full_week_updates_sponsor_plan_progress(self):
+        # Create sponsor with an active plan and 2 active directs
+        sponsor = make_user('fw_sponsor@test.com', 'fw_sponsor')
+        sponsor_inv = make_active_investment(sponsor, self.plan)
+
+        self.investor.parent = sponsor
+        self.investor.save(update_fields=['parent'])
+
+        child2 = make_user('fw_child2@test.com', 'fw_child2', parent=sponsor)
+        make_active_investment(child2, self.plan)
+
+        # Distribute full week ROI (10% of 120 = $12.00)
+        roi = distribute_roi_for_investment(self.investment, mode='full_week')
+        self.assertEqual(roi, Decimal('12.00'))
+
+        # Sponsor gets 75% = $9.00 added to their oldest investment plan progress
+        sponsor_inv.refresh_from_db()
+        self.assertEqual(sponsor_inv.total_credited, Decimal('9.00'))
+        sponsor.wallet.refresh_from_db()
+        self.assertEqual(sponsor.wallet.balance, Decimal('9.00'))
+
+    def test_downline_roi_commission_spills_over_and_completes_plan(self):
+        # Create sponsor with an investment close to max_return ($350)
+        sponsor = make_user('spill_sponsor@test.com', 'spill_sponsor')
+        sponsor_inv1 = make_active_investment(sponsor, self.plan)
+        sponsor_inv1.total_credited = Decimal('345.00')  # Remaining capacity = $5.00
+        sponsor_inv1.save()
+
+        sponsor_inv2 = make_active_investment(sponsor, self.plan)
+
+        self.investor.parent = sponsor
+        self.investor.save(update_fields=['parent'])
+
+        child2 = make_user('spill_child2@test.com', 'spill_child2', parent=sponsor)
+        make_active_investment(child2, self.plan)
+
+        # Downline ROI of $12.00 -> 75% commission = $9.00
+        # $5.00 should fill and complete sponsor_inv1, $4.00 spills over into sponsor_inv2
+        roi = distribute_roi_for_investment(self.investment, mode='full_week')
+        self.assertEqual(roi, Decimal('12.00'))
+
+        sponsor_inv1.refresh_from_db()
+        self.assertEqual(sponsor_inv1.total_credited, Decimal('350.00'))
+        self.assertEqual(sponsor_inv1.status, Investment.Status.COMPLETED)
+
+        sponsor_inv2.refresh_from_db()
+        self.assertEqual(sponsor_inv2.total_credited, Decimal('4.00'))
+        self.assertEqual(sponsor_inv2.status, Investment.Status.ACTIVE)
+
+        sponsor.wallet.refresh_from_db()
+        self.assertEqual(sponsor.wallet.balance, Decimal('9.00'))
+
     @patch('apps.investments.services._get_profit_days')
     def test_prorated_roi(self, mock_profit_days):
         # Joined mid-week, got 3 profit days

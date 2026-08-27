@@ -352,7 +352,7 @@ def distribute_roi_for_investment(investment: Investment, mode: str = 'by_day') 
     - ROI is credited to investor's spendable wallet balance (withdrawable).
     - investment.total_credited tracks cumulative ROI paid out toward max_return.
     - Marks the investment COMPLETED if max_return is reached.
-    - Distributes ROI-level commissions (75% up to 5 levels) to upline sponsors'
+    - Distributes ROI-level commissions (18.75% up to 5 levels) to upline sponsors'
       OLDEST active investment plans (not their wallet balance).
 
     Returns the actual ROI amount credited to the investor (may be less if capped).
@@ -427,12 +427,12 @@ def distribute_roi_for_investment(investment: Investment, mode: str = 'by_day') 
 
 def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> None:
     """
-    Distribute ROI income commissions up the sponsor chain (5 levels, 75%).
+    Distribute ROI income commissions up the sponsor chain (5 levels, 18.75%).
 
     Each sponsor's commission fills their OLDEST active investment plan.
     Any undistributed / unclaimed commission across the 5 levels is credited to the Company Wallet.
     """
-    rate = _get_setting('ROI_INCOME_RATE', '75.00') / Decimal('100')
+    rate = _get_setting('ROI_INCOME_RATE', '18.75') / Decimal('100')
     max_levels = int(PlatformSettings.get('MAX_REFERRAL_LEVELS', '5'))
 
     commission_per_level = (roi_amount * rate).quantize(

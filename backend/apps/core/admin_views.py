@@ -706,6 +706,7 @@ class AdminPlatformSettingsListView(generics.ListAPIView):
     """GET /api/v1/admin-panel/settings/"""
     serializer_class = AdminPlatformSettingSerializer
     permission_classes = [IsAdminRoleOrStaff]
+    pagination_class = None
     queryset = PlatformSettings.objects.select_related('updated_by').all()
 
 
@@ -747,6 +748,7 @@ class AdminPlanListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = AdminPlanSerializer
     permission_classes = [IsAdminRoleOrStaff]
+    pagination_class = None
     queryset = Plan.objects.all().order_by('cost')
 
 

@@ -75,7 +75,7 @@ def distribute_weekly_roi_task(self):
     For each active investment:
     1. Calculate prorated ROI based on elapsed Monday-to-Friday profit days (weekly_roi_rate / 5 * profit_days)
     2. Credit investor's wallet (capped at remaining_return)
-    3. Distribute 75% ROI commissions up 5 levels to oldest active plans
+    3. Distribute 18.75% ROI commissions up 5 levels to oldest active plans
     4. Mark investment COMPLETED if max_return is reached
     """
     logger.info(f"[ROI Engine] Starting weekly ROI distribution (daywise) at {timezone.now()}")

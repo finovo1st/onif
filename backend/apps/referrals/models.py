@@ -48,7 +48,7 @@ class ReferralCommission(models.Model):
 
     Per SRS:
     - Direct Income: 2% up to 5 levels
-    - ROI Income:    75% up to 5 levels
+    - ROI Income:    18.75% up to 5 levels
 
     is_paid tracks whether the commission has been moved to wallet balance.
     """

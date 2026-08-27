@@ -933,7 +933,7 @@ function renderReferralView() {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
           <div>
             <div style="font-size: 15px; font-weight: 700; color: var(--text);">Level ${stats.level}</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">2.00% Direct Sponsor Commission • 75.00% ROI Referral Yield</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">2.00% Direct Sponsor Commission • 18.75% ROI Referral Yield</div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <span class="badge ${isDirUnlocked ? 'badge-approved' : 'badge-pending'}" style="font-size: 11px; padding: 4px 8px;" title="Direct Income requires ${dirReq} active directs">
@@ -3377,14 +3377,14 @@ function openTriggerROIModal(mode = 'full_week') {
         <li>Credits full 100% weekly ROI return directly to each investor's spendable wallet balance</li>
         <li>Ignores weekday counts — triggers immediate full weekly cycle for all active plans</li>
         <li>Fills up investor plans toward their maximum return cap</li>
-        <li>Distributes 75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
+        <li>Distributes 18.75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
         <li>Completes plans that reach their maximum return</li>
       `
       : `
         <li>Calculates profit days (Monday to Friday) between last ROI date / start date and today</li>
         <li>Credits (Weekly Rate ÷ 5 × profit days) to each investor's spendable wallet balance</li>
         <li>Fills up investor plans toward their maximum return cap</li>
-        <li>Distributes 75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
+        <li>Distributes 18.75% ROI commissions across 5 sponsor levels to upline oldest active plans</li>
         <li>Completes plans that reach their maximum return</li>
       `;
   }

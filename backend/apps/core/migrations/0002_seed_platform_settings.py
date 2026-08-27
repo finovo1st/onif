@@ -18,7 +18,7 @@ DEFAULT_SETTINGS = [
     ('CAPITAL_WITHDRAWAL_FEE',   '10.00',   'Fund-management charge for capital withdrawal in USD'),
     # Income rates (percentage)
     ('DIRECT_INCOME_RATE',       '2.00',    'Direct income rate per referral level (%)'),
-    ('ROI_INCOME_RATE',          '75.00',   'ROI income rate per referral level (%)'),
+    ('ROI_INCOME_RATE',          '18.75',   'ROI income rate per referral level (%)'),
     # Referral levels - Direct Income (0, 2, 4, 6, 8)
     ('DIR_LEVEL1_UNLOCK_DIRECTS', '0',       'Active direct members required to unlock Level 1 Direct Income'),
     ('DIR_LEVEL2_UNLOCK_DIRECTS', '2',       'Active direct members required to unlock Level 2 Direct Income'),

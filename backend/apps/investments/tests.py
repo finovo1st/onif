@@ -196,10 +196,10 @@ class ROIDistributionTests(TestCase):
         distribute_roi_for_investment(self.investment, mode='full_week')
         roi_comm_unlocked = ReferralCommission.objects.filter(user=sponsor, commission_type=ReferralCommission.CommissionType.ROI).first()
         self.assertIsNotNone(roi_comm_unlocked)  # Unlocked!
-        self.assertEqual(roi_comm_unlocked.amount, Decimal('9.00'))  # 75% of $12.00 ROI
+        self.assertEqual(roi_comm_unlocked.amount, Decimal('2.25'))  # 18.75% of $12.00 ROI
 
     @patch('apps.investments.services._get_profit_days')
-    def test_roi_commission_distributed_to_eligible_sponsor_at_75_percent(self, mock_profit_days):
+    def test_roi_commission_distributed_to_eligible_sponsor_at_default_rate(self, mock_profit_days):
         mock_profit_days.return_value = 5
         # Create sponsor with an active plan and 2 active directs (meeting Level 1)
         sponsor = make_user('roisponsor@test.com', 'roisponsor')
@@ -217,15 +217,15 @@ class ROIDistributionTests(TestCase):
         roi = distribute_roi_for_investment(self.investment)
         self.assertEqual(roi, Decimal('12.00'))
 
-        # Sponsor should receive 75% of $12.00 = $9.00
+        # Sponsor should receive 18.75% of $12.00 = $2.25
         comm = ReferralCommission.objects.filter(user=sponsor, commission_type=ReferralCommission.CommissionType.ROI).first()
         self.assertIsNotNone(comm)
-        self.assertEqual(comm.amount, Decimal('9.00'))
+        self.assertEqual(comm.amount, Decimal('2.25'))
         self.assertEqual(comm.level, 1)
 
         # Verify sponsor's oldest active investment plan progress (total_credited) was updated
         sponsor_inv.refresh_from_db()
-        self.assertEqual(sponsor_inv.total_credited, Decimal('9.00'))
+        self.assertEqual(sponsor_inv.total_credited, Decimal('2.25'))
         # Ensure last_roi_date on sponsor's investment was NOT modified by downline commission
         self.assertIsNone(sponsor_inv.last_roi_date)
 
@@ -244,17 +244,17 @@ class ROIDistributionTests(TestCase):
         roi = distribute_roi_for_investment(self.investment, mode='full_week')
         self.assertEqual(roi, Decimal('12.00'))
 
-        # Sponsor gets 75% = $9.00 added to their oldest investment plan progress
+        # Sponsor gets 18.75% = $2.25 added to their oldest investment plan progress
         sponsor_inv.refresh_from_db()
-        self.assertEqual(sponsor_inv.total_credited, Decimal('9.00'))
+        self.assertEqual(sponsor_inv.total_credited, Decimal('2.25'))
         sponsor.wallet.refresh_from_db()
-        self.assertEqual(sponsor.wallet.balance, Decimal('9.00'))
+        self.assertEqual(sponsor.wallet.balance, Decimal('2.25'))
 
     def test_downline_roi_commission_spills_over_and_completes_plan(self):
         # Create sponsor with an investment close to max_return ($350)
         sponsor = make_user('spill_sponsor@test.com', 'spill_sponsor')
         sponsor_inv1 = make_active_investment(sponsor, self.plan)
-        sponsor_inv1.total_credited = Decimal('345.00')  # Remaining capacity = $5.00
+        sponsor_inv1.total_credited = Decimal('348.00')  # Remaining capacity = $2.00
         sponsor_inv1.save()
 
         sponsor_inv2 = make_active_investment(sponsor, self.plan)
@@ -265,21 +265,20 @@ class ROIDistributionTests(TestCase):
         child2 = make_user('spill_child2@test.com', 'spill_child2', parent=sponsor)
         make_active_investment(child2, self.plan)
 
-        # Downline ROI of $12.00 -> 75% commission = $9.00
-        # $5.00 should fill and complete sponsor_inv1, $4.00 spills over into sponsor_inv2
+        # Downline ROI of $12.00 -> 18.75% commission = $2.25
+        # $2.00 should fill and complete sponsor_inv1, $0.25 spills over into sponsor_inv2
         roi = distribute_roi_for_investment(self.investment, mode='full_week')
         self.assertEqual(roi, Decimal('12.00'))
 
         sponsor_inv1.refresh_from_db()
         self.assertEqual(sponsor_inv1.total_credited, Decimal('350.00'))
         self.assertEqual(sponsor_inv1.status, Investment.Status.COMPLETED)
-
         sponsor_inv2.refresh_from_db()
-        self.assertEqual(sponsor_inv2.total_credited, Decimal('4.00'))
+        self.assertEqual(sponsor_inv2.total_credited, Decimal('0.25'))
         self.assertEqual(sponsor_inv2.status, Investment.Status.ACTIVE)
 
         sponsor.wallet.refresh_from_db()
-        self.assertEqual(sponsor.wallet.balance, Decimal('9.00'))
+        self.assertEqual(sponsor.wallet.balance, Decimal('2.25'))
 
     @patch('apps.investments.services._get_profit_days')
     def test_prorated_roi(self, mock_profit_days):
@@ -514,7 +513,7 @@ class InvestmentViewTests(APITestCase):
 
     def test_undistributed_roi_commissions_credited_to_company_wallet(self):
         from apps.wallet.models import CompanyWallet, CompanyWalletTransaction
-        # User has no sponsor -> all 5 levels (5 * 75% of $10 ROI = 5 * $7.50 = $37.50) go to company wallet
+        # User has no sponsor -> all 5 levels (5 * 18.75% of $10 ROI = 5 * $1.87 = $9.35) go to company wallet
         company_wallet = CompanyWallet.get_wallet()
         initial_balance = company_wallet.balance
 
@@ -522,7 +521,7 @@ class InvestmentViewTests(APITestCase):
         distribute_roi_for_investment(inv, mode='full_week')
 
         company_wallet.refresh_from_db()
-        expected_roi_remainder = Decimal('37.50') # 5 * (10.00 * 0.75)
+        expected_roi_remainder = Decimal('9.35') # 5 * (10.00 * 0.1875 rounded down to 1.87)
         self.assertEqual(company_wallet.balance, initial_balance + expected_roi_remainder)
         self.assertTrue(
             CompanyWalletTransaction.objects.filter(

@@ -19,7 +19,7 @@ class PlatformSettings(models.Model):
       CAPITAL_WITHDRAWAL_FEE      = "10.00"
       MIN_CAPITAL_WITHDRAWAL      = "100.00"
       DIRECT_INCOME_RATE          = "2.00"      # % per level
-      ROI_INCOME_RATE             = "75.00"     # % per level
+      ROI_INCOME_RATE             = "18.75"     # % per level
       # Direct Income Level Unlocks (0, 2, 4, 6, 8 directs)
       DIR_LEVEL1_UNLOCK_DIRECTS   = "0"
       DIR_LEVEL2_UNLOCK_DIRECTS   = "2"

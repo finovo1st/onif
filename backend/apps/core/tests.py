@@ -10,8 +10,8 @@ class CoreModelTests(TestCase):
         self.user = User.objects.create_user(email='coreuser@example.com', username='coreuser')
 
     def test_platform_settings_get(self):
-        val = PlatformSettings.get('MIN_INVESTMENT', default='100.00')
-        self.assertEqual(val, '120.00')  # from seeded migration
+        val = PlatformSettings.get('MIN_PROFIT_WITHDRAWAL', default='1.00')
+        self.assertEqual(val, '10.00')  # from seeded migration
 
         non_existent = PlatformSettings.get('NON_EXISTENT', default='DEFAULT_VAL')
         self.assertEqual(non_existent, 'DEFAULT_VAL')

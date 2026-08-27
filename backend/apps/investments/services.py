@@ -32,11 +32,11 @@ def _get_setting(key: str, default: str) -> Decimal:
 def _dir_level_unlock_threshold(level: int) -> int:
     """Return the number of active directs needed to unlock Direct Income at this level (0, 2, 4, 6, 8)."""
     mapping = {
-        1: int(PlatformSettings.get('DIR_LEVEL1_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL1_UNLOCK_DIRECTS', '0'))),
-        2: int(PlatformSettings.get('DIR_LEVEL2_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL2_UNLOCK_DIRECTS', '2'))),
-        3: int(PlatformSettings.get('DIR_LEVEL3_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL3_UNLOCK_DIRECTS', '4'))),
-        4: int(PlatformSettings.get('DIR_LEVEL4_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL4_UNLOCK_DIRECTS', '6'))),
-        5: int(PlatformSettings.get('DIR_LEVEL5_UNLOCK_DIRECTS', PlatformSettings.get('LEVEL5_UNLOCK_DIRECTS', '8'))),
+        1: int(PlatformSettings.get('DIR_LEVEL1_UNLOCK_DIRECTS', '0')),
+        2: int(PlatformSettings.get('DIR_LEVEL2_UNLOCK_DIRECTS', '2')),
+        3: int(PlatformSettings.get('DIR_LEVEL3_UNLOCK_DIRECTS', '4')),
+        4: int(PlatformSettings.get('DIR_LEVEL4_UNLOCK_DIRECTS', '6')),
+        5: int(PlatformSettings.get('DIR_LEVEL5_UNLOCK_DIRECTS', '8')),
     }
     return mapping.get(level, 999)
 

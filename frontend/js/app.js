@@ -1642,8 +1642,6 @@ function openModal(modalId) {
   if (modalId === 'modal-withdraw' && state.settings) {
     const profitFee = state.settings.PROFIT_WITHDRAWAL_FEE || 1.00;
     const profitMin = state.settings.MIN_PROFIT_WITHDRAWAL || 10.00;
-    const capFee = state.settings.CAPITAL_WITHDRAWAL_FEE || 10.00;
-    const capMin = state.settings.MIN_CAPITAL_WITHDRAWAL || 100.00;
     
     const select = document.getElementById('wdr-type');
     if (select && select.options.length >= 1) {
@@ -1840,15 +1838,10 @@ async function handleInvestSubmit(e) {
 // ─── Withdrawal Fee Calculator & API Submission ────────────────────────────────
 
 function updateWithdrawalFeeCalc() {
-  const type = document.getElementById('wdr-type').value;
   const amount = Number(document.getElementById('wdr-amount').value) || 0;
-  
-  const profitFee = state.settings?.PROFIT_WITHDRAWAL_FEE || 1.00;
-  const capFee = state.settings?.CAPITAL_WITHDRAWAL_FEE || 10.00;
-  const fee = type === 'PROFIT' ? profitFee : capFee;
-  
+  const fee = state.settings?.PROFIT_WITHDRAWAL_FEE || 1.00;
   const net = Math.max(0, amount - fee);
-  document.getElementById('wdr-fee-preview').innerText = `$${fee.toFixed(2)}`;
+  document.getElementById('wdr-fee-preview').innerText = `$${Number(fee).toFixed(2)}`;
   document.getElementById('wdr-net-preview').innerText = `$${net.toFixed(2)}`;
 }
 

@@ -113,8 +113,6 @@ class DashboardView(APIView):
             },
             'settings': {
                 'PROFIT_WITHDRAWAL_FEE': float(PlatformSettings.get('PROFIT_WITHDRAWAL_FEE', '1.00')),
-                'CAPITAL_WITHDRAWAL_FEE': float(PlatformSettings.get('CAPITAL_WITHDRAWAL_FEE', '10.00')),
                 'MIN_PROFIT_WITHDRAWAL': float(PlatformSettings.get('MIN_PROFIT_WITHDRAWAL', '10.00')),
-                'MIN_CAPITAL_WITHDRAWAL': float(PlatformSettings.get('MIN_CAPITAL_WITHDRAWAL', '100.00')),
             },
         })

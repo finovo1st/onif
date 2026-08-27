@@ -12,12 +12,8 @@ class PlatformSettings(models.Model):
     to be changed through the admin panel without code modifications — per SRS requirement.
 
     Typical keys:
-      MIN_INVESTMENT              = "120.00"
-      MAX_TOTAL_RETURN            = "350.00"
-      PROFIT_WITHDRAWAL_FEE       = "1.00"
       MIN_PROFIT_WITHDRAWAL       = "10.00"
-      CAPITAL_WITHDRAWAL_FEE      = "10.00"
-      MIN_CAPITAL_WITHDRAWAL      = "100.00"
+      PROFIT_WITHDRAWAL_FEE       = "1.00"
       DIRECT_INCOME_RATE          = "2.00"      # % per level
       ROI_INCOME_RATE             = "18.75"     # % per level
       # Direct Income Level Unlocks (0, 2, 4, 6, 8 directs)
@@ -32,7 +28,8 @@ class PlatformSettings(models.Model):
       ROI_LEVEL3_UNLOCK_DIRECTS   = "6"
       ROI_LEVEL4_UNLOCK_DIRECTS   = "8"
       ROI_LEVEL5_UNLOCK_DIRECTS   = "10"
-      ROI_DISTRIBUTION_DAY        = "6"         # 6 = Saturday (weekday index)
+      MAX_REFERRAL_LEVELS         = "5"
+      ROI_DISTRIBUTION_DAY        = "5"         # 5 = Saturday (weekday index)
     """
 
     key = models.CharField(

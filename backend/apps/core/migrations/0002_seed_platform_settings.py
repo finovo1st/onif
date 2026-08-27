@@ -7,15 +7,9 @@ from django.db import migrations
 
 
 DEFAULT_SETTINGS = [
-    # Investment limits
-    ('MIN_INVESTMENT',           '120.00',  'Minimum investment amount in USD'),
-    ('MAX_TOTAL_RETURN',         '350.00',  'Maximum total return per investment (capital + profit) in USD'),
-    ('NET_PROFIT',               '230.00',  'Net profit per investment cycle in USD'),
     # Withdrawal
     ('MIN_PROFIT_WITHDRAWAL',    '10.00',   'Minimum profit/wallet withdrawal amount in USD'),
     ('PROFIT_WITHDRAWAL_FEE',    '1.00',    'Flat fee per profit/wallet withdrawal transaction in USD'),
-    ('MIN_CAPITAL_WITHDRAWAL',   '100.00',  'Minimum capital withdrawal amount in USD'),
-    ('CAPITAL_WITHDRAWAL_FEE',   '10.00',   'Fund-management charge for capital withdrawal in USD'),
     # Income rates (percentage)
     ('DIRECT_INCOME_RATE',       '2.00',    'Direct income rate per referral level (%)'),
     ('ROI_INCOME_RATE',          '18.75',   'ROI income rate per referral level (%)'),
@@ -31,13 +25,7 @@ DEFAULT_SETTINGS = [
     ('ROI_LEVEL3_UNLOCK_DIRECTS', '6',       'Active direct members required to unlock Level 3 ROI Referral Income'),
     ('ROI_LEVEL4_UNLOCK_DIRECTS', '8',       'Active direct members required to unlock Level 4 ROI Referral Income'),
     ('ROI_LEVEL5_UNLOCK_DIRECTS', '10',      'Active direct members required to unlock Level 5 ROI Referral Income'),
-    # Legacy fallback keys
     ('MAX_REFERRAL_LEVELS',      '5',       'Maximum referral income depth levels'),
-    ('LEVEL1_UNLOCK_DIRECTS',    '0',       'Active direct members required to unlock Level 1 income'),
-    ('LEVEL2_UNLOCK_DIRECTS',    '2',       'Active direct members required to unlock Level 2 income'),
-    ('LEVEL3_UNLOCK_DIRECTS',    '4',       'Active direct members required to unlock Level 3 income'),
-    ('LEVEL4_UNLOCK_DIRECTS',    '6',       'Active direct members required to unlock Level 4 income'),
-    ('LEVEL5_UNLOCK_DIRECTS',    '8',       'Active direct members required to unlock Level 5 income'),
     # ROI distribution schedule
     ('ROI_DISTRIBUTION_DAY',     '5',       'Weekday for ROI distribution: 0=Mon … 5=Sat, 6=Sun'),
     # Supported networks

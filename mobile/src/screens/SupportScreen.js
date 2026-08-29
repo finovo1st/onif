@@ -84,7 +84,8 @@ export default function SupportScreen({ onNavigate }) {
     if (isDemoMode) return;
     try {
       const data = await apiCall('/support/tickets/').catch(() => []);
-      if (Array.isArray(data) && data.length > 0) setTickets(data);
+      const ticketList = Array.isArray(data) ? data : (data?.results || []);
+      if (ticketList.length > 0) setTickets(ticketList);
     } catch (err) {
       console.warn('Support ticket load error:', err.message);
     }
@@ -252,10 +253,12 @@ export default function SupportScreen({ onNavigate }) {
         <Text style={styles.label}>Inquiry Category *</Text>
         <View style={styles.categoryToggleGrid}>
           {[
-            { id: 'GENERAL', label: 'General Question' },
-            { id: 'DEPOSIT', label: 'Deposit Query' },
+            { id: 'KYC', label: 'KYC & Verification' },
+            { id: 'DEPOSIT', label: 'Deposit & Crypto' },
             { id: 'WITHDRAWAL', label: 'Withdrawal Issue' },
-            { id: 'REFERRAL', label: 'Affiliate & ROI' },
+            { id: 'INVESTMENT', label: 'Investment Plan' },
+            { id: 'REFERRAL', label: 'Referral Commission' },
+            { id: 'GENERAL', label: 'Technical / Other' },
           ].map((item) => (
             <TouchableOpacity
               key={item.id}
@@ -316,7 +319,7 @@ export default function SupportScreen({ onNavigate }) {
               <View style={{ flex: 1, paddingRight: 8 }}>
                 <Text style={styles.ticketSubject}>{t.subject}</Text>
                 <Text style={styles.ticketCategory}>
-                  Category: {t.category} • Tap to view ({t.messages ? t.messages.length : 1} msgs)
+                  Status: {t.status || 'OPEN'} • {t.reply_count !== undefined ? `${t.reply_count} msgs` : (t.replies ? `${t.replies.length} msgs` : (t.messages ? `${t.messages.length} msgs` : '1 msg'))}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -325,7 +328,7 @@ export default function SupportScreen({ onNavigate }) {
                     {t.status || 'OPEN'}
                   </Text>
                 </View>
-                <Text style={styles.ticketDate}>{t.created_at || 'Recent'}</Text>
+                <Text style={styles.ticketDate}>{t.created_at ? String(t.created_at).slice(0, 10) : 'Recent'}</Text>
               </View>
             </TouchableOpacity>
           ))
@@ -345,7 +348,7 @@ export default function SupportScreen({ onNavigate }) {
                   <Text style={{ color: colors.goldSoft, fontSize: 10, fontWeight: '700' }}>
                     {selectedTicket?.status || 'OPEN'}
                   </Text>
-                  <Text style={{ color: colors.textDim, fontSize: 10 }}>• {selectedTicket?.created_at}</Text>
+                  <Text style={{ color: colors.textDim, fontSize: 10 }}>• {selectedTicket?.created_at ? String(selectedTicket.created_at).slice(0, 10) : 'Recent'}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => setThreadModalVisible(false)}>
@@ -355,9 +358,19 @@ export default function SupportScreen({ onNavigate }) {
 
             {/* Conversation Messages */}
             <ScrollView style={{ maxHeight: 240, marginVertical: 10 }} showsVerticalScrollIndicator={false}>
-              {selectedTicket?.messages && selectedTicket.messages.length > 0 ? (
-                selectedTicket.messages.map((m, idx) => {
-                  const isStaff = m.is_staff;
+              {(() => {
+                const threadList = selectedTicket?.replies || selectedTicket?.messages || [];
+                if (threadList.length === 0) {
+                  return (
+                    <Text style={{ color: colors.textMuted, fontSize: 12, paddingVertical: 10 }}>
+                      No messages recorded in this inquiry thread.
+                    </Text>
+                  );
+                }
+                return threadList.map((m, idx) => {
+                  const isStaff = Boolean(m.is_staff || m.is_staff_reply);
+                  const senderName = isStaff ? 'Compliance Staff' : (m.user_email || m.sender_name || 'You');
+                  const timeStr = m.created_at ? String(m.created_at).slice(0, 16).replace('T', ' ') : 'Recent';
                   return (
                     <View
                       key={m.id || idx}
@@ -367,20 +380,14 @@ export default function SupportScreen({ onNavigate }) {
                       ]}
                     >
                       <View style={styles.msgHeaderRow}>
-                        <Text style={styles.msgSender}>
-                          {isStaff ? 'Compliance Staff' : m.sender_name || 'You'}
-                        </Text>
-                        <Text style={styles.msgTime}>{m.created_at || 'Recent'}</Text>
+                        <Text style={styles.msgSender}>{senderName}</Text>
+                        <Text style={styles.msgTime}>{timeStr}</Text>
                       </View>
                       <Text style={styles.msgBody}>{m.message}</Text>
                     </View>
                   );
-                })
-              ) : (
-                <Text style={{ color: colors.textMuted, fontSize: 12, paddingVertical: 10 }}>
-                  No messages recorded in this inquiry thread.
-                </Text>
-              )}
+                });
+              })()}
             </ScrollView>
 
             {/* Reply Input Box */}

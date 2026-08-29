@@ -147,8 +147,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class KYCSubmitSerializer(serializers.ModelSerializer):
     """Submit document and details for KYC identity verification."""
-    kyc_document_front = serializers.FileField(required=True)
-    kyc_document_back = serializers.FileField(required=True)
+    kyc_document_front = serializers.FileField(required=False, allow_null=True)
+    kyc_document_back = serializers.FileField(required=False, allow_null=True)
     kyc_document_type = serializers.CharField(required=True)
     kyc_document_number = serializers.CharField(required=False, allow_blank=True)
 

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
@@ -30,8 +31,8 @@ export default function WalletScreen({ onNavigate }) {
   const [deposits, setDeposits] = useState([
     {
       id: 'dep-1',
-      plan_name: 'Starter Plan',
-      amount: 1000.0,
+      plan_name: 'Package 1',
+      amount: 120.0,
       network: 'BEP20',
       txn_hash: '0x892a7f82b1c9842a...4b08',
       status: 'APPROVED',
@@ -52,6 +53,45 @@ export default function WalletScreen({ onNavigate }) {
     },
   ]);
 
+  const [ledger, setLedger] = useState([
+    {
+      id: 'tx-1',
+      transaction_type: 'CREDIT',
+      category: 'DEPOSIT',
+      amount: 120.0,
+      balance_after: 120.0,
+      created_at: '2026-08-01',
+      description: 'Approved deposit #dep-001 for Package 1',
+    },
+    {
+      id: 'tx-2',
+      transaction_type: 'CREDIT',
+      category: 'DIRECT_INCOME',
+      amount: 40.0,
+      balance_after: 160.0,
+      created_at: '2026-08-05',
+      description: 'Level-1 direct commission from l2_emma@finovo.com',
+    },
+    {
+      id: 'tx-3',
+      transaction_type: 'CREDIT',
+      category: 'ROI',
+      amount: 125.0,
+      balance_after: 285.0,
+      created_at: '2026-08-10',
+      description: 'Weekly ROI credited from Package 1',
+    },
+    {
+      id: 'tx-4',
+      transaction_type: 'DEBIT',
+      category: 'WITHDRAWAL',
+      amount: 50.0,
+      balance_after: 235.0,
+      created_at: '2026-08-15',
+      description: 'Payout processed to 0x71C7...8976F (BEP20)',
+    },
+  ]);
+
   // Withdrawal Modal State
   const [wdrModalVisible, setWdrModalVisible] = useState(false);
   const [wdrType, setWdrType] = useState('PROFIT'); // 'PROFIT' | 'CAPITAL'
@@ -65,6 +105,8 @@ export default function WalletScreen({ onNavigate }) {
   const [depNetwork, setDepNetwork] = useState('BEP20');
   const [depTxHash, setDepTxHash] = useState('');
   const [depSender, setDepSender] = useState('');
+  const [depProofFile, setDepProofFile] = useState('');
+  const [lightboxVisible, setLightboxVisible] = useState(false);
 
   const companyWallets = {
     BEP20: '0x71C8bf7B67295F2797e883FffFa7617bFF524b08',
@@ -74,7 +116,7 @@ export default function WalletScreen({ onNavigate }) {
   const loadWalletData = async () => {
     if (isDemoMode) return;
     try {
-      const data = await apiCall('/dashboard/');
+      const data = await apiCall('/dashboard/').catch(() => null);
       if (data) {
         setWalletStats({
           wallet_balance: data.wallet_balance || 0,
@@ -84,11 +126,24 @@ export default function WalletScreen({ onNavigate }) {
         });
       }
 
-      const deps = await apiCall('/deposits/').catch(() => []);
-      if (Array.isArray(deps) && deps.length > 0) setDeposits(deps);
+      // User deposits are tracked via investments in Finovo
+      const invs = await apiCall('/investments/').catch(() => []);
+      const invList = Array.isArray(invs) ? invs : (invs?.results || []);
+      if (invList.length > 0) {
+        setDeposits(invList);
+      } else {
+        const deps = await apiCall('/deposits/').catch(() => []);
+        const depList = Array.isArray(deps) ? deps : (deps?.results || []);
+        if (depList.length > 0) setDeposits(depList);
+      }
 
       const wdrs = await apiCall('/withdrawals/').catch(() => []);
-      if (Array.isArray(wdrs) && wdrs.length > 0) setWithdrawals(wdrs);
+      const wdrList = Array.isArray(wdrs) ? wdrs : (wdrs?.results || []);
+      if (wdrList.length > 0) setWithdrawals(wdrList);
+
+      const txs = await apiCall('/wallet/transactions/').catch(() => []);
+      const txList = Array.isArray(txs) ? txs : (txs?.results || []);
+      if (txList.length > 0) setLedger(txList);
     } catch (err) {
       console.warn('Wallet data fetch error:', err.message);
     }
@@ -133,10 +188,26 @@ export default function WalletScreen({ onNavigate }) {
           network: wdrNetwork,
           wallet_address: wdrAddress,
         });
+      } else {
+        const newWdr = {
+          id: `wdr-${Date.now()}`,
+          withdrawal_type: wdrType,
+          amount: amt,
+          fee: fee,
+          net_amount: netReceived,
+          network: wdrNetwork,
+          status: 'PENDING',
+          created_at: 'Just now',
+        };
+        setWithdrawals([newWdr, ...withdrawals]);
+        setWalletStats((prev) => ({ ...prev, wallet_balance: prev.wallet_balance - amt }));
       }
 
       setWdrModalVisible(false);
-      Alert.alert('Withdrawal Submitted', `Request for $${amt.toFixed(2)} USDT (Net: $${netReceived.toFixed(2)}) submitted for Admin approval.`);
+      Alert.alert(
+        'Withdrawal Submitted',
+        `Request for $${amt.toFixed(2)} USDT (Net: $${netReceived.toFixed(2)}) submitted for Admin payout verification.`
+      );
       loadWalletData();
     } catch (err) {
       Alert.alert('Withdrawal Error', err.message);
@@ -165,10 +236,24 @@ export default function WalletScreen({ onNavigate }) {
           txn_hash: depTxHash,
           sender_wallet_address: depSender || '0xSenderWallet',
         });
+      } else {
+        const newDep = {
+          id: `dep-${Date.now()}`,
+          plan_name: 'Custom Deposit',
+          amount: amt,
+          network: depNetwork,
+          txn_hash: depTxHash,
+          status: 'PENDING',
+          created_at: 'Just now',
+        };
+        setDeposits([newDep, ...deposits]);
       }
 
       setDepModalVisible(false);
-      Alert.alert('Deposit Proof Submitted', `Your deposit proof of $${amt.toFixed(2)} USDT has been submitted for on-chain approval.`);
+      Alert.alert(
+        'Deposit Proof Submitted',
+        `Your deposit proof of $${amt.toFixed(2)} USDT has been submitted for compliance verification.`
+      );
       loadWalletData();
     } catch (err) {
       Alert.alert('Deposit Error', err.message);
@@ -259,13 +344,15 @@ export default function WalletScreen({ onNavigate }) {
           onPress={() => setDepModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.btnPrimaryText}>+ Deposit Funds</Text>
+          <Feather name="plus-circle" size={14} color="#030507" style={{ marginRight: 4 }} />
+          <Text style={styles.btnPrimaryText}>Deposit Funds</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.btnSecondary}
           onPress={() => setWdrModalVisible(true)}
           activeOpacity={0.7}
         >
+          <Feather name="arrow-up-right" size={14} color={colors.textMain} style={{ marginRight: 4 }} />
           <Text style={styles.btnSecondaryText}>Request Withdrawal</Text>
         </TouchableOpacity>
       </View>
@@ -358,6 +445,55 @@ export default function WalletScreen({ onNavigate }) {
         )}
       </View>
 
+      {/* Complete Wallet Ledger Card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View>
+            <Text style={styles.eyebrow}>ACCOUNTING</Text>
+            <Text style={styles.cardTitle}>Complete Wallet Ledger</Text>
+          </View>
+        </View>
+
+        {ledger.length === 0 ? (
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingVertical: 12 }}>
+            No transactions in ledger.
+          </Text>
+        ) : (
+          ledger.map((item, idx) => {
+            const isCredit = item.transaction_type === 'CREDIT';
+            return (
+              <View key={item.id || idx} style={styles.row}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 12 }}>
+                      {item.category}
+                    </Text>
+                    <Text style={styles.rowDate}>{item.created_at || 'Recent'}</Text>
+                  </View>
+                  <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2 }}>
+                    {item.description}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text
+                    style={{
+                      color: isCredit ? colors.accentGreenSoft : colors.accentDanger,
+                      fontWeight: '800',
+                      fontSize: 13,
+                    }}
+                  >
+                    {isCredit ? '+' : '-'}${Number(item.amount).toFixed(2)}
+                  </Text>
+                  <Text style={{ color: colors.textDim, fontSize: 10, marginTop: 2 }}>
+                    Bal: ${Number(item.balance_after || 0).toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+
       {/* WITHDRAWAL MODAL */}
       <Modal visible={wdrModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -369,9 +505,9 @@ export default function WalletScreen({ onNavigate }) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
               {/* Type Toggle */}
-              <Text style={styles.label}>Withdrawal Type</Text>
+              <Text style={styles.label}>Withdrawal Type *</Text>
               <View style={styles.toggleRow}>
                 <TouchableOpacity
                   style={[styles.toggleBtn, wdrType === 'PROFIT' && styles.toggleBtnActive]}
@@ -392,7 +528,7 @@ export default function WalletScreen({ onNavigate }) {
               </View>
 
               {/* Amount */}
-              <Text style={styles.label}>Requested Amount ($ USDT)</Text>
+              <Text style={styles.label}>Requested Amount ($ USDT) *</Text>
               <TextInput
                 style={styles.input}
                 value={wdrAmount}
@@ -403,7 +539,7 @@ export default function WalletScreen({ onNavigate }) {
               />
 
               {/* Network */}
-              <Text style={styles.label}>Settlement Network</Text>
+              <Text style={styles.label}>Settlement Network *</Text>
               <View style={styles.toggleRow}>
                 <TouchableOpacity
                   style={[styles.toggleBtn, wdrNetwork === 'BEP20' && styles.toggleBtnActive]}
@@ -424,7 +560,7 @@ export default function WalletScreen({ onNavigate }) {
               </View>
 
               {/* Destination Address */}
-              <Text style={styles.label}>Destination USDT Wallet Address</Text>
+              <Text style={styles.label}>Destination USDT Wallet Address *</Text>
               <TextInput
                 style={styles.input}
                 value={wdrAddress}
@@ -482,8 +618,8 @@ export default function WalletScreen({ onNavigate }) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-              <Text style={styles.label}>Deposit Network</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
+              <Text style={styles.label}>Deposit Network *</Text>
               <View style={styles.toggleRow}>
                 <TouchableOpacity
                   style={[styles.toggleBtn, depNetwork === 'BEP20' && styles.toggleBtnActive]}
@@ -514,15 +650,26 @@ export default function WalletScreen({ onNavigate }) {
                     style={styles.miniCopyBtn}
                     onPress={() => copyCompanyAddress(depNetwork)}
                   >
+                    <Feather name="copy" size={11} color="#030507" style={{ marginRight: 3 }} />
                     <Text style={styles.miniCopyBtnText}>Copy</Text>
                   </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                  style={styles.qrZoomRow}
+                  onPress={() => setLightboxVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="maximize-2" size={12} color={colors.goldSoft} />
+                  <Text style={styles.qrZoomText}>Tap to enlarge Deposit QR Code</Text>
+                </TouchableOpacity>
+
                 <Text style={styles.walletNoticeText}>
                   Send USDT ({depNetwork}) directly to this vault address, then enter your TxID below.
                 </Text>
               </View>
 
-              <Text style={styles.label}>Deposit Amount ($ USDT)</Text>
+              <Text style={styles.label}>Deposit Amount ($ USDT) *</Text>
               <TextInput
                 style={styles.input}
                 value={depAmount}
@@ -549,6 +696,21 @@ export default function WalletScreen({ onNavigate }) {
                 placeholder="Enter your USDT wallet address"
                 placeholderTextColor={colors.textDim}
               />
+
+              <Text style={styles.label}>Upload Payment Screenshot (Optional)</Text>
+              <TouchableOpacity
+                style={styles.uploadBox}
+                onPress={() => {
+                  setDepProofFile(`receipt_${Date.now().toString().slice(-4)}.png`);
+                  Alert.alert('Screenshot Attached', 'Payment receipt image attached.');
+                }}
+                activeOpacity={0.7}
+              >
+                <Feather name="upload-cloud" size={15} color={colors.goldSoft} style={{ marginRight: 6 }} />
+                <Text style={styles.uploadBoxText}>
+                  {depProofFile ? `Attached: ${depProofFile}` : 'Attach Receipt Screenshot'}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
 
             <View style={styles.modalBtnRow}>
@@ -574,6 +736,28 @@ export default function WalletScreen({ onNavigate }) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* QR Code Lightbox Modal */}
+      <Modal visible={lightboxVisible} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.lightboxOverlay}
+          activeOpacity={1}
+          onPress={() => setLightboxVisible(false)}
+        >
+          <View style={styles.lightboxCard}>
+            <Text style={styles.lightboxTitle}>Deposit QR Code ({depNetwork})</Text>
+            <View style={styles.qrPlaceholder}>
+              <Feather name="grid" size={90} color={colors.goldSoft} />
+            </View>
+            <Text style={styles.lightboxAddr} numberOfLines={2}>
+              {companyWallets[depNetwork]}
+            </Text>
+            <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setLightboxVisible(false)}>
+              <Text style={styles.lightboxCloseBtnText}>Close Window</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -658,10 +842,12 @@ const styles = StyleSheet.create({
   },
   btnPrimary: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.gold,
     borderRadius: 8,
     paddingVertical: 12,
-    alignItems: 'center',
   },
   btnPrimaryText: {
     color: '#030507',
@@ -670,12 +856,14 @@ const styles = StyleSheet.create({
   },
   btnSecondary: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
     borderRadius: 8,
     paddingVertical: 12,
-    alignItems: 'center',
   },
   btnSecondaryText: {
     color: colors.textMain,
@@ -878,6 +1066,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   miniCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.gold,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -888,10 +1078,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#030507',
   },
+  qrZoomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginVertical: 4,
+  },
+  qrZoomText: {
+    fontSize: 11,
+    color: colors.goldSoft,
+    fontWeight: '600',
+  },
   walletNoticeText: {
     fontSize: 9.5,
     color: colors.textDim,
     lineHeight: 14,
+  },
+  uploadBox: {
+    backgroundColor: '#0E131A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.bgCardBorderGold,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  uploadBoxText: {
+    fontSize: 11.5,
+    color: colors.goldSoft,
+    fontWeight: '600',
   },
   modalBtnRow: {
     flexDirection: 'row',
@@ -919,4 +1138,56 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  lightboxCard: {
+    backgroundColor: '#070A0E',
+    borderRadius: 16,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorderGold,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  lightboxTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textMain,
+    marginBottom: 16,
+  },
+  qrPlaceholder: {
+    width: 180,
+    height: 180,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  lightboxAddr: {
+    fontSize: 11,
+    color: colors.goldSoft,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  lightboxCloseBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  lightboxCloseBtnText: {
+    color: colors.textMain,
+    fontWeight: '700',
+    fontSize: 12,
+  },
 });
+

@@ -1,4 +1,4 @@
-// FINOVO Mobile Design System Tokens — Strictly matching the web application
+// FINOVO Mobile Design System Tokens — Strictly matching the web application & design.md
 // Architecture: Deep Void base, Frosted Obsidian surfaces, Authentic Gold accents, Emerald signals.
 
 export default {
@@ -7,10 +7,12 @@ export default {
   bgVoid: '#030507',
   bgCard: '#0E131A',
   bgCardElevated: '#151C25',
+  bgCardGlass: 'rgba(14, 19, 26, 0.85)',
   bgCardBorder: 'rgba(255, 255, 255, 0.08)',
   bgCardBorderLight: 'rgba(255, 255, 255, 0.15)',
   bgCardBorderGold: 'rgba(198, 153, 61, 0.30)',
   bgCardBorderGreen: 'rgba(16, 185, 129, 0.30)',
+  bgCardBorderRed: 'rgba(239, 68, 68, 0.30)',
   bgInput: '#070A0E',
   bgInputFocus: '#0c1017',
 
@@ -20,6 +22,7 @@ export default {
   goldDeep: '#A27B2C',
   goldGlow: 'rgba(198, 153, 61, 0.18)',
   goldGlowStrong: 'rgba(198, 153, 61, 0.32)',
+  goldMuted: 'rgba(198, 153, 61, 0.12)',
 
   // Emerald & Growth Accents (Positive Financial Signals)
   emerald: '#10B981',
@@ -51,3 +54,4 @@ export default {
   primaryBlue: '#DFBD69',
   primaryPurple: '#A27B2C',
 };
+

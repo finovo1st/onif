@@ -97,6 +97,8 @@ export default function ReferralsScreen() {
 
   const [selectedLevel, setSelectedLevel] = useState('all');
 
+  const [levelStats, setLevelStats] = useState([]);
+
   const loadReferralData = async () => {
     if (isDemoMode) return;
     try {
@@ -118,6 +120,10 @@ export default function ReferralsScreen() {
       const commData = await apiCall('/referrals/commissions/').catch(() => []);
       const commList = Array.isArray(commData) ? commData : (commData?.results || []);
       if (commList.length > 0) setCommissions(commList);
+
+      const levelsData = await apiCall('/referrals/levels/').catch(() => []);
+      const levelsList = Array.isArray(levelsData) ? levelsData : (levelsData?.results || []);
+      if (levelsList.length > 0) setLevelStats(levelsList);
     } catch (err) {
       console.warn('Referrals data load error:', err.message);
     }
@@ -139,13 +145,27 @@ export default function ReferralsScreen() {
 
   const currentDirLevel = summary.active_level || user?.active_level || 0;
   const currentRoiLevel = summary.active_roi_level || user?.active_roi_level || 0;
-  const levels = [
+  const defaultLevels = [
     { lvl: 1, dirReq: 0, roiReq: 2 },
     { lvl: 2, dirReq: 2, roiReq: 4 },
     { lvl: 3, dirReq: 4, roiReq: 6 },
     { lvl: 4, dirReq: 6, roiReq: 8 },
     { lvl: 5, dirReq: 8, roiReq: 10 },
   ];
+
+  const levelsToRender = levelStats.length > 0
+    ? levelStats.map(s => ({
+        lvl: s.level,
+        dirReq: s.dir_req !== undefined ? s.dir_req : (s.level === 1 ? 0 : (s.level - 1) * 2),
+        roiReq: s.roi_req !== undefined ? s.roi_req : s.level * 2,
+        isDirUnlocked: s.is_direct_unlocked !== undefined ? s.is_direct_unlocked : (currentDirLevel >= s.level),
+        isRoiUnlocked: s.is_roi_unlocked !== undefined ? s.is_roi_unlocked : (currentRoiLevel >= s.level),
+      }))
+    : defaultLevels.map(item => ({
+        ...item,
+        isDirUnlocked: currentDirLevel >= item.lvl,
+        isRoiUnlocked: currentRoiLevel >= item.lvl,
+      }));
 
   const filteredTeam = team.filter((m) => {
     const q = searchQuery.toLowerCase();
@@ -216,9 +236,9 @@ export default function ReferralsScreen() {
           Active Direct Referrals unlock downline levels up to 5 tiers deep.
         </Text>
 
-        {levels.map((item) => {
-          const isDirUnlocked = currentDirLevel >= item.lvl;
-          const isRoiUnlocked = currentRoiLevel >= item.lvl;
+        {levelsToRender.map((item) => {
+          const isDirUnlocked = item.isDirUnlocked;
+          const isRoiUnlocked = item.isRoiUnlocked;
           return (
             <View key={item.lvl} style={styles.levelRow}>
               <View style={{ flex: 1 }}>

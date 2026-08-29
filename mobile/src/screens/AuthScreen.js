@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,17 +9,30 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import colors from '../theme/colors';
 
 export default function AuthScreen() {
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
-  const { login, register, forgotPassword, resetPassword, enableDemoMode, loading } = useContext(AuthContext);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'verify-otp' | 'forgot' | 'reset'
+  const {
+    login,
+    register,
+    verifyEmail,
+    resendOTP,
+    forgotPassword,
+    resendForgotOTP,
+    resetPassword,
+    enableDemoMode,
+    loading,
+  } = useContext(AuthContext);
 
   // Form State
   const [email, setEmail] = useState('l1_alice@finovo.com');
   const [password, setPassword] = useState('Password123!');
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // Register Fields
   const [firstName, setFirstName] = useState('');
@@ -28,18 +41,52 @@ export default function AuthScreen() {
   const [password2, setPassword2] = useState('');
   const [refCode, setRefCode] = useState('');
 
+  // OTP Verification Fields
+  const [otpCode, setOtpCode] = useState('');
+  const [otpEmailDisplay, setOtpEmailDisplay] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);
+
   // Forgot / Reset Password Fields
   const [resetIdentifier, setResetIdentifier] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPassword2, setNewPassword2] = useState('');
+  const [resetCountdown, setResetCountdown] = useState(0);
+
+  // Countdown timer effect
+  useEffect(() => {
+    let timer;
+    if (otpCountdown > 0) {
+      timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [otpCountdown]);
+
+  useEffect(() => {
+    let timer;
+    if (resetCountdown > 0) {
+      timer = setTimeout(() => setResetCountdown(resetCountdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resetCountdown]);
 
   const onLoginSubmit = async () => {
     if (!email || !password) {
       Alert.alert('Validation Error', 'Please enter your email or username and password.');
       return;
     }
-    await login(email, password);
+    try {
+      await login(email, password);
+    } catch (err) {
+      Alert.alert(
+        'Sign In Failed',
+        err.message || 'Unable to sign in. Please verify your credentials.',
+        [
+          { text: 'Try Again' },
+          { text: 'Use Demo Mode', onPress: () => enableDemoMode(email) },
+        ]
+      );
+    }
   };
 
   const onRegisterSubmit = async () => {
@@ -61,10 +108,36 @@ export default function AuthScreen() {
         password2,
         referral_code: refCode,
       });
-      Alert.alert('Registration Successful', 'Your account has been created. Please sign in.');
-      setAuthMode('login');
+      setOtpEmailDisplay(email);
+      setOtpCode('');
+      setOtpCountdown(60);
+      setAuthMode('verify-otp');
     } catch (err) {
       Alert.alert('Registration Error', err.message);
+    }
+  };
+
+  const onVerifyOTPSubmit = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      Alert.alert('Validation Error', 'Please enter the complete 6-digit verification code.');
+      return;
+    }
+    try {
+      await verifyEmail(otpCode);
+      Alert.alert('Email Verified', 'Your account has been verified! Welcome to FINOVO.');
+    } catch (err) {
+      Alert.alert('Verification Error', err.message || 'Invalid or expired OTP code.');
+    }
+  };
+
+  const onResendOTPClick = async () => {
+    if (otpCountdown > 0) return;
+    try {
+      await resendOTP(otpEmailDisplay || email);
+      setOtpCountdown(60);
+      Alert.alert('Code Sent', 'A fresh 6-digit verification code has been dispatched to your email.');
+    } catch (err) {
+      Alert.alert('Resend Error', err.message);
     }
   };
 
@@ -75,10 +148,22 @@ export default function AuthScreen() {
     }
     try {
       await forgotPassword(resetIdentifier);
+      setResetCountdown(60);
       Alert.alert('Reset Code Sent', `If the account exists, a 6-digit reset code has been sent.`);
       setAuthMode('reset');
     } catch (err) {
       Alert.alert('Error', err.message);
+    }
+  };
+
+  const onResendForgotOTPClick = async () => {
+    if (resetCountdown > 0) return;
+    try {
+      await resendForgotOTP(resetIdentifier);
+      setResetCountdown(60);
+      Alert.alert('Code Sent', 'A new password reset code has been dispatched.');
+    } catch (err) {
+      Alert.alert('Resend Error', err.message);
     }
   };
 
@@ -108,12 +193,12 @@ export default function AuthScreen() {
           <Text style={styles.logoText}>F</Text>
         </View>
         <Text style={styles.brandTitle}>FINOVO</Text>
-        <Text style={styles.brandSubtitle}>Institutional Crypto Investment & Yield Sharing</Text>
+        <Text style={styles.brandSubtitle}>Institutional Crypto Investment &amp; Referral Portal</Text>
 
         <View style={styles.trustRow}>
           <Text style={styles.trustItem}>✓ Segregated Custody</Text>
           <Text style={styles.trustItem}>✓ 300% Return Cap</Text>
-          <Text style={styles.trustItem}>✓ Fast USDT Payouts</Text>
+          <Text style={styles.trustItem}>✓ Fast USDT Settlements</Text>
         </View>
       </View>
 
@@ -151,7 +236,7 @@ export default function AuthScreen() {
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="you@example.com or johndoe"
+              placeholder="you@example.com or username"
               placeholderTextColor={colors.textDim}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -203,10 +288,19 @@ export default function AuthScreen() {
 
             <TouchableOpacity
               style={styles.btnSecondary}
-              onPress={() => enableDemoMode()}
+              onPress={() => enableDemoMode('l1_alice@finovo.com', true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.btnSecondaryText}>Explore Demo Mode Offline</Text>
+              <Text style={styles.btnSecondaryText}>⚡ Explore Full Demo Mode (Investor &amp; Admin)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ marginTop: 16, alignItems: 'center' }}
+              onPress={() => setAuthMode('register')}
+            >
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                New to Finovo? <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Create an account</Text>
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -237,7 +331,7 @@ export default function AuthScreen() {
               </View>
             </View>
 
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.label}>Username *</Text>
             <TextInput
               style={styles.input}
               value={username}
@@ -247,7 +341,7 @@ export default function AuthScreen() {
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>Email Address *</Text>
             <TextInput
               style={styles.input}
               value={email}
@@ -258,24 +352,33 @@ export default function AuthScreen() {
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Minimum 8 characters"
-              placeholderTextColor={colors.textDim}
-              secureTextEntry
-            />
+            <Text style={styles.label}>Password *</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Minimum 8 characters"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showRegPassword}
+              />
+              <TouchableOpacity
+                style={styles.togglePwBtn}
+                onPress={() => setShowRegPassword(!showRegPassword)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.togglePwText}>{showRegPassword ? 'HIDE' : 'SHOW'}</Text>
+              </TouchableOpacity>
+            </View>
 
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={styles.label}>Confirm Password *</Text>
             <TextInput
               style={styles.input}
               value={password2}
               onChangeText={setPassword2}
               placeholder="Re-enter password"
               placeholderTextColor={colors.textDim}
-              secureTextEntry
+              secureTextEntry={!showRegPassword}
             />
 
             <Text style={styles.label}>Sponsor / Referral Code (Optional)</Text>
@@ -312,12 +415,80 @@ export default function AuthScreen() {
           </View>
         )}
 
-        {/* 3. FORGOT PASSWORD FORM */}
+        {/* 3. OTP VERIFICATION FORM (Post Registration) */}
+        {authMode === 'verify-otp' && (
+          <View style={{ alignItems: 'center' }}>
+            <View style={styles.otpIconCircle}>
+              <Feather name="mail" size={26} color={colors.goldSoft} />
+            </View>
+            <Text style={styles.formTitle}>Verify Your Email Address</Text>
+            <Text style={[styles.formDesc, { textAlign: 'center' }]}>
+              We've dispatched a 6-digit confirmation code to{'\n'}
+              <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>{otpEmailDisplay}</Text>
+            </Text>
+
+            <View style={{ width: '100%', marginTop: 8 }}>
+              <Text style={styles.label}>6-Digit Verification Code</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    textAlign: 'center',
+                    fontSize: 22,
+                    fontWeight: '800',
+                    letterSpacing: 8,
+                    color: colors.goldSoft,
+                  },
+                ]}
+                value={otpCode}
+                onChangeText={setOtpCode}
+                placeholder="123456"
+                placeholderTextColor={colors.textDim}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.btnPrimary, { width: '100%', marginTop: 16 }]}
+              onPress={onVerifyOTPSubmit}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator color="#030507" />
+              ) : (
+                <Text style={styles.btnPrimaryText}>Verify Email &amp; Activate Account</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.otpResendRow}>
+              {otpCountdown > 0 ? (
+                <Text style={styles.countdownText}>Resend code in {otpCountdown}s</Text>
+              ) : (
+                <TouchableOpacity onPress={onResendOTPClick} activeOpacity={0.7}>
+                  <Text style={styles.resendBtnText}>Resend Code</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={{ marginTop: 18 }}
+              onPress={() => setAuthMode('register')}
+            >
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                ← <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Back to registration</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 4. FORGOT PASSWORD FORM */}
         {authMode === 'forgot' && (
           <View>
             <Text style={styles.formTitle}>Reset Your Password</Text>
             <Text style={styles.formDesc}>
-              Enter your registered email address or username and we will send you a 6-digit verification code.
+              Enter your registered email address or username and we will dispatch a 6-digit verification code.
             </Text>
 
             <Text style={styles.label}>Email Address or Username</Text>
@@ -325,7 +496,7 @@ export default function AuthScreen() {
               style={styles.input}
               value={resetIdentifier}
               onChangeText={setResetIdentifier}
-              placeholder="you@example.com or johndoe"
+              placeholder="you@example.com or username"
               placeholderTextColor={colors.textDim}
               autoCapitalize="none"
             />
@@ -348,23 +519,32 @@ export default function AuthScreen() {
               onPress={() => setAuthMode('login')}
             >
               <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                ← Back to <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Sign In</Text>
+                Remember your password? <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Sign In</Text>
               </Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* 4. RESET PASSWORD FORM */}
+        {/* 5. RESET PASSWORD FORM */}
         {authMode === 'reset' && (
           <View>
             <Text style={styles.formTitle}>Enter Verification Code</Text>
             <Text style={styles.formDesc}>
-              Enter the 6-digit OTP code sent to your account and choose your new password.
+              Enter the 6-digit OTP code dispatched to <Text style={{ color: colors.goldSoft }}>{resetIdentifier}</Text> and choose your new password.
             </Text>
 
             <Text style={styles.label}>6-Digit OTP Code</Text>
             <TextInput
-              style={[styles.input, { letterSpacing: 4, fontWeight: '700', fontSize: 16 }]}
+              style={[
+                styles.input,
+                {
+                  textAlign: 'center',
+                  fontSize: 20,
+                  fontWeight: '800',
+                  letterSpacing: 6,
+                  color: colors.goldSoft,
+                },
+              ]}
               value={resetOtp}
               onChangeText={setResetOtp}
               placeholder="123456"
@@ -374,14 +554,23 @@ export default function AuthScreen() {
             />
 
             <Text style={styles.label}>New Password</Text>
-            <TextInput
-              style={styles.input}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholder="Minimum 8 characters"
-              placeholderTextColor={colors.textDim}
-              secureTextEntry
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Minimum 8 characters"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showResetPassword}
+              />
+              <TouchableOpacity
+                style={styles.togglePwBtn}
+                onPress={() => setShowResetPassword(!showResetPassword)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.togglePwText}>{showResetPassword ? 'HIDE' : 'SHOW'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.label}>Confirm New Password</Text>
             <TextInput
@@ -390,7 +579,7 @@ export default function AuthScreen() {
               onChangeText={setNewPassword2}
               placeholder="Re-enter new password"
               placeholderTextColor={colors.textDim}
-              secureTextEntry
+              secureTextEntry={!showResetPassword}
             />
 
             <TouchableOpacity
@@ -402,18 +591,29 @@ export default function AuthScreen() {
               {loading ? (
                 <ActivityIndicator color="#030507" />
               ) : (
-                <Text style={styles.btnPrimaryText}>Update & Save Password</Text>
+                <Text style={styles.btnPrimaryText}>Update &amp; Save Password</Text>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={{ marginTop: 16, alignItems: 'center' }}
-              onPress={() => setAuthMode('login')}
-            >
-              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                ← Back to <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Sign In</Text>
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.otpResendRow}>
+              {resetCountdown > 0 ? (
+                <Text style={styles.countdownText}>Resend code in {resetCountdown}s</Text>
+              ) : (
+                <TouchableOpacity onPress={onResendForgotOTPClick} activeOpacity={0.7}>
+                  <Text style={styles.resendBtnText}>Resend Code</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16, gap: 12 }}>
+              <TouchableOpacity onPress={() => setAuthMode('forgot')}>
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>← Change email</Text>
+              </TouchableOpacity>
+              <Text style={{ color: colors.textDim }}>|</Text>
+              <TouchableOpacity onPress={() => setAuthMode('login')}>
+                <Text style={{ color: colors.goldSoft, fontWeight: '700', fontSize: 13 }}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -434,10 +634,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logoBadge: {
-    width: 52,
-    height: 52,
+    width: 54,
+    height: 54,
     borderRadius: 14,
-    backgroundColor: 'rgba(198, 153, 61, 0.12)',
+    backgroundColor: 'rgba(198, 153, 61, 0.15)',
     borderWidth: 1,
     borderColor: colors.bgCardBorderGold,
     alignItems: 'center',
@@ -445,7 +645,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   logoText: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.goldSoft,
   },
@@ -516,6 +716,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 18,
     marginBottom: 14,
+  },
+  otpIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(198, 153, 61, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorderGold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   label: {
     fontSize: 11,
@@ -588,6 +799,22 @@ const styles = StyleSheet.create({
   btnSecondaryText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textMuted,
+    color: colors.goldSoft,
+  },
+  otpResendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  countdownText: {
+    fontSize: 12,
+    color: colors.textDim,
+  },
+  resendBtnText: {
+    fontSize: 12,
+    color: colors.goldSoft,
+    fontWeight: '700',
   },
 });
+

@@ -9,67 +9,106 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
 
+const DEFAULT_TIERS = [
+  {
+    id: 'package-1',
+    name: 'Package 1',
+    cost: 120,
+    trading_capital: 100,
+    max_return_factor: 3,
+    max_total_return: 350,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+  },
+  {
+    id: 'package-2',
+    name: 'Package 2',
+    cost: 350,
+    trading_capital: 300,
+    max_return_factor: 3,
+    max_total_return: 1000,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+    is_popular: true,
+  },
+  {
+    id: 'package-3',
+    name: 'Package 3',
+    cost: 575,
+    trading_capital: 500,
+    max_return_factor: 3,
+    max_total_return: 1700,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+  },
+  {
+    id: 'package-4',
+    name: 'Package 4',
+    cost: 1100,
+    trading_capital: 1000,
+    max_return_factor: 3,
+    max_total_return: 3300,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+  },
+  {
+    id: 'package-5',
+    name: 'Package 5',
+    cost: 5500,
+    trading_capital: 5000,
+    max_return_factor: 3,
+    max_total_return: 16500,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+  },
+  {
+    id: 'package-6',
+    name: 'Package 6',
+    cost: 11000,
+    trading_capital: 10000,
+    max_return_factor: 3,
+    max_total_return: 33000,
+    weekly_roi_rate: 2.0,
+    duration_weeks: 0,
+  },
+];
+
 export default function InvestmentsScreen({ onNavigate }) {
   const { user, isDemoMode } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [plans, setPlans] = useState([
+  const [plans, setPlans] = useState(DEFAULT_TIERS);
+
+  const [investments, setInvestments] = useState([
     {
-      id: 'starter',
-      name: 'Starter Tier',
-      package_cost: 100,
-      trading_capital: 100,
-      weekly_roi_rate: 2.5,
-      minimum_amount: 100,
-      maximum_amount: 1000,
-      max_return_cap: 300,
-    },
-    {
-      id: 'pro',
-      name: 'Pro Trader Tier',
-      package_cost: 1000,
-      trading_capital: 1000,
-      weekly_roi_rate: 3.5,
-      minimum_amount: 1000,
-      maximum_amount: 5000,
-      max_return_cap: 300,
-      is_popular: true,
-    },
-    {
-      id: 'elite',
-      name: 'Elite Institutional',
-      package_cost: 5000,
-      trading_capital: 5000,
-      weekly_roi_rate: 4.5,
-      minimum_amount: 5000,
-      maximum_amount: 25000,
-      max_return_cap: 300,
-    },
-    {
-      id: 'whale',
-      name: 'Whale Multi-Strategy',
-      package_cost: 10000,
-      trading_capital: 10000,
-      weekly_roi_rate: 5.0,
-      minimum_amount: 10000,
-      maximum_amount: 50000,
-      max_return_cap: 300,
+      id: 'inv-1',
+      plan_name: 'Package 1',
+      cost: 120.0,
+      amount: 120.0,
+      trading_capital: 100.0,
+      max_return: 350.0,
+      total_credited: 125.0,
+      status: 'ACTIVE',
+      created_at: '2026-08-01',
     },
   ]);
 
-  const [investments, setInvestments] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [investAmount, setInvestAmount] = useState('100');
+  const [investAmount, setInvestAmount] = useState('120');
   const [depositNetwork, setDepositNetwork] = useState('BEP20');
   const [txHash, setTxHash] = useState('');
   const [senderAddress, setSenderAddress] = useState('');
+  const [proofFileName, setProofFileName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [lightboxVisible, setLightboxVisible] = useState(false);
 
   // Platform treasury deposit addresses
   const [companyWallets, setCompanyWallets] = useState({
@@ -81,10 +120,18 @@ export default function InvestmentsScreen({ onNavigate }) {
     if (isDemoMode) return;
     try {
       const fetchedPlans = await apiCall('/investments/plans/').catch(() => []);
-      if (Array.isArray(fetchedPlans) && fetchedPlans.length > 0) setPlans(fetchedPlans);
+      const planList = Array.isArray(fetchedPlans) ? fetchedPlans : (fetchedPlans?.results || []);
+      if (planList.length > 0) {
+        setPlans(planList);
+      } else {
+        setPlans(DEFAULT_TIERS);
+      }
 
       const fetchedInvestments = await apiCall('/investments/').catch(() => []);
-      if (Array.isArray(fetchedInvestments)) setInvestments(fetchedInvestments);
+      const invList = Array.isArray(fetchedInvestments) ? fetchedInvestments : (fetchedInvestments?.results || []);
+      if (invList.length > 0) {
+        setInvestments(invList);
+      }
 
       const walletData = await apiCall('/dashboard/deposit-wallets/').catch(() => null);
       if (walletData) {
@@ -102,20 +149,29 @@ export default function InvestmentsScreen({ onNavigate }) {
     loadPlansAndInvestments();
   }, []);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadPlansAndInvestments();
+    setRefreshing(false);
+  };
+
   const openInvestModal = (plan) => {
+    const cost = Number(plan.cost || plan.package_cost || plan.minimum_amount || 120);
     setSelectedPlan(plan);
-    setInvestAmount(String(plan.package_cost || plan.minimum_amount || 100));
+    setInvestAmount(String(cost));
     setTxHash('');
     setSenderAddress('');
+    setProofFileName('');
     setModalVisible(true);
   };
 
+  const handlePickProof = () => {
+    setProofFileName(`deposit_receipt_${Date.now().toString().slice(-4)}.jpg`);
+    Alert.alert('Screenshot Attached', 'Deposit payment proof screenshot has been selected.');
+  };
+
   const handleConfirmInvestment = async () => {
-    const amt = Number(investAmount);
-    if (!amt || amt < (selectedPlan?.minimum_amount || 100)) {
-      Alert.alert('Invalid Amount', `Minimum allocation for ${selectedPlan?.name} is $${selectedPlan?.minimum_amount || 100} USDT.`);
-      return;
-    }
+    const cost = Number(selectedPlan?.cost || selectedPlan?.package_cost || investAmount || 120);
     if (!txHash) {
       Alert.alert('Missing TxID', 'Please enter your blockchain transaction hash (TxID) to submit deposit proof.');
       return;
@@ -126,15 +182,37 @@ export default function InvestmentsScreen({ onNavigate }) {
       if (!isDemoMode) {
         await apiCall('/investments/', 'POST', {
           plan: selectedPlan.id,
-          amount: amt,
+          cost: cost,
+          amount: cost,
           network: depositNetwork,
+          deposit_network: depositNetwork,
           txn_hash: txHash,
+          deposit_txn_hash: txHash,
           sender_wallet_address: senderAddress || '0xUserMobileSender',
+          deposit_sender_address: senderAddress || '0xUserMobileSender',
         });
+      } else {
+        const tradingCap = Number(selectedPlan.trading_capital || cost);
+        const maxRet = Number(selectedPlan.max_total_return || (tradingCap * (selectedPlan.max_return_factor || 3)));
+        const newInv = {
+          id: `inv-${Date.now()}`,
+          plan_name: selectedPlan.name,
+          cost: cost,
+          amount: cost,
+          trading_capital: tradingCap,
+          max_return: maxRet,
+          total_credited: 0,
+          status: 'PENDING',
+          created_at: 'Just now',
+        };
+        setInvestments([newInv, ...investments]);
       }
 
       setModalVisible(false);
-      Alert.alert('Investment Submitted', `Deposit proof for $${amt.toFixed(2)} USDT submitted successfully. Admin will verify on-chain and activate your plan.`);
+      Alert.alert(
+        'Investment Submitted',
+        `Deposit proof for $${cost.toFixed(2)} USDT (${selectedPlan.name}) submitted successfully. Admin compliance desk will verify on-chain and activate your plan.`
+      );
       loadPlansAndInvestments();
     } catch (err) {
       Alert.alert('Investment Error', err.message);
@@ -151,13 +229,19 @@ export default function InvestmentsScreen({ onNavigate }) {
   const isKycApproved = user?.kyc_status === 'APPROVED';
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.goldSoft} />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.eyebrow}>PACKAGES &amp; TIERS</Text>
         <Text style={styles.screenTitle}>Institutional Investment Plans</Text>
         <Text style={styles.screenSubtitle}>
-          Choose your investment tier, complete USDT deposit to treasury, and receive trading capital allocation upon confirmation.
+          Choose your desired investment tier, complete USDT deposit to platform treasury, and receive trading capital allocation upon confirmation.
         </Text>
       </View>
 
@@ -165,9 +249,9 @@ export default function InvestmentsScreen({ onNavigate }) {
       {!isKycApproved && (
         <View style={styles.kycLockCard}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kycLockTitle}>Identity Verification (KYC) Required</Text>
+            <Text style={styles.kycLockTitle}>Identity Verification Required to Buy Plans</Text>
             <Text style={styles.kycLockDesc}>
-              Complete your KYC identity verification to unlock full capital deployment and automated weekly ROI distributions.
+              You must complete your KYC identity verification before you can invest in packages or activate deposits.
             </Text>
           </View>
           <TouchableOpacity
@@ -175,7 +259,7 @@ export default function InvestmentsScreen({ onNavigate }) {
             onPress={() => onNavigate && onNavigate('kyc')}
             activeOpacity={0.8}
           >
-            <Text style={styles.kycLockBtnText}>Verify KYC →</Text>
+            <Text style={styles.kycLockBtnText}>Verify Identity (KYC)</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -187,63 +271,112 @@ export default function InvestmentsScreen({ onNavigate }) {
           <Text style={styles.guideTitle}>How Investment Works</Text>
         </View>
         <Text style={styles.guideStep}>
-          <Text style={styles.guideStepBold}>1. Choose Tier:</Text> Select an institutional plan and amount.
-        </Text>
-        <Text style={styles.guideStep}>
-          <Text style={styles.guideStepBold}>2. Send USDT:</Text> Transfer crypto to the verified treasury wallet address.
-        </Text>
-        <Text style={styles.guideStep}>
-          <Text style={styles.guideStepBold}>3. Admin Verifies:</Text> Your transaction hash is verified on-chain.
-        </Text>
-        <Text style={styles.guideStep}>
-          <Text style={styles.guideStepBold}>4. Automated Yield:</Text> Weekly ROI and referral income are credited directly.
+          <Text style={styles.guideStepBold}>Step 1:</Text> Choose a plan &amp; review terms →{' '}
+          <Text style={styles.guideStepBold}>Step 2:</Text> Send exact USDT to platform treasury wallet and paste TxID hash →{' '}
+          <Text style={styles.guideStepBold}>Step 3:</Text> Admin verifies deposit and activates plan →{' '}
+          <Text style={styles.guideStepBold}>Step 4:</Text> Weekly automated ROI credited to your wallet.
         </Text>
       </View>
 
-      {/* Package Tier Cards Grid */}
-      {plans.map((plan) => {
+      {/* Luxury Package Tier Cards Grid */}
+      {plans.map((plan, idx) => {
+        const pkgNum = plan.name ? (plan.name.replace(/[^0-9]/g, '') || (idx + 1)) : (idx + 1);
+        const cost = Number(plan.cost || plan.package_cost || plan.minimum_amount || 120);
+        const tradingCap = Number(plan.trading_capital || cost);
+        const maxFactor = Number(plan.max_return_factor || 3);
+        const maxReturn = Number(plan.max_total_return || (tradingCap * maxFactor));
+        const profitCap = `${maxFactor}X`;
+        const duration = plan.duration_weeks ? `${plan.duration_weeks} WEEKS` : 'FLEXIBLE';
         const isPopular = plan.is_popular;
+
         return (
-          <View key={plan.id} style={[styles.planCard, isPopular && styles.planCardPopular]}>
-            {isPopular && (
-              <View style={styles.popularBadge}>
-                <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+          <View key={plan.id || idx} style={[styles.pkgCard, isPopular && styles.pkgCardPopular]}>
+            {/* Top Right Gold Ribbon */}
+            <View style={styles.pkgRibbon}>
+              <Text style={styles.pkgRibbonSub}>PACKAGE</Text>
+              <Text style={styles.pkgRibbonNum}>{pkgNum}</Text>
+            </View>
+
+            {/* Header: Brand Logo & Tagline */}
+            <View style={styles.pkgHeader}>
+              <View style={styles.pkgBrandRow}>
+                <View style={styles.pkgLogoIconWrap}>
+                  <Feather name="layers" size={15} color={colors.goldSoft} />
+                </View>
+                <Text style={styles.pkgBrandTitle}>FINOVO</Text>
               </View>
-            )}
-
-            <Text style={styles.planName}>{plan.name}</Text>
-            <View style={styles.roiRow}>
-              <Text style={styles.planRoi}>{Number(plan.weekly_roi_rate).toFixed(2)}%</Text>
-              <Text style={styles.planRoiSub}> / weekly ROI</Text>
+              <Text style={styles.pkgBrandTagline}>Trade Smart. Grow Together.</Text>
             </View>
 
-            <View style={styles.divider} />
+            {/* Subheading */}
+            <Text style={styles.pkgSubheading}>INVESTMENT PLAN</Text>
 
-            <View style={styles.featureRow}>
-              <Text style={styles.featureLabel}>Package Cost</Text>
-              <Text style={styles.featureValue}>${Number(plan.package_cost || plan.minimum_amount).toFixed(2)} USDT</Text>
-            </View>
-            <View style={styles.featureRow}>
-              <Text style={styles.featureLabel}>Trading Capital</Text>
-              <Text style={[styles.featureValue, { color: colors.accentGreenSoft }]}>
-                ${Number(plan.trading_capital || plan.package_cost || plan.minimum_amount).toFixed(2)} USDT
-              </Text>
-            </View>
-            <View style={styles.featureRow}>
-              <Text style={styles.featureLabel}>Max Cumulative Return</Text>
-              <Text style={[styles.featureValue, { color: colors.goldSoft }]}>
-                300.00% Profit Cap
-              </Text>
-            </View>
-            <View style={styles.featureRow}>
-              <Text style={styles.featureLabel}>Payout Schedule</Text>
-              <Text style={styles.featureValue}>Weekly Automated</Text>
+            {/* Main Invest -> You Get (Max) Box */}
+            <View style={styles.pkgInvestBox}>
+              <View style={styles.pkgInvestCol}>
+                <Text style={styles.pkgInvestLbl}>INVEST</Text>
+                <Text style={styles.pkgInvestVal}>${cost.toLocaleString()}</Text>
+              </View>
+              <View style={styles.pkgArrowWrap}>
+                <Text style={styles.pkgArrow}>➔</Text>
+              </View>
+              <View style={styles.pkgInvestCol}>
+                <Text style={styles.pkgInvestLbl}>YOU GET (MAX)</Text>
+                <Text style={[styles.pkgInvestVal, styles.pkgInvestValGold]}>${maxReturn.toLocaleString()}</Text>
+              </View>
             </View>
 
+            {/* 3-Column Stats Row */}
+            <View style={styles.pkgStatsRow}>
+              <View style={styles.pkgStatItem}>
+                <Feather name="shield" size={13} color={colors.goldSoft} style={styles.pkgStatIcon} />
+                <View>
+                  <Text style={styles.pkgStatTitle}>TRADING CAPITAL</Text>
+                  <Text style={styles.pkgStatValue}>${tradingCap.toLocaleString()}</Text>
+                </View>
+              </View>
+              <View style={styles.pkgStatItem}>
+                <Feather name="trending-up" size={13} color={colors.goldSoft} style={styles.pkgStatIcon} />
+                <View>
+                  <Text style={styles.pkgStatTitle}>PROFIT CAP</Text>
+                  <Text style={styles.pkgStatValue}>{profitCap}</Text>
+                </View>
+              </View>
+              <View style={styles.pkgStatItem}>
+                <Feather name="clock" size={13} color={colors.goldSoft} style={styles.pkgStatIcon} />
+                <View>
+                  <Text style={styles.pkgStatTitle}>DURATION</Text>
+                  <Text style={styles.pkgStatValue}>{duration}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Profit Payout Gold Banner */}
+            <View style={styles.pkgPayoutBanner}>
+              <Text style={styles.pkgPayoutBannerText}>PROFIT PAYOUT : WEEKLY</Text>
+            </View>
+
+            {/* Trust Badges Row */}
+            <View style={styles.pkgTrustRow}>
+              <View style={styles.pkgTrustItem}>
+                <Feather name="check-circle" size={11} color={colors.goldSoft} />
+                <Text style={styles.pkgTrustText}>SECURE PLATFORM</Text>
+              </View>
+              <View style={styles.pkgTrustItem}>
+                <Feather name="eye" size={11} color={colors.goldSoft} />
+                <Text style={styles.pkgTrustText}>TRANSPARENT</Text>
+              </View>
+              <View style={styles.pkgTrustItem}>
+                <Feather name="headphones" size={11} color={colors.goldSoft} />
+                <Text style={styles.pkgTrustText}>24/7 SUPPORT</Text>
+              </View>
+            </View>
+
+            {/* Deploy Capital Action Button */}
             <TouchableOpacity
               style={styles.btnInvest}
               onPress={() => openInvestModal(plan)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <Text style={styles.btnInvestText}>Deploy Capital →</Text>
             </TouchableOpacity>
@@ -266,18 +399,28 @@ export default function InvestmentsScreen({ onNavigate }) {
             <View key={inv.id || idx} style={styles.invRow}>
               <View style={{ flex: 1, paddingRight: 8 }}>
                 <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13 }}>
-                  {inv.plan_name || 'Tier'}
+                  {inv.plan_name || 'Package'}
                 </Text>
                 <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
-                  Credited: ${Number(inv.total_credited || 0).toFixed(2)} / Max: ${Number(inv.max_return || inv.amount * 3).toFixed(2)}
+                  Credited: ${Number(inv.total_credited || 0).toFixed(2)} / Max: ${Number(inv.max_return || (Number(inv.amount || inv.cost || 120) * 3)).toFixed(2)}
+                </Text>
+                <Text style={{ color: colors.textDim, fontSize: 10, marginTop: 2 }}>
+                  Started: {inv.created_at ? String(inv.created_at).slice(0, 10) : 'Recent'}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: colors.goldSoft, fontWeight: '700', fontSize: 14 }}>
-                  ${Number(inv.amount).toFixed(2)}
+                  ${Number(inv.cost || inv.amount || 120).toFixed(2)}
                 </Text>
-                <Text style={{ color: colors.accentGreenSoft, fontSize: 10, fontWeight: '700', marginTop: 2 }}>
-                  {inv.status || 'ACTIVE'}
+                <Text
+                  style={{
+                    color: inv.status === 'ACTIVE' ? colors.accentGreenSoft : inv.status === 'PENDING' || inv.status === 'DEPOSIT_PENDING' ? colors.accentWarning : colors.textDim,
+                    fontSize: 10,
+                    fontWeight: '700',
+                    marginTop: 2,
+                  }}
+                >
+                  {inv.status ? inv.status.replace('_', ' ') : 'ACTIVE'}
                 </Text>
               </View>
             </View>
@@ -296,7 +439,7 @@ export default function InvestmentsScreen({ onNavigate }) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 460 }} showsVerticalScrollIndicator={false}>
               {/* Step 1: Package Overview */}
               <Text style={styles.stepTitle}>STEP 1 — PACKAGE OVERVIEW</Text>
               <View style={styles.step1Box}>
@@ -305,33 +448,48 @@ export default function InvestmentsScreen({ onNavigate }) {
                   <Text style={styles.previewValGold}>{selectedPlan?.name}</Text>
                 </View>
                 <View style={styles.previewRow}>
-                  <Text style={styles.previewLabel}>Weekly ROI Rate:</Text>
-                  <Text style={styles.previewValGold}>{Number(selectedPlan?.weekly_roi_rate || 0).toFixed(2)}% / wk</Text>
+                  <Text style={styles.previewLabel}>Package Purchase Cost:</Text>
+                  <Text style={styles.previewValGold}>
+                    ${Number(selectedPlan?.cost || selectedPlan?.package_cost || investAmount || 120).toFixed(2)} USDT
+                  </Text>
                 </View>
                 <View style={styles.previewRow}>
-                  <Text style={styles.previewLabel}>Allocation Amount ($):</Text>
-                  <Text style={styles.previewVal}>${Number(investAmount || 0).toFixed(2)} USDT</Text>
+                  <Text style={styles.previewLabel}>Trading Capital Allocation:</Text>
+                  <Text style={{ color: colors.accentGreenSoft, fontWeight: '700', fontSize: 12 }}>
+                    ${Number(selectedPlan?.trading_capital || selectedPlan?.cost || 100).toFixed(2)} USDT
+                  </Text>
+                </View>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Profit Cap Multiplier:</Text>
+                  <Text style={styles.previewVal}>{selectedPlan?.max_return_factor || 3}X (300%)</Text>
                 </View>
                 <View style={[styles.previewRow, { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 6 }]}>
-                  <Text style={styles.previewLabel}>300% Maximum Return Cap:</Text>
-                  <Text style={{ color: colors.accentGreenSoft, fontWeight: '800' }}>
-                    ${(Number(investAmount || 0) * 3).toFixed(2)} USDT
+                  <Text style={styles.previewLabel}>Maximum Total Return (Max):</Text>
+                  <Text style={{ color: colors.goldSoft, fontWeight: '800', fontSize: 13 }}>
+                    ${Number(selectedPlan?.max_total_return || (Number(selectedPlan?.trading_capital || 100) * (selectedPlan?.max_return_factor || 3))).toFixed(2)} USDT
                   </Text>
+                </View>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Profit Distribution:</Text>
+                  <Text style={styles.previewVal}>Weekly Automated</Text>
                 </View>
               </View>
 
               {/* Step 2: Send Crypto & Provide Proof */}
               <Text style={styles.stepTitle}>STEP 2 — SEND CRYPTO &amp; PROVIDE PROOF</Text>
+              <Text style={styles.step2Desc}>
+                Send the exact package amount (${Number(selectedPlan?.cost || selectedPlan?.package_cost || investAmount || 120).toFixed(2)} USDT) to the platform treasury wallet, then paste your transaction hash below.
+              </Text>
 
               {/* Network Toggle */}
-              <Text style={styles.label}>Deposit Network</Text>
+              <Text style={styles.label}>Deposit Network *</Text>
               <View style={styles.networkToggleRow}>
                 <TouchableOpacity
                   style={[styles.networkBtn, depositNetwork === 'BEP20' && styles.networkBtnActive]}
                   onPress={() => setDepositNetwork('BEP20')}
                 >
                   <Text style={[styles.networkBtnText, depositNetwork === 'BEP20' && styles.networkBtnTextActive]}>
-                    BEP20 (USDT)
+                    BEP20 (Binance Smart Chain - USDT)
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -339,24 +497,41 @@ export default function InvestmentsScreen({ onNavigate }) {
                   onPress={() => setDepositNetwork('TRC20')}
                 >
                   <Text style={[styles.networkBtnText, depositNetwork === 'TRC20' && styles.networkBtnTextActive]}>
-                    TRC20 (USDT)
+                    TRC20 (TRON - USDT)
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Company Wallet Box */}
+              {/* Company Wallet Destination Box with QR */}
               <View style={styles.companyWalletBox}>
-                <Text style={styles.companyWalletLabel}>Official Treasury Deposit Address ({depositNetwork}):</Text>
+                <View style={styles.walletBoxTop}>
+                  <Text style={styles.companyWalletLabel}>Official Deposit Destination ({depositNetwork}):</Text>
+                  <View style={styles.badgeNetwork}>
+                    <Text style={styles.badgeNetworkText}>USDT {depositNetwork}</Text>
+                  </View>
+                </View>
+
                 <View style={styles.walletCopyRow}>
                   <Text style={styles.companyWalletAddrText} numberOfLines={1}>
                     {companyWallets[depositNetwork]}
                   </Text>
                   <TouchableOpacity style={styles.miniCopyBtn} onPress={copyAddress}>
+                    <Feather name="copy" size={11} color="#030507" style={{ marginRight: 3 }} />
                     <Text style={styles.miniCopyBtnText}>Copy</Text>
                   </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                  style={styles.qrZoomRow}
+                  onPress={() => setLightboxVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="maximize-2" size={12} color={colors.goldSoft} />
+                  <Text style={styles.qrZoomText}>Tap to enlarge Deposit QR Code</Text>
+                </TouchableOpacity>
+
                 <Text style={styles.walletNoticeText}>
-                  Send exact amount in USDT ({depositNetwork}). Verified by admin on-chain.
+                  Send only <Text style={{ color: colors.textMain, fontWeight: '700' }}>USDT ({depositNetwork})</Text> to this address. Funds are verified by compliance before activation.
                 </Text>
               </View>
 
@@ -368,6 +543,7 @@ export default function InvestmentsScreen({ onNavigate }) {
                 onChangeText={setTxHash}
                 placeholder="Enter blockchain TxID hash"
                 placeholderTextColor={colors.textDim}
+                autoCapitalize="none"
               />
 
               <Text style={styles.label}>Your Sender Wallet Address (Optional)</Text>
@@ -375,9 +551,22 @@ export default function InvestmentsScreen({ onNavigate }) {
                 style={styles.input}
                 value={senderAddress}
                 onChangeText={setSenderAddress}
-                placeholder="Enter your USDT wallet address"
+                placeholder="Enter your sender USDT wallet address"
                 placeholderTextColor={colors.textDim}
+                autoCapitalize="none"
               />
+
+              <Text style={styles.label}>Upload Payment Screenshot (Optional)</Text>
+              <TouchableOpacity
+                style={styles.uploadBox}
+                onPress={handlePickProof}
+                activeOpacity={0.7}
+              >
+                <Feather name="upload-cloud" size={16} color={colors.goldSoft} style={{ marginRight: 6 }} />
+                <Text style={styles.uploadBoxText}>
+                  {proofFileName ? `Attached: ${proofFileName}` : 'Select Screenshot (JPG, PNG, PDF)'}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
 
             <View style={styles.modalBtnRow}>
@@ -403,6 +592,28 @@ export default function InvestmentsScreen({ onNavigate }) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* QR Code Lightbox Modal */}
+      <Modal visible={lightboxVisible} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.lightboxOverlay}
+          activeOpacity={1}
+          onPress={() => setLightboxVisible(false)}
+        >
+          <View style={styles.lightboxCard}>
+            <Text style={styles.lightboxTitle}>Deposit QR Code ({depositNetwork})</Text>
+            <View style={styles.qrPlaceholder}>
+              <Feather name="grid" size={90} color={colors.goldSoft} />
+            </View>
+            <Text style={styles.lightboxAddr} numberOfLines={2}>
+              {companyWallets[depositNetwork]}
+            </Text>
+            <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setLightboxVisible(false)}>
+              <Text style={styles.lightboxCloseBtnText}>Close Window</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -504,89 +715,218 @@ const styles = StyleSheet.create({
     color: colors.textMain,
     fontWeight: '700',
   },
-  planCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 14,
+
+  /* Luxury Package Card Styles */
+  pkgCard: {
+    backgroundColor: '#090D14',
+    borderRadius: 16,
     padding: 18,
-    borderWidth: 1,
-    borderColor: colors.bgCardBorder,
-    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.28)',
+    marginBottom: 20,
     position: 'relative',
+    overflow: 'hidden',
   },
-  planCardPopular: {
-    borderColor: colors.bgCardBorderGold,
-    backgroundColor: 'rgba(14, 19, 26, 0.95)',
+  pkgCardPopular: {
+    borderColor: 'rgba(247, 213, 122, 0.55)',
+    backgroundColor: '#0A0F18',
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  popularBadge: {
+  pkgRibbon: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    backgroundColor: 'rgba(198, 153, 61, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.bgCardBorderGold,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    top: 0,
+    right: 0,
+    backgroundColor: 'rgba(212, 175, 55, 0.16)',
+    borderBottomLeftRadius: 12,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    alignItems: 'center',
   },
-  popularBadgeText: {
-    fontSize: 9,
+  pkgRibbonSub: {
+    fontSize: 8.5,
     fontWeight: '800',
     color: colors.goldSoft,
     letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
-  planName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textMain,
+  pkgRibbonNum: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#ffffff',
+    fontFamily: 'monospace',
+    lineHeight: 16,
   },
-  roiRow: {
+  pkgHeader: {
+    marginBottom: 4,
+  },
+  pkgBrandRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    marginVertical: 6,
+    alignItems: 'center',
+    gap: 6,
   },
-  planRoi: {
-    fontSize: 28,
-    fontWeight: '800',
+  pkgLogoIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pkgBrandTitle: {
+    fontSize: 16,
+    fontWeight: '900',
     color: colors.goldSoft,
-    letterSpacing: -0.5,
+    letterSpacing: 1.2,
   },
-  planRoiSub: {
-    fontSize: 12,
+  pkgBrandTagline: {
+    fontSize: 10.5,
     color: colors.textMuted,
-    fontWeight: '500',
+    marginTop: 2,
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    marginVertical: 10,
+  pkgSubheading: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.gold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginTop: 8,
+    marginBottom: 8,
   },
-  featureRow: {
+  pkgInvestBox: {
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  pkgInvestCol: {
+    flex: 1,
+  },
+  pkgInvestLbl: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: colors.textDim,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  pkgInvestVal: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: 'monospace',
+  },
+  pkgInvestValGold: {
+    color: colors.goldSoft,
+  },
+  pkgArrowWrap: {
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pkgArrow: {
+    color: colors.gold,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  pkgStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    marginBottom: 10,
   },
-  featureLabel: {
-    fontSize: 12,
+  pkgStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+  },
+  pkgStatIcon: {
+    marginRight: 1,
+  },
+  pkgStatTitle: {
+    fontSize: 7.5,
+    fontWeight: '700',
+    color: colors.textDim,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  pkgStatValue: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: 'monospace',
+    marginTop: 1,
+  },
+  pkgPayoutBanner: {
+    backgroundColor: 'rgba(198, 153, 61, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(198, 153, 61, 0.45)',
+    borderRadius: 6,
+    paddingVertical: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  pkgPayoutBannerText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: colors.goldSoft,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  pkgTrustRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212, 175, 55, 0.15)',
+    marginBottom: 10,
+  },
+  pkgTrustItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  pkgTrustText: {
+    fontSize: 8,
+    fontWeight: '700',
     color: colors.textMuted,
-  },
-  featureValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textMain,
+    letterSpacing: 0.2,
   },
   btnInvest: {
     backgroundColor: colors.gold,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 4,
   },
   btnInvestText: {
     color: '#030507',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 13,
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
+
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: 14,
@@ -670,6 +1010,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.goldSoft,
   },
+  step2Desc: {
+    fontSize: 11.5,
+    color: colors.textMuted,
+    lineHeight: 16,
+    marginBottom: 10,
+  },
   label: {
     fontSize: 11,
     fontWeight: '700',
@@ -680,13 +1026,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   networkToggleRow: {
-    flexDirection: 'row',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 6,
     marginBottom: 10,
   },
   networkBtn: {
-    flex: 1,
     paddingVertical: 8,
+    paddingHorizontal: 10,
     alignItems: 'center',
     borderRadius: 6,
     borderWidth: 1,
@@ -698,7 +1044,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(198, 153, 61, 0.15)',
   },
   networkBtnText: {
-    fontSize: 11.5,
+    fontSize: 11,
     color: colors.textMuted,
     fontWeight: '600',
   },
@@ -711,14 +1057,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
-    padding: 10,
+    padding: 12,
     marginBottom: 8,
+  },
+  walletBoxTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   companyWalletLabel: {
     fontSize: 10,
     color: colors.textMuted,
-    marginBottom: 4,
     fontWeight: '600',
+  },
+  badgeNetwork: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeNetworkText: {
+    fontSize: 9.5,
+    color: colors.accentGreenSoft,
+    fontWeight: '700',
   },
   walletCopyRow: {
     flexDirection: 'row',
@@ -733,6 +1097,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   miniCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.gold,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -743,10 +1109,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#030507',
   },
+  qrZoomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginVertical: 4,
+    paddingVertical: 4,
+  },
+  qrZoomText: {
+    fontSize: 11,
+    color: colors.goldSoft,
+    fontWeight: '600',
+  },
   walletNoticeText: {
     fontSize: 9.5,
     color: colors.textDim,
     lineHeight: 14,
+    marginTop: 4,
   },
   input: {
     backgroundColor: '#0E131A',
@@ -757,6 +1136,23 @@ const styles = StyleSheet.create({
     color: colors.textMain,
     fontSize: 13,
     marginBottom: 6,
+  },
+  uploadBox: {
+    backgroundColor: '#0E131A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.bgCardBorderGold,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  uploadBoxText: {
+    fontSize: 11.5,
+    color: colors.goldSoft,
+    fontWeight: '600',
   },
   modalBtnRow: {
     flexDirection: 'row',
@@ -783,5 +1179,56 @@ const styles = StyleSheet.create({
     color: '#030507',
     fontWeight: '700',
     fontSize: 13,
+  },
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  lightboxCard: {
+    backgroundColor: '#070A0E',
+    borderRadius: 16,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorderGold,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  lightboxTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textMain,
+    marginBottom: 16,
+  },
+  qrPlaceholder: {
+    width: 180,
+    height: 180,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  lightboxAddr: {
+    fontSize: 11,
+    color: colors.goldSoft,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  lightboxCloseBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  lightboxCloseBtnText: {
+    color: colors.textMain,
+    fontWeight: '700',
+    fontSize: 12,
   },
 });

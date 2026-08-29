@@ -33,12 +33,14 @@ export default function DashboardScreen({ onNavigate }) {
   const [activeInvestments, setActiveInvestments] = useState([
     {
       id: 'inv-1',
-      plan_name: 'Starter Plan',
-      amount: 1000.0,
-      max_return: 3000.0,
+      plan_name: 'Package 1',
+      cost: 120.0,
+      amount: 120.0,
+      trading_capital: 100.0,
+      max_return: 350.0,
       total_credited: 125.0,
       status: 'ACTIVE',
-      weekly_roi_rate: 2.5,
+      weekly_roi_rate: 2.0,
     },
   ]);
 
@@ -47,17 +49,17 @@ export default function DashboardScreen({ onNavigate }) {
       id: '1',
       transaction_type: 'CREDIT',
       category: 'DEPOSIT',
-      amount: 1000.0,
-      balance_after: 1000.0,
+      amount: 120.0,
+      balance_after: 120.0,
       created_at: '2026-08-01',
-      description: 'Approved deposit #dep-001',
+      description: 'Approved deposit #dep-001 for Package 1',
     },
     {
       id: '2',
       transaction_type: 'CREDIT',
       category: 'DIRECT_INCOME',
       amount: 40.0,
-      balance_after: 1040.0,
+      balance_after: 160.0,
       created_at: '2026-08-05',
       description: 'Level-1 direct commission from l2_emma@finovo.com',
     },
@@ -66,9 +68,9 @@ export default function DashboardScreen({ onNavigate }) {
       transaction_type: 'CREDIT',
       category: 'ROI',
       amount: 125.0,
-      balance_after: 1165.0,
+      balance_after: 285.0,
       created_at: '2026-08-10',
-      description: 'Weekly ROI credited from Starter Plan',
+      description: 'Weekly ROI credited from Package 1',
     },
   ]);
 
@@ -92,13 +94,15 @@ export default function DashboardScreen({ onNavigate }) {
       }
 
       const investments = await apiCall('/investments/').catch(() => []);
-      if (Array.isArray(investments) && investments.length > 0) {
-        setActiveInvestments(investments);
+      const invList = Array.isArray(investments) ? investments : (investments?.results || []);
+      if (invList.length > 0) {
+        setActiveInvestments(invList);
       }
 
       const ledger = await apiCall('/wallet/transactions/').catch(() => []);
-      if (Array.isArray(ledger) && ledger.length > 0) {
-        setRecentLedger(ledger);
+      const ledgerList = Array.isArray(ledger) ? ledger : (ledger?.results || []);
+      if (ledgerList.length > 0) {
+        setRecentLedger(ledgerList);
       }
     } catch (err) {
       console.warn('Dashboard fetch error:', err.message);

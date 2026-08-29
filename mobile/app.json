@@ -12,7 +12,8 @@
       "supportsTablet": true
     },
     "android": {
-      "backgroundColor": "#030507"
+      "backgroundColor": "#030507",
+      "package": "com.anonymous.finovomobile"
     },
     "web": {
       "backgroundColor": "#030507"

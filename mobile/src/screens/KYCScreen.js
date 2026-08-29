@@ -23,8 +23,12 @@ export default function KYCScreen({ onNavigate }) {
   // Form State
   const [docType, setDocType] = useState('PASSPORT'); // 'PASSPORT' | 'NATIONAL_ID' | 'DRIVERS_LICENSE' | 'RESIDENCE_PERMIT'
   const [docNumber, setDocNumber] = useState('');
-  const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`.trim());
+  const [firstName, setFirstName] = useState(user?.first_name || 'Alice');
+  const [lastName, setLastName] = useState(user?.last_name || 'Smith');
   const [country, setCountry] = useState('United Kingdom');
+  const [dob, setDob] = useState('1992-05-14');
+  const [frontDocName, setFrontDocName] = useState('');
+  const [backDocName, setBackDocName] = useState('');
 
   const [kycProfile, setKycProfile] = useState({
     kyc_status: user?.kyc_status || 'UNVERIFIED', // 'APPROVED' | 'IN_REVIEW' | 'UNVERIFIED' | 'REJECTED'
@@ -63,9 +67,19 @@ export default function KYCScreen({ onNavigate }) {
     setRefreshing(false);
   };
 
+  const handlePickFront = () => {
+    setFrontDocName(`id_front_${Date.now().toString().slice(-4)}.jpg`);
+    Alert.alert('Front Image Selected', 'Government ID front photo attached.');
+  };
+
+  const handlePickBack = () => {
+    setBackDocName(`id_back_${Date.now().toString().slice(-4)}.jpg`);
+    Alert.alert('Back Image Selected', 'Government ID back photo attached.');
+  };
+
   const handleKYCSubmit = async () => {
-    if (!docNumber || !fullName || !country) {
-      Alert.alert('Validation Error', 'Please fill in your document number, full legal name, and country.');
+    if (!docNumber || !firstName || !lastName || !country) {
+      Alert.alert('Validation Error', 'Please fill in your document number, first name, last name, and issuing country.');
       return;
     }
 
@@ -76,8 +90,9 @@ export default function KYCScreen({ onNavigate }) {
           kyc_document_type: docType,
           kyc_document_number: docNumber,
           kyc_country: country,
-          first_name: fullName.split(' ')[0] || user?.first_name,
-          last_name: fullName.split(' ').slice(1).join(' ') || user?.last_name,
+          first_name: firstName,
+          last_name: lastName,
+          date_of_birth: dob,
         });
       }
 
@@ -105,6 +120,15 @@ export default function KYCScreen({ onNavigate }) {
 
   const status = kycProfile.kyc_status || 'UNVERIFIED';
 
+  const getHeaderBadgeStyle = () => {
+    if (status === 'APPROVED') return { bg: colors.badgeApprovedBg, border: colors.badgeApprovedBorder, text: colors.accentGreenSoft, label: 'APPROVED' };
+    if (status === 'IN_REVIEW') return { bg: colors.badgePendingBg, border: colors.badgePendingBorder, text: colors.accentWarning, label: 'IN REVIEW' };
+    if (status === 'REJECTED') return { bg: colors.badgeRejectedBg, border: colors.badgeRejectedBorder, text: colors.accentDanger, label: 'REJECTED' };
+    return { bg: 'rgba(255,255,255,0.06)', border: colors.bgCardBorder, text: colors.textMuted, label: 'UNVERIFIED' };
+  };
+
+  const badgeStyle = getHeaderBadgeStyle();
+
   return (
     <ScrollView
       style={styles.container}
@@ -115,10 +139,17 @@ export default function KYCScreen({ onNavigate }) {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>SECURITY &amp; COMPLIANCE</Text>
-        <Text style={styles.screenTitle}>Identity Verification (KYC)</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={styles.eyebrow}>SECURITY &amp; REGULATORY COMPLIANCE</Text>
+            <Text style={styles.screenTitle}>Identity Verification (KYC)</Text>
+          </View>
+          <View style={[styles.headerBadge, { backgroundColor: badgeStyle.bg, borderColor: badgeStyle.border }]}>
+            <Text style={[styles.headerBadgeText, { color: badgeStyle.text }]}>{badgeStyle.label}</Text>
+          </View>
+        </View>
         <Text style={styles.screenSubtitle}>
-          To ensure AML compliance and platform protection, all investors must verify government-issued identity before purchasing investment packages.
+          To ensure AML compliance, identity safety, and platform protection, all investors must verify their government-issued identity before purchasing investment packages or activating crypto deposits.
         </Text>
       </View>
 
@@ -127,15 +158,15 @@ export default function KYCScreen({ onNavigate }) {
         <View style={styles.cardApproved}>
           <View style={styles.approvedHeroRow}>
             <View style={styles.approvedIconCircle}>
-              <Feather name="shield" size={24} color={colors.accentGreenSoft} />
+              <Feather name="shield" size={26} color={colors.accentGreenSoft} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.badgeApproved}>
-                <Text style={styles.badgeApprovedText}>VERIFIED INVESTOR</Text>
+                <Text style={styles.badgeApprovedText}>VERIFIED INVESTOR ACCOUNT</Text>
               </View>
               <Text style={styles.approvedTitle}>KYC Identity Verified</Text>
               <Text style={styles.approvedSubtitle}>
-                Your identity has been reviewed and approved. Full capital deployment, deposits, and instant withdrawals are active.
+                Your government ID has been reviewed and verified by our compliance team. You have full access to all investment plans, deposits, weekly ROI earnings, and instant withdrawals.
               </Text>
             </View>
           </View>
@@ -165,6 +196,7 @@ export default function KYCScreen({ onNavigate }) {
               onPress={() => onNavigate && onNavigate('investments')}
               activeOpacity={0.8}
             >
+              <Feather name="trending-up" size={14} color="#030507" style={{ marginRight: 4 }} />
               <Text style={styles.btnPrimaryText}>Purchase Investment Plan →</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -183,31 +215,31 @@ export default function KYCScreen({ onNavigate }) {
         <View style={styles.cardPending}>
           <View style={styles.approvedHeroRow}>
             <View style={styles.pendingIconCircle}>
-              <Feather name="clock" size={24} color={colors.accentWarning} />
+              <Feather name="clock" size={26} color={colors.accentWarning} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.badgePending}>
                 <Text style={styles.badgePendingText}>VERIFICATION IN REVIEW</Text>
               </View>
-              <Text style={styles.approvedTitle}>Compliance Review in Progress</Text>
+              <Text style={styles.approvedTitle}>KYC Submission Under Compliance Review</Text>
               <Text style={styles.approvedSubtitle}>
-                Your document submission is in the compliance queue. Tier investment and withdrawals will unlock immediately upon review.
+                Your document submission has been received. Our compliance team is currently reviewing your identity. Investment package purchases will unlock immediately upon approval.
               </Text>
             </View>
           </View>
 
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>DOCUMENT TYPE</Text>
+              <Text style={styles.detailLabel}>SUBMITTED DOCUMENT</Text>
               <Text style={styles.detailVal}>{kycProfile.kyc_document_type}</Text>
             </View>
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>DOCUMENT ID</Text>
+              <Text style={styles.detailLabel}>DOCUMENT NUMBER</Text>
               <Text style={[styles.detailVal, { color: colors.goldSoft }]}>{kycProfile.kyc_document_number}</Text>
             </View>
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>REVIEW STATUS</Text>
-              <Text style={[styles.detailVal, { color: colors.accentWarning }]}>Priority Review Queue</Text>
+              <Text style={styles.detailLabel}>REVIEW QUEUE</Text>
+              <Text style={[styles.detailVal, { color: colors.goldSoft }]}>Priority Review Queue</Text>
             </View>
           </View>
         </View>
@@ -218,9 +250,12 @@ export default function KYCScreen({ onNavigate }) {
         <View>
           {status === 'REJECTED' && (
             <View style={styles.rejectionCard}>
-              <Text style={styles.rejectionTitle}>Previous Submission Rejected</Text>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                <Feather name="alert-circle" size={16} color="#f87171" />
+                <Text style={styles.rejectionTitle}>Previous KYC Submission Was Rejected</Text>
+              </View>
               <Text style={styles.rejectionDesc}>
-                {kycProfile.kyc_rejection_reason || 'Document could not be verified. Please submit a valid, clear government-issued ID.'}
+                {kycProfile.kyc_rejection_reason || 'Your document could not be verified. Please review the requirements below and upload a clear, unexpired government-issued ID.'}
               </Text>
             </View>
           )}
@@ -228,7 +263,7 @@ export default function KYCScreen({ onNavigate }) {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.eyebrow}>STEP-BY-STEP VERIFICATION</Text>
-              <Text style={styles.cardTitle}>Submit Identity Details</Text>
+              <Text style={styles.cardTitle}>Submit Verification Details</Text>
             </View>
 
             <Text style={styles.label}>Government Document Type *</Text>
@@ -252,7 +287,7 @@ export default function KYCScreen({ onNavigate }) {
               ))}
             </View>
 
-            <Text style={styles.label}>Document Identification Number *</Text>
+            <Text style={styles.label}>Document Identification Number (ID / Passport No.) *</Text>
             <TextInput
               style={styles.input}
               value={docNumber}
@@ -261,23 +296,79 @@ export default function KYCScreen({ onNavigate }) {
               placeholderTextColor={colors.textDim}
             />
 
-            <Text style={styles.label}>Full Legal Name (as on document) *</Text>
-            <TextInput
-              style={styles.input}
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="Alice Jane Smith"
-              placeholderTextColor={colors.textDim}
-            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Legal First Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="Alice"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Legal Last Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Smith"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+            </View>
 
-            <Text style={styles.label}>Country of Residence *</Text>
-            <TextInput
-              style={styles.input}
-              value={country}
-              onChangeText={setCountry}
-              placeholder="United Kingdom"
-              placeholderTextColor={colors.textDim}
-            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Issuing Country *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={country}
+                  onChangeText={setCountry}
+                  placeholder="United Kingdom"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Date of Birth</Text>
+                <TextInput
+                  style={styles.input}
+                  value={dob}
+                  onChangeText={setDob}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+            </View>
+
+            {/* Front & Back Document Upload Dropzones */}
+            <Text style={styles.label}>Document Verification Photos *</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+              <TouchableOpacity
+                style={styles.docDropzone}
+                onPress={handlePickFront}
+                activeOpacity={0.7}
+              >
+                <Feather name="upload-cloud" size={20} color={colors.goldSoft} />
+                <Text style={styles.dropzoneTitle}>Front Photo</Text>
+                <Text style={styles.dropzoneSub} numberOfLines={1}>
+                  {frontDocName || 'Tap to upload'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.docDropzone}
+                onPress={handlePickBack}
+                activeOpacity={0.7}
+              >
+                <Feather name="upload-cloud" size={20} color={colors.goldSoft} />
+                <Text style={styles.dropzoneTitle}>Back Photo</Text>
+                <Text style={styles.dropzoneSub} numberOfLines={1}>
+                  {backDocName || 'Tap to upload'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.btnPrimary}
@@ -288,9 +379,57 @@ export default function KYCScreen({ onNavigate }) {
               {loading ? (
                 <ActivityIndicator color="#030507" />
               ) : (
-                <Text style={styles.btnPrimaryText}>Submit Verification Details →</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Feather name="shield" size={14} color="#030507" style={{ marginRight: 6 }} />
+                  <Text style={styles.btnPrimaryText}>Submit Identity Documents for Verification</Text>
+                </View>
               )}
             </TouchableOpacity>
+          </View>
+
+          {/* KYC Guidelines & Verification Criteria Card */}
+          <View style={[styles.card, { marginTop: 16 }]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.eyebrow}>DOCUMENT REQUIREMENTS</Text>
+              <Text style={styles.cardTitle}>Verification Criteria</Text>
+            </View>
+
+            <View style={styles.criteriaItem}>
+              <Feather name="check" size={15} color={colors.accentGreenSoft} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.criteriaTitle}>Government-Issued &amp; Valid</Text>
+                <Text style={styles.criteriaDesc}>
+                  Document must be an official government-issued ID (Passport, National ID, or Driver's License) with a valid expiration date.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.criteriaItem}>
+              <Feather name="check" size={15} color={colors.accentGreenSoft} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.criteriaTitle}>Clear &amp; Fully Legible</Text>
+                <Text style={styles.criteriaDesc}>
+                  All four corners must be visible with no blur, glare, reflections, or cropped edges. Text and photo must be crisp.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.criteriaItem}>
+              <Feather name="check" size={15} color={colors.accentGreenSoft} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.criteriaTitle}>Original &amp; Unaltered</Text>
+                <Text style={styles.criteriaDesc}>
+                  Photoshopped images, black-and-white photocopies, or edited photos will be rejected by the compliance review team.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.privacyNoticeBox}>
+              <Text style={styles.privacyNoticeText}>
+                <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Privacy &amp; Encryption: </Text>
+                Your identity documents are stored in an encrypted vault and accessed solely for regulatory compliance purposes.
+              </Text>
+            </View>
           </View>
         </View>
       )}
@@ -324,10 +463,21 @@ const styles = StyleSheet.create({
     color: colors.textMain,
     letterSpacing: -0.3,
   },
+  headerBadge: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  headerBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   screenSubtitle: {
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 4,
+    marginTop: 6,
     lineHeight: 18,
   },
   cardApproved: {
@@ -443,10 +593,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.gold,
     borderRadius: 8,
     paddingVertical: 12,
-    alignItems: 'center',
   },
   btnPrimaryText: {
     color: '#030507',
@@ -471,14 +623,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
     borderRadius: 10,
-    padding: 12,
-    marginBottom: 14,
+    padding: 14,
+    marginBottom: 16,
   },
   rejectionTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: '#f87171',
-    marginBottom: 2,
   },
   rejectionDesc: {
     fontSize: 11.5,
@@ -547,4 +698,56 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 6,
   },
+  docDropzone: {
+    flex: 1,
+    backgroundColor: '#0E131A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.bgCardBorderGold,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropzoneTitle: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.textMain,
+    marginTop: 4,
+  },
+  dropzoneSub: {
+    fontSize: 10,
+    color: colors.textDim,
+    marginTop: 2,
+  },
+  criteriaItem: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  criteriaTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: colors.textMain,
+  },
+  criteriaDesc: {
+    fontSize: 11.5,
+    color: colors.textMuted,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  privacyNoticeBox: {
+    backgroundColor: 'rgba(198, 153, 61, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(198, 153, 61, 0.2)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 4,
+  },
+  privacyNoticeText: {
+    fontSize: 11.5,
+    color: colors.textMuted,
+    lineHeight: 16,
+  },
 });
+

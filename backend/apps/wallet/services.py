@@ -124,8 +124,7 @@ def credit_company_wallet(
     Credit `amount` to the singleton CompanyWallet.
     Creates an immutable CompanyWalletTransaction ledger entry.
     """
-    wallet = CompanyWallet.get_wallet()
-    wallet = CompanyWallet.objects.select_for_update().get(id=wallet.id)
+    wallet = CompanyWallet.objects.select_for_update().get_or_create(id=1)[0]
 
     balance_before = wallet.balance
     wallet.balance += amount
@@ -149,15 +148,19 @@ def debit_company_wallet(
     category: str,
     description: str = '',
     reference_id: str = '',
+    allow_negative: bool = True,
 ) -> CompanyWalletTransaction:
     """
     Debit `amount` from the singleton CompanyWallet.
     Creates an immutable CompanyWalletTransaction ledger entry.
-    """
-    wallet = CompanyWallet.get_wallet()
-    wallet = CompanyWallet.objects.select_for_update().get(id=wallet.id)
 
-    if wallet.balance < amount:
+    allow_negative: if False, raises ValueError when balance < amount.
+                    Defaults to True for bookkeeping entries (e.g. generation
+                    adjustments) that can legitimately take the balance negative.
+    """
+    wallet = CompanyWallet.objects.select_for_update().get_or_create(id=1)[0]
+
+    if not allow_negative and wallet.balance < amount:
         raise ValueError(
             f"Insufficient company wallet balance: has ${wallet.balance}, needs ${amount}"
         )

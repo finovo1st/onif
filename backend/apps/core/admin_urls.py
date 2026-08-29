@@ -25,6 +25,7 @@ from .admin_views import (
     AdminCompanyFundsLedgerView,
     AdminCompanyFundsSummaryView,
     AdminCompanyFundsAdjustView,
+    AdminCompanyFundsGenerationView,
 )
 
 app_name = 'admin_panel'
@@ -36,6 +37,7 @@ urlpatterns = [
     # Company Funds & Treasury Ledger
     path('funds/', AdminCompanyFundsLedgerView.as_view(), name='funds_ledger'),
     path('funds/summary/', AdminCompanyFundsSummaryView.as_view(), name='funds_summary'),
+    path('funds/generation/', AdminCompanyFundsGenerationView.as_view(), name='funds_generation'),
     path('funds/adjust/', AdminCompanyFundsAdjustView.as_view(), name='funds_adjust'),
 
     # Investments & Deposit Approvals

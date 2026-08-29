@@ -292,3 +292,11 @@ class AdminCompanyFundsAdjustmentSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=Decimal('0.01'))
     reason = serializers.CharField(max_length=255, required=True)
 
+
+class AdminCompanyFundsGenerationSerializer(serializers.Serializer):
+    """Manual admin addition or set operation on total company generation amount."""
+    action = serializers.ChoiceField(choices=['ADD', 'SET'], default='ADD')
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=Decimal('0.00'))
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default='Manual generation update')
+
+

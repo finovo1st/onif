@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from apps.investments.models import Plan, Investment, NetworkChoices
 from apps.transactions.models import Withdrawal
 from apps.support.models import Ticket
-from apps.wallet.models import Wallet
+from apps.wallet.models import Wallet, CompanyWalletTransaction
 
 User = get_user_model()
 
@@ -107,6 +107,46 @@ class AdminPanelTestCase(TestCase):
         self.assertEqual(inv.status, Investment.Status.ACTIVE)
         self.assertEqual(inv.approved_by, self.admin)
 
+        # Verify investment activation updated user wallet accumulators
+        user_wallet = Wallet.objects.get(user=inv.user)
+        self.assertEqual(user_wallet.total_invested, Decimal('200.00'))
+
+    def test_approve_withdrawal_flow(self):
+        # Fund user wallet
+        wallet = Wallet.objects.get_or_create(user=self.regular_user)[0]
+        wallet.balance = Decimal('500.00')
+        wallet.save()
+
+        # Create pending withdrawal
+        wdr = Withdrawal.objects.create(
+            user=self.regular_user,
+            amount=Decimal('150.00'),
+            net_amount=Decimal('149.00'),
+            fee=Decimal('1.00'),
+            withdrawal_type=Withdrawal.WithdrawalType.PROFIT,
+            network=NetworkChoices.BEP20,
+            wallet_address='0xabcdef1234567890',
+            status=Withdrawal.Status.PENDING,
+        )
+
+        # Admin approves
+        res = self.client.post(
+            f'/api/v1/admin-panel/withdrawals/{wdr.id}/approve/',
+            {'txn_hash': '0xhash123'},
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res.status_code, 200)
+
+        # Verify company ledger recorded WITHDRAWAL_FEE retained profit
+        self.assertTrue(
+            CompanyWalletTransaction.objects.filter(
+                category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
+                amount=Decimal('1.00'),
+                reference_id=str(wdr.id),
+            ).exists()
+        )
+
     def test_user_balance_adjustment(self):
         # Admin adjusts user balance
         res = self.client.post(
@@ -164,6 +204,100 @@ class AdminPanelTestCase(TestCase):
         )
         self.assertEqual(res.status_code, 200)
         self.assertIn('investments_processed', res.json())
+
+    def test_funds_summary_and_generation_adjustment(self):
+        # 1. Create an active investment of $500
+        Investment.objects.create(
+            user=self.regular_user,
+            plan=self.plan,
+            cost=Decimal('500.00'),
+            trading_capital=Decimal('500.00'),
+            amount=Decimal('500.00'),
+            max_return=Decimal('1500.00'),
+            status=Investment.Status.ACTIVE,
+        )
+
+        # 2. Create an approved withdrawal of $100
+        Withdrawal.objects.create(
+            user=self.regular_user,
+            amount=Decimal('100.00'),
+            net_amount=Decimal('99.00'),
+            fee=Decimal('1.00'),
+            withdrawal_type=Withdrawal.WithdrawalType.PROFIT,
+            network=NetworkChoices.BEP20,
+            wallet_address='0xabc123',
+            status=Withdrawal.Status.APPROVED,
+        )
+
+        # 3. Fetch summary initially (generation = 0)
+        res = self.client.get(
+            '/api/v1/admin-panel/funds/summary/',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['total_plan_amounts'], 500.0)
+        self.assertEqual(data['total_withdrawals'], 100.0)
+        self.assertEqual(data['total_generation'], 0.0)
+        # Total Cash = 500 + 0 - 100 = 400
+        self.assertEqual(data['total_cash'], 400.0)
+
+        # 4. Add $250 to generation
+        res_gen = self.client.post(
+            '/api/v1/admin-panel/funds/generation/',
+            {
+                'action': 'ADD',
+                'amount': '250.00',
+                'reason': 'Initial manual investment generation'
+            },
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_gen.status_code, 200)
+        gen_data = res_gen.json()
+        self.assertEqual(gen_data['total_generation'], 250.0)
+        # Total Cash = 500 + 250 - 100 = 650
+        self.assertEqual(gen_data['total_cash'], 650.0)
+
+        # 5. Add another $50
+        res_gen2 = self.client.post(
+            '/api/v1/admin-panel/funds/generation/',
+            {
+                'action': 'ADD',
+                'amount': '50.00',
+            },
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_gen2.status_code, 200)
+        self.assertEqual(res_gen2.json()['total_generation'], 300.0)
+        # Total Cash = 500 + 300 - 100 = 700
+        self.assertEqual(res_gen2.json()['total_cash'], 700.0)
+
+        # 6. Verify summary endpoint reflects changes
+        res_final = self.client.get(
+            '/api/v1/admin-panel/funds/summary/',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_final.status_code, 200)
+        final_data = res_final.json()
+        self.assertEqual(final_data['total_generation'], 300.0)
+        self.assertEqual(final_data['total_cash'], 700.0)
+
+        # 7. Verify ledger entries created for generation
+        self.assertTrue(
+            CompanyWalletTransaction.objects.filter(
+                category=CompanyWalletTransaction.Category.GENERATION,
+                amount=Decimal('250.00'),
+            ).exists()
+        )
+        self.assertTrue(
+            CompanyWalletTransaction.objects.filter(
+                category=CompanyWalletTransaction.Category.GENERATION,
+                amount=Decimal('50.00'),
+            ).exists()
+        )
+
 
 
 if __name__ == '__main__':

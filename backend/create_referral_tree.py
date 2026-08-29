@@ -257,6 +257,15 @@ def seed_activity_records(users_list, admin_user):
                 w.reviewed_at = timezone.now()
                 w.txn_hash = f"0xpayout{random.randint(10000000, 99999999)}"
                 w.save()
+                from apps.wallet.services import credit_company_wallet
+                from apps.wallet.models import CompanyWalletTransaction
+                if w.fee > Decimal('0.00'):
+                    credit_company_wallet(
+                        amount=w.fee,
+                        category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
+                        description=f"Fee collected from {w.withdrawal_type} withdrawal #{str(w.id)[:8]} by {u.email}",
+                        reference_id=str(w.id),
+                    )
 
     # Seed Support Tickets
     sample_tickets = [

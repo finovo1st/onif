@@ -12,7 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 
 <body>
@@ -1383,40 +1383,6 @@
 
       <!-- ================= 6. ADMIN PORTAL VIEW ================= -->
       <section id="view-admin" class="page-view">
-        <div class="admin-header-panel">
-          <div class="admin-header-title">
-            <div class="admin-badge-pill">
-              <span class="pulse-dot"></span>
-              FINOVO CORE OPERATIONS HUB
-            </div>
-            <h1 class="admin-main-title">Administrative Command Center</h1>
-            <p class="admin-main-subtitle">Manage deposits, execute withdrawals, inspect users, and configure live
-              system rules.</p>
-          </div>
-          <div class="admin-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-secondary" onclick="loadAdminData(true)" title="Refresh all admin telemetry">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              Refresh Telemetry
-            </button>
-            <button class="btn btn-sm btn-gold" onclick="openTriggerROIModal('full_week')" title="Trigger 1 full week ROI for all users regardless of days">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-              </svg>
-              Trigger ROI
-            </button>
-            <button class="btn btn-sm btn-secondary" onclick="openTriggerROIModal('by_day')" style="border-color: rgba(212,175,55,0.35); color: var(--gold-soft);" title="Trigger ROI with days logic (prorated Mon–Fri)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Trigger ROI (By Day)
-            </button>
-          </div>
-        </div>
 
 
         <!-- 1. ADMIN OVERVIEW SUB-PAGE -->
@@ -1640,13 +1606,28 @@
             </div>
           </div>
 
-          <!-- KPI Summary Cards -->
-          <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="card stat-card admin-stat-card highlight-gold">
+          <!-- Consolidated 6-Card Treasury & Cash Flow Telemetry Grid -->
+          <div class="grid-3" style="margin-bottom: 24px;">
+            <!-- Card 1: Total Platform Cash -->
+            <div class="card stat-card admin-stat-card highlight-gold" style="border-left: 3px solid var(--gold);">
+              <div>
+                <div class="stat-title">Total Platform Cash</div>
+                <div class="stat-value" id="adm-funds-stat-total-cash" style="color: #10b981;">$0.00</div>
+                <div class="stat-subtext" id="adm-funds-stat-total-cash-sub">Plans + Gen − Withdrawals + Fees</div>
+              </div>
+              <div class="stat-icon icon-invest" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Card 2: Treasury Balance (Retained Profit) -->
+            <div class="card stat-card admin-stat-card highlight-gold" onclick="openAdminFundsAdjustModal()" style="cursor: pointer;" title="Click to adjust Company Wallet funds">
               <div>
                 <div class="stat-title">Treasury Balance</div>
                 <div class="stat-value" id="adm-funds-stat-balance" style="color: var(--gold);">$0.00</div>
-                <div class="stat-subtext" id="adm-funds-stat-updated">Live Company Balance</div>
+                <div class="stat-subtext" id="adm-funds-stat-treasury-sub">Retained profit • Click to adjust</div>
               </div>
               <div class="stat-icon icon-invest">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1656,11 +1637,12 @@
               </div>
             </div>
 
+            <!-- Card 3: Total Plan Amounts -->
             <div class="card stat-card admin-stat-card">
               <div>
-                <div class="stat-title">Investment Retainers</div>
-                <div class="stat-value" id="adm-funds-stat-remainders" style="color: #34d399;">$0.00</div>
-                <div class="stat-subtext">Package margin spread</div>
+                <div class="stat-title">Total Plan Amounts</div>
+                <div class="stat-value" id="adm-funds-stat-plan-amounts" style="color: var(--gold);">$0.00</div>
+                <div class="stat-subtext">Active &amp; completed packages</div>
               </div>
               <div class="stat-icon icon-invest">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1670,25 +1652,42 @@
               </div>
             </div>
 
-            <div class="card stat-card admin-stat-card">
+            <!-- Card 4: Total Generation -->
+            <div class="card stat-card admin-stat-card highlight-blue" onclick="openAdminGenerationAdjustModal()" style="cursor: pointer;" title="Click to adjust Total Generation">
               <div>
-                <div class="stat-title">Withdrawal Fees</div>
-                <div class="stat-value" id="adm-funds-stat-fees" style="color: #60a5fa;">$0.00</div>
-                <div class="stat-subtext">Platform fees collected</div>
+                <div class="stat-title">Total Generation</div>
+                <div class="stat-value" id="adm-funds-stat-generation" style="color: #60a5fa;">$0.00</div>
+                <div class="stat-subtext" id="adm-funds-stat-generation-sub">Manual addition • Click to adjust</div>
               </div>
-              <div class="stat-icon icon-wdr">
+              <div class="stat-icon icon-users" style="background: rgba(96, 165, 250, 0.12); color: #60a5fa;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="1" x2="12" y2="23"></line>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </div>
             </div>
 
+            <!-- Card 5: Total Withdrawals -->
+            <div class="card stat-card admin-stat-card highlight-danger">
+              <div>
+                <div class="stat-title">Total Withdrawals</div>
+                <div class="stat-value" id="adm-funds-stat-total-withdrawals" style="color: #f87171;">$0.00</div>
+                <div class="stat-subtext">Gross paid out (before fees)</div>
+              </div>
+              <div class="stat-icon icon-wdr">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="7 17 17 7"></polyline>
+                  <polyline points="7 7 17 7 17 17"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Card 6: Ledger Entries -->
             <div class="card stat-card admin-stat-card">
               <div>
                 <div class="stat-title">Ledger Entries</div>
                 <div class="stat-value" id="adm-funds-stat-count">0</div>
-                <div class="stat-subtext">Immutable audit entries</div>
+                <div class="stat-subtext" id="adm-funds-stat-updated">Live immutable audit entries</div>
               </div>
               <div class="stat-icon icon-pending">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1714,6 +1713,9 @@
                 <select id="adm-funds-filter-category" class="form-control admin-filter-select"
                   onchange="filterAdminFunds()" style="min-width: 180px;">
                   <option value="all">All Categories</option>
+                  <option value="PLAN_INFLOW">Plan Inflow (+)</option>
+                  <option value="GENERATION">Manual Generation (+/-)</option>
+                  <option value="WITHDRAWAL_OUTFLOW">Withdrawal Outflow (-)</option>
                   <option value="INVESTMENT_REMAINDER">Investment Remainder</option>
                   <option value="WITHDRAWAL_FEE">Withdrawal Fee</option>
                   <option value="ADJUSTMENT">Admin Adjustment</option>
@@ -2096,63 +2098,61 @@
           </div>
 
 
-          <div class="grid-2">
-            <!-- Global Business Parameters -->
-            <div class="card">
-              <div class="section-header">
-                <div>
-                  <div class="eyebrow">Business Rules</div>
-                  <h2 class="section-title">Platform Global Settings</h2>
-                </div>
-                <button class="btn btn-sm btn-secondary" onclick="loadAdminSettings()">Refresh</button>
+          <!-- Investment Plans Management (Horizontal Full-Width Table) -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Tier Architecture</div>
+                <h2 class="section-title">Investment Plans Manager</h2>
               </div>
-              <p style="font-size: 13px; color: var(--mute); margin-bottom: 16px;">
-                Adjust business constants dynamically without restarting services.
-              </p>
-              <div class="table-responsive">
-                <table class="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Key</th>
-                      <th>Value</th>
-                      <th>Description</th>
-                      <th style="text-align: right;">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="adm-settings-tbody">
-                    <!-- Rendered via JS -->
-                  </tbody>
-                </table>
-              </div>
+              <button class="btn btn-sm btn-primary" onclick="openPlanModal()">+ Add New Plan</button>
             </div>
+            <div class="table-responsive">
+              <table class="custom-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Plan Name</th>
+                    <th>Cost ($)</th>
+                    <th>Trading Capital ($)</th>
+                    <th>Max Return (Cap)</th>
+                    <th>Weekly ROI</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-plans-tbody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-            <!-- Investment Plans Management -->
-            <div class="card">
-              <div class="section-header">
-                <div>
-                  <div class="eyebrow">Tier Architecture</div>
-                  <h2 class="section-title">Investment Plans Manager</h2>
-                </div>
-                <button class="btn btn-sm btn-primary" onclick="openPlanModal()">+ Add New Plan</button>
+          <!-- Global Business Parameters -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Business Rules</div>
+                <h2 class="section-title">Platform Global Settings</h2>
               </div>
-              <div class="table-responsive">
-                <table class="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Plan Name</th>
-                      <th>Cost ($)</th>
-                      <th>Trading Capital ($)</th>
-                      <th>Max Return (Cap)</th>
-                      <th>Weekly ROI</th>
-                      <th>Status</th>
-                      <th style="text-align: right;">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="adm-plans-tbody">
-                    <!-- Rendered via JS -->
-                  </tbody>
-                </table>
-              </div>
+              <button class="btn btn-sm btn-secondary" onclick="loadAdminSettings()">Refresh</button>
+            </div>
+            <p style="font-size: 13px; color: var(--mute); margin-bottom: 16px;">
+              Adjust business constants dynamically without restarting services.
+            </p>
+            <div class="table-responsive">
+              <table class="custom-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Description</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adm-settings-tbody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -3178,7 +3178,13 @@
   <div id="modal-admin-funds-adjust" class="modal-backdrop">
     <div class="modal" style="max-width: 500px; width: 100%;">
       <div class="modal-header">
-        <h3 class="modal-title">Company Treasury Adjustment</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          Adjust Treasury Balance
+        </h3>
         <button class="modal-close" onclick="closeModal('modal-admin-funds-adjust')">&times;</button>
       </div>
       <form onsubmit="handleCompanyFundsAdjustSubmit(event)">
@@ -3187,15 +3193,28 @@
         </p>
         <div class="form-group">
           <label class="form-label">Adjustment Action <span style="color: var(--accent-danger);">*</span></label>
-          <select id="adm-funds-adj-action" class="form-control" required>
+          <select id="adm-funds-adj-action" class="form-control" onchange="updateTreasuryModalPreview()" required>
             <option value="CREDIT">CREDIT (+) — Add funds to company wallet</option>
             <option value="DEBIT">DEBIT (-) — Deduct funds from company wallet</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Amount ($) <span style="color: var(--accent-danger);">*</span></label>
-          <input type="number" id="adm-funds-adj-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 500.00" required>
+          <input type="number" id="adm-funds-adj-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 500.00" oninput="updateTreasuryModalPreview()" required>
         </div>
+
+        <!-- Live Projection Preview Box -->
+        <div style="background: rgba(198, 153, 61, 0.08); border: 1px solid rgba(198, 153, 61, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+            <span style="color: var(--mute);">Current Treasury Balance:</span>
+            <span id="adm-funds-adj-preview-current" style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
+            <span style="color: var(--mute);">Projected New Balance:</span>
+            <span id="adm-funds-adj-preview-projected" style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">$0.00</span>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Reason / Justification <span style="color: var(--accent-danger);">*</span></label>
           <textarea id="adm-funds-adj-reason" class="form-control" rows="3" placeholder="Reason for treasury balance adjustment..." required></textarea>
@@ -3208,11 +3227,71 @@
     </div>
   </div>
 
+  <!-- A10. Total Generation Adjustment Modal -->
+  <div id="modal-admin-generation-adjust" class="modal-backdrop">
+    <div class="modal" style="max-width: 500px; width: 100%;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: #60a5fa; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Adjust Total Generation
+        </h3>
+        <button class="modal-close" onclick="closeModal('modal-admin-generation-adjust')">&times;</button>
+      </div>
+      <form onsubmit="handleGenerationAdjustSubmit(event)">
+        <p style="font-size: 12.5px; color: var(--mute); margin-bottom: 16px; line-height: 1.5;">
+          Add to or override the platform's manual Total Generation. All generation adjustments recalculate platform liquidity and record an immutable ledger entry.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Generation Action <span style="color: var(--accent-danger);">*</span></label>
+          <select id="adm-gen-action" class="form-control" onchange="updateGenerationModalPreview()" required>
+            <option value="ADD">ADD (+) — Add amount to current total generation</option>
+            <option value="SET">SET (=) — Directly set total generation amount</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Amount ($) <span style="color: var(--accent-danger);">*</span></label>
+          <input type="number" id="adm-gen-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 5000.00" oninput="updateGenerationModalPreview()" required>
+        </div>
+
+        <!-- Live Projection Preview Box -->
+        <div style="background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+            <span style="color: var(--mute);">Current Total Generation:</span>
+            <span id="adm-gen-preview-current" style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+            <span style="color: var(--mute);">Projected New Generation:</span>
+            <span id="adm-gen-preview-projected" style="font-family: var(--font-mono); font-weight: 700; color: #60a5fa;">$0.00</span>
+          </div>
+          <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 6px 0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
+            <span style="color: var(--mute);">Projected Platform Total Cash:</span>
+            <span id="adm-gen-preview-cash" style="font-family: var(--font-mono); font-weight: 700; color: #10b981;">$0.00</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">Notes / Reason (Optional)</label>
+          <input type="text" id="adm-gen-reason" class="form-control" placeholder="e.g. Injected capital generation / trading returns" style="font-size: 12.5px;">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-admin-generation-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="adm-gen-submit-btn" style="background: #3b82f6; border-color: #3b82f6;">Apply Generation Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/app.js?v=6"></script>
+  <script src="js/app.js?v=14"></script>
 </body>
 
 </html>

@@ -89,11 +89,12 @@ class WithdrawalAdmin(admin.ModelAdmin):
                         reference_id=str(withdrawal.id),
                     )
 
+                    from apps.wallet.services import credit_company_wallet
+                    from apps.wallet.models import CompanyWalletTransaction
+                    user_account_info = f"{withdrawal.user.email} (Account ID: #{str(withdrawal.user.id)[:8]})"
+
                     fee_amount = withdrawal.amount - withdrawal.net_amount
                     if fee_amount > 0:
-                        from apps.wallet.services import credit_company_wallet
-                        from apps.wallet.models import CompanyWalletTransaction
-                        user_account_info = f"{withdrawal.user.email} (Account ID: #{str(withdrawal.user.id)[:8]})"
                         credit_company_wallet(
                             amount=fee_amount,
                             category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,

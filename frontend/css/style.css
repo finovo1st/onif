@@ -5,6 +5,7 @@
 
 /* ─── 1. Design Tokens ─────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
   /* Surfaces & Atmosphere */
   --bg:          #030507;
   --glass-bg:    rgba(14, 19, 25, 0.45);
@@ -973,12 +974,64 @@ body.modal-open {
   font-size: 14px;
   font-family: var(--font-family);
   outline: none;
+  color-scheme: dark;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .form-control:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(198, 153, 61, 0.15);
+}
+
+/* Number Input Up/Down Stepper Spin Buttons */
+input[type="number"] {
+  color-scheme: dark;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  cursor: pointer;
+  opacity: 0.7;
+  filter: brightness(0) saturate(100%) invert(67%) sepia(45%) saturate(750%) hue-rotate(6deg) brightness(95%) contrast(88%);
+  transition: opacity 0.15s ease, filter 0.15s ease;
+  margin-left: 2px;
+}
+
+input[type="number"]:hover::-webkit-inner-spin-button,
+input[type="number"]:focus::-webkit-inner-spin-button {
+  opacity: 1;
+  filter: brightness(0) saturate(100%) invert(80%) sepia(35%) saturate(850%) hue-rotate(6deg) brightness(105%) contrast(92%);
+}
+
+/* Generation Amount Input Specific Themed Stepper */
+#adm-funds-gen-amount-input {
+  color-scheme: dark;
+  border-color: rgba(96, 165, 250, 0.25);
+  background: rgba(10, 14, 19, 0.7);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#adm-funds-gen-amount-input:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+#adm-funds-gen-amount-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+#adm-funds-gen-amount-input::-webkit-inner-spin-button,
+#adm-funds-gen-amount-input::-webkit-outer-spin-button {
+  cursor: pointer;
+  opacity: 0.85;
+  filter: brightness(0) saturate(100%) invert(70%) sepia(35%) saturate(1200%) hue-rotate(185deg) brightness(105%) contrast(95%);
+  transition: opacity 0.15s ease, filter 0.15s ease, transform 0.1s ease;
+}
+
+#adm-funds-gen-amount-input:hover::-webkit-inner-spin-button,
+#adm-funds-gen-amount-input:focus::-webkit-inner-spin-button {
+  opacity: 1;
+  filter: brightness(0) saturate(100%) invert(85%) sepia(50%) saturate(1600%) hue-rotate(185deg) brightness(115%) contrast(100%);
 }
 
 /* ─── 16. Toast Notifications ───────────────────────────────────── */

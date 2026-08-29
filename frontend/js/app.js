@@ -1999,7 +1999,7 @@ function renderAdminOverview(ov) {
   document.getElementById('adm-stat-users-sub').innerText = `${ov.users.verified} verified • ${ov.users.active} active investors • ${ov.users.pending_kyc} KYC pending`;
 
   document.getElementById('adm-stat-active-inv').innerText = `$${Number(ov.investments.active_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  document.getElementById('adm-stat-inv-sub').innerText = `${ov.investments.active_count} active plans ($${Number(ov.investments.all_time_total).toFixed(2)} total)`;
+  document.getElementById('adm-stat-inv-sub').innerText = `${ov.investments.active_count} active plans • $${Number(ov.investments.all_time_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} all-time volume`;
 
   document.getElementById('adm-stat-pending-dep').innerText = `$${Number(ov.investments.pending_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('adm-stat-pending-dep-sub').innerText = `${ov.investments.pending_count} deposits awaiting review`;
@@ -2042,7 +2042,10 @@ function renderAdminOverview(ov) {
   document.getElementById('adm-fin-balance').innerText = `$${Number(ov.finances.total_system_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('adm-fin-deposits').innerText = `$${Number(ov.finances.total_system_deposited).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('adm-fin-roi').innerText = `$${Number(ov.finances.total_roi_earned).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  document.getElementById('adm-fin-comm').innerText = `$${Number(ov.finances.total_direct_income).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalCommissions = (ov.finances.total_commissions_paid !== undefined)
+    ? ov.finances.total_commissions_paid
+    : (Number(ov.finances.total_direct_income || 0) + Number(ov.finances.total_referral_income || 0));
+  document.getElementById('adm-fin-comm').innerText = `$${Number(totalCommissions).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   // Overview Queues
   renderOverviewDepositsQueue(ov.queues.pending_investments || []);
@@ -2221,21 +2224,71 @@ async function loadAdminFundsSummary() {
 function renderAdminFundsSummary(summary) {
   if (!summary) return;
 
+  const totalCashEl = document.getElementById('adm-funds-stat-total-cash');
+  if (totalCashEl) {
+    const cashVal = Number(summary.total_cash || 0);
+    totalCashEl.innerText = `$${cashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (cashVal >= 0) {
+      totalCashEl.style.color = '#10b981';
+    } else {
+      totalCashEl.style.color = '#ef4444';
+    }
+  }
+
+  const totalCashSub = document.getElementById('adm-funds-stat-total-cash-sub');
+  if (totalCashSub) {
+    const planVal = Number(summary.total_plan_amounts || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const genVal = Number(summary.total_generation || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const wdrVal = Number(summary.total_withdrawals || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const feeVal = Number(summary.total_cumulative_withdrawal_fees || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    totalCashSub.innerText = `Plans ($${planVal}) + Gen ($${genVal}) − Wdr ($${wdrVal}) + Fees ($${feeVal})`;
+  }
+
+  const planAmountsEl = document.getElementById('adm-funds-stat-plan-amounts');
+  if (planAmountsEl) {
+    planAmountsEl.innerText = `$${Number(summary.total_plan_amounts || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  const genEl = document.getElementById('adm-funds-stat-generation');
+  if (genEl) {
+    genEl.innerText = `$${Number(summary.total_generation || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  const wdrEl = document.getElementById('adm-funds-stat-total-withdrawals');
+  if (wdrEl) {
+    wdrEl.innerText = `$${Number(summary.total_withdrawals || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  const cumFeeVal = Number(summary.total_cumulative_withdrawal_fees ?? summary.total_withdrawal_fees ?? 0);
+  const cumFeeEl = document.getElementById('adm-funds-stat-cumulative-fees');
+  if (cumFeeEl) {
+    cumFeeEl.innerText = `$${cumFeeVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  const feeEl = document.getElementById('adm-funds-stat-fees');
+  if (feeEl) {
+    feeEl.innerText = `$${cumFeeVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
   const balEl = document.getElementById('adm-funds-stat-balance');
   if (balEl) balEl.innerText = `$${Number(summary.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const treasurySub = document.getElementById('adm-funds-stat-treasury-sub');
+  if (treasurySub) {
+    const remVal = Number(summary.total_investment_remainders || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const feeVal = Number(cumFeeVal).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    treasurySub.innerText = `Retainers ($${remVal}) + Fees ($${feeVal}) • Click to adjust`;
+  }
+
   const remEl = document.getElementById('adm-funds-stat-remainders');
   if (remEl) remEl.innerText = `$${Number(summary.total_investment_remainders || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const feeEl = document.getElementById('adm-funds-stat-fees');
-  if (feeEl) feeEl.innerText = `$${Number(summary.total_withdrawal_fees || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const cntEl = document.getElementById('adm-funds-stat-count');
   if (cntEl) cntEl.innerText = summary.total_count || 0;
 
   const updEl = document.getElementById('adm-funds-stat-updated');
   if (updEl && summary.updated_at) {
-    updEl.innerText = `Live Updated: ${new Date(summary.updated_at).toLocaleTimeString()}`;
+    updEl.innerText = `Live entries • Updated: ${new Date(summary.updated_at).toLocaleTimeString()}`;
   }
 }
 
@@ -2257,7 +2310,13 @@ function renderAdminFunds(funds) {
 
     let catBadgeClass = 'badge-approved';
     let catLabel = txn.category_display || txn.category;
-    if (txn.category === 'INVESTMENT_REMAINDER') {
+    if (txn.category === 'PLAN_INFLOW') {
+      catBadgeClass = 'badge-approved';
+    } else if (txn.category === 'GENERATION') {
+      catBadgeClass = 'badge-active';
+    } else if (txn.category === 'WITHDRAWAL_OUTFLOW') {
+      catBadgeClass = 'badge-rejected';
+    } else if (txn.category === 'INVESTMENT_REMAINDER') {
       catBadgeClass = 'badge-approved';
     } else if (txn.category === 'WITHDRAWAL_FEE') {
       catBadgeClass = 'badge-kyc-approved';
@@ -2301,7 +2360,25 @@ function openAdminFundsAdjustModal() {
   if (actionSel) actionSel.value = 'CREDIT';
   if (amountInp) amountInp.value = '';
   if (reasonInp) reasonInp.value = '';
+  updateTreasuryModalPreview();
   openModal('modal-admin-funds-adjust');
+}
+
+function updateTreasuryModalPreview() {
+  const summary = state.admin?.fundsSummary || {};
+  const currentBal = Number(summary.balance || 0);
+  const action = document.getElementById('adm-funds-adj-action')?.value || 'CREDIT';
+  const amount = parseFloat(document.getElementById('adm-funds-adj-amount')?.value || 0) || 0;
+  const newBal = action === 'CREDIT' ? (currentBal + amount) : (currentBal - amount);
+
+  const curEl = document.getElementById('adm-funds-adj-preview-current');
+  const projEl = document.getElementById('adm-funds-adj-preview-projected');
+
+  if (curEl) curEl.innerText = `$${currentBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (projEl) {
+    projEl.innerText = `$${newBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    projEl.style.color = newBal >= 0 ? '#34d399' : '#f87171';
+  }
 }
 
 async function handleCompanyFundsAdjustSubmit(event) {
@@ -2335,15 +2412,89 @@ async function handleCompanyFundsAdjustSubmit(event) {
     showToast(res.detail || 'Company wallet adjustment applied successfully.');
     closeModal('modal-admin-funds-adjust');
 
-    // Reload funds ledger, summary and general admin telemetry
+    // Reload funds ledger and summary
     loadAdminFunds();
-    loadAdminData();
+    loadAdminFundsSummary();
   } catch (err) {
     showToast(err.message, true);
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerText = 'Apply Treasury Adjustment';
+    }
+  }
+}
+
+function openAdminGenerationAdjustModal() {
+  const actionSel = document.getElementById('adm-gen-action');
+  const amountInp = document.getElementById('adm-gen-amount');
+  const reasonInp = document.getElementById('adm-gen-reason');
+  if (actionSel) actionSel.value = 'ADD';
+  if (amountInp) amountInp.value = '';
+  if (reasonInp) reasonInp.value = '';
+  updateGenerationModalPreview();
+  openModal('modal-admin-generation-adjust');
+}
+
+function updateGenerationModalPreview() {
+  const summary = state.admin?.fundsSummary || {};
+  const currentGen = Number(summary.total_generation || 0);
+  const currentCash = Number(summary.total_cash || 0);
+  const action = document.getElementById('adm-gen-action')?.value || 'ADD';
+  const amount = parseFloat(document.getElementById('adm-gen-amount')?.value || 0) || 0;
+  const newGen = action === 'ADD' ? (currentGen + amount) : amount;
+  const delta = newGen - currentGen;
+  const newCash = currentCash + delta;
+
+  const curEl = document.getElementById('adm-gen-preview-current');
+  const projEl = document.getElementById('adm-gen-preview-projected');
+  const cashEl = document.getElementById('adm-gen-preview-cash');
+  const btnEl = document.getElementById('adm-gen-submit-btn');
+
+  if (curEl) curEl.innerText = `$${currentGen.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (projEl) projEl.innerText = `$${newGen.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (cashEl) {
+    cashEl.innerText = `$${newCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    cashEl.style.color = newCash >= 0 ? '#10b981' : '#f87171';
+  }
+  if (btnEl) {
+    btnEl.innerText = action === 'ADD' ? 'Apply Generation Addition' : 'Apply Generation Override';
+  }
+}
+
+async function handleGenerationAdjustSubmit(event) {
+  event.preventDefault();
+  const action = document.getElementById('adm-gen-action')?.value || 'ADD';
+  const amount = parseFloat(document.getElementById('adm-gen-amount')?.value || 0);
+  const reason = document.getElementById('adm-gen-reason')?.value.trim() || 'Manual generation adjustment';
+
+  if (isNaN(amount) || amount <= 0) {
+    showToast('Please enter a valid positive generation amount.', true);
+    return;
+  }
+
+  const btnEl = document.getElementById('adm-gen-submit-btn');
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerText = 'Processing...';
+  }
+
+  try {
+    const res = await apiCall('/admin-panel/funds/generation/', 'POST', {
+      action,
+      amount,
+      reason
+    });
+    showToast(res.detail || 'Generation amount updated successfully.');
+    closeModal('modal-admin-generation-adjust');
+    loadAdminFundsSummary();
+    loadAdminFunds();
+  } catch (err) {
+    showToast(err.message, true);
+  } finally {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerText = action === 'ADD' ? 'Apply Generation Addition' : 'Apply Generation Override';
     }
   }
 }

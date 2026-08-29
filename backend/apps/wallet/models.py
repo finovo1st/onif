@@ -188,6 +188,9 @@ class CompanyWalletTransaction(models.Model):
         DEBIT = 'DEBIT', _('Debit')
 
     class Category(models.TextChoices):
+        PLAN_INFLOW = 'PLAN_INFLOW', _('Plan Deposit Inflow')
+        GENERATION = 'GENERATION', _('Manual Generation')
+        WITHDRAWAL_OUTFLOW = 'WITHDRAWAL_OUTFLOW', _('Withdrawal Outflow')
         INVESTMENT_REMAINDER = 'INVESTMENT_REMAINDER', _('Investment Remainder')
         WITHDRAWAL_FEE = 'WITHDRAWAL_FEE', _('Withdrawal Fee')
         ADJUSTMENT = 'ADJUSTMENT', _('Admin Adjustment')

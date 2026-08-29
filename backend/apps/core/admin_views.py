@@ -36,6 +36,7 @@ from apps.core.admin_serializers import (
     AdminPlanSerializer,
     AdminCompanyWalletTransactionSerializer,
     AdminCompanyFundsAdjustmentSerializer,
+    AdminCompanyFundsGenerationSerializer,
 )
 
 User = get_user_model()
@@ -84,6 +85,8 @@ class AdminOverviewView(APIView):
         total_system_deposited = Wallet.objects.aggregate(total=Sum('total_deposited'))['total'] or Decimal('0.00')
         total_roi_earned = Wallet.objects.aggregate(total=Sum('total_roi_earned'))['total'] or Decimal('0.00')
         total_direct_income = Wallet.objects.aggregate(total=Sum('total_direct_income'))['total'] or Decimal('0.00')
+        total_referral_income = Wallet.objects.aggregate(total=Sum('total_referral_income'))['total'] or Decimal('0.00')
+        total_commissions_paid = total_direct_income + total_referral_income
         company_wallet_balance = CompanyWallet.get_wallet().balance
 
         # Support Tickets
@@ -133,6 +136,8 @@ class AdminOverviewView(APIView):
                 'total_system_deposited': float(total_system_deposited),
                 'total_roi_earned': float(total_roi_earned),
                 'total_direct_income': float(total_direct_income),
+                'total_referral_income': float(total_referral_income),
+                'total_commissions_paid': float(total_commissions_paid),
                 'company_wallet_balance': float(company_wallet_balance),
             },
             'support': {
@@ -335,10 +340,11 @@ class AdminWithdrawalApproveView(APIView):
                 reference_id=str(withdrawal.id),
             )
 
+            user_account_info = f"{withdrawal.user.email} (Account ID: #{str(withdrawal.user.id)[:8]})"
+
             # Credit fee to Company Wallet if applicable
             fee_amount = withdrawal.amount - withdrawal.net_amount
             if fee_amount > Decimal('0.00'):
-                user_account_info = f"{withdrawal.user.email} (Account ID: #{str(withdrawal.user.id)[:8]})"
                 credit_company_wallet(
                     amount=fee_amount,
                     category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE,
@@ -853,7 +859,7 @@ class AdminCompanyFundsLedgerView(generics.ListAPIView):
 class AdminCompanyFundsSummaryView(APIView):
     """
     GET /api/v1/admin-panel/funds/summary/
-    Returns high-level KPI telemetry for the company funds treasury.
+    Returns high-level KPI telemetry for the company funds treasury and cash flow.
     """
     permission_classes = [IsAdminRoleOrStaff]
 
@@ -883,6 +889,24 @@ class AdminCompanyFundsSummaryView(APIView):
 
         total_count = qs.count()
 
+        # Company Cash Flow Telemetry
+        total_plan_amounts = Investment.objects.filter(
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+        ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
+
+        try:
+            total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
+        except Exception:
+            total_generation = Decimal('0.00')
+
+        total_withdrawals = Withdrawal.objects.filter(
+            status=Withdrawal.Status.APPROVED
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        # Net cash = Plan inflows + Manual generation − Gross withdrawals paid out + Fees retained
+        # Fees are debited then credited back in the ledger, so we add them back to reconcile.
+        total_cash = total_plan_amounts + total_generation - total_withdrawals + total_withdrawal_fees
+
         return Response({
             'balance': float(wallet.balance),
             'total_credits': float(total_credits),
@@ -891,8 +915,124 @@ class AdminCompanyFundsSummaryView(APIView):
             'total_withdrawal_fees': float(total_withdrawal_fees),
             'total_adjustments': float(total_adjustments),
             'total_count': total_count,
+            'total_plan_amounts': float(total_plan_amounts),
+            'total_generation': float(total_generation),
+            'total_withdrawals': float(total_withdrawals),
+            'total_cash': float(total_cash),
             'updated_at': wallet.updated_at,
         })
+
+
+class AdminCompanyFundsGenerationView(APIView):
+    """
+    POST /api/v1/admin-panel/funds/generation/
+    Allows admin to add to or set the manual company Total Generation amount.
+    """
+    permission_classes = [IsAdminRoleOrStaff]
+
+    def post(self, request):
+        serializer = AdminCompanyFundsGenerationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data.get('action', 'ADD')
+        amount = serializer.validated_data['amount']
+        reason = serializer.validated_data.get('reason') or 'Manual generation update'
+
+        with db_transaction.atomic():
+            current_gen_str = PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00')
+            try:
+                current_generation = Decimal(current_gen_str)
+            except Exception:
+                current_generation = Decimal('0.00')
+
+            # Compute new_generation first so we can guard before any wallet mutations.
+            if action == 'ADD':
+                new_generation = current_generation + amount
+            else:  # 'SET'
+                new_generation = amount
+
+            if new_generation < Decimal('0.00'):
+                return Response(
+                    {'detail': 'Total generation amount cannot be negative.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Apply wallet ledger entries now that the guard has passed.
+            if action == 'ADD':
+                if amount > Decimal('0.00'):
+                    credit_company_wallet(
+                        amount=amount,
+                        category=CompanyWalletTransaction.Category.GENERATION,
+                        description=f"Manual generation addition of ${amount:,.2f} by {request.user.email}: {reason}",
+                        reference_id=f"ADM-GEN-{uuid.uuid4().hex[:8].upper()}",
+                    )
+            else:  # 'SET'
+                delta = new_generation - current_generation
+                if delta > Decimal('0.00'):
+                    credit_company_wallet(
+                        amount=delta,
+                        category=CompanyWalletTransaction.Category.GENERATION,
+                        description=f"Manual generation adjustment (+${delta:,.2f}) by {request.user.email}: {reason}",
+                        reference_id=f"ADM-GEN-{uuid.uuid4().hex[:8].upper()}",
+                    )
+                elif delta < Decimal('0.00'):
+                    debit_company_wallet(
+                        amount=abs(delta),
+                        category=CompanyWalletTransaction.Category.GENERATION,
+                        description=f"Manual generation adjustment (-${abs(delta):,.2f}) by {request.user.email}: {reason}",
+                        reference_id=f"ADM-GEN-{uuid.uuid4().hex[:8].upper()}",
+                        allow_negative=True,
+                    )
+
+            PlatformSettings.objects.update_or_create(
+                key='TOTAL_GENERATION_AMOUNT',
+                defaults={
+                    'value': str(new_generation),
+                    'description': 'Admin manual company generation amount',
+                    'updated_by': request.user,
+                }
+            )
+
+            # Audit Log
+            AuditLog.objects.create(
+                user=request.user,
+                action=AuditLog.Action.ADMIN_ACTION,
+                ip_address=request.META.get('REMOTE_ADDR'),
+                new_value={
+                    'setting': 'TOTAL_GENERATION_AMOUNT',
+                    'action': action,
+                    'delta_amount': str(amount),
+                    'previous_generation': str(current_generation),
+                    'new_generation': str(new_generation),
+                    'reason': reason,
+                },
+                extra_data={'company_generation_adjusted': True}
+            )
+
+        # Recalculate company cash flow metrics (mirrors AdminCompanyFundsSummaryView formula)
+        total_plan_amounts = Investment.objects.filter(
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+        ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
+
+        total_withdrawals = Withdrawal.objects.filter(
+            status=Withdrawal.Status.APPROVED
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        total_withdrawal_fees = CompanyWalletTransaction.objects.filter(
+            category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        # Net cash = Plan inflows + Manual generation − Gross withdrawals + Fees retained
+        total_cash = total_plan_amounts + new_generation - total_withdrawals + total_withdrawal_fees
+
+        return Response({
+            'detail': f'Total generation successfully updated to ${new_generation:,.2f}.',
+            'total_generation': float(new_generation),
+            'total_plan_amounts': float(total_plan_amounts),
+            'total_withdrawals': float(total_withdrawals),
+            'total_withdrawal_fees': float(total_withdrawal_fees),
+            'total_cash': float(total_cash),
+        }, status=status.HTTP_200_OK)
 
 
 class AdminCompanyFundsAdjustView(APIView):
@@ -900,7 +1040,7 @@ class AdminCompanyFundsAdjustView(APIView):
     POST /api/v1/admin-panel/funds/adjust/
     Allows admin to perform audited credit or debit adjustments to company funds.
     """
-    permission_classes = [IsSuperAdminOnly]
+    permission_classes = [IsAdminRoleOrStaff]
 
     def post(self, request):
         serializer = AdminCompanyFundsAdjustmentSerializer(data=request.data)
@@ -938,7 +1078,7 @@ class AdminCompanyFundsAdjustView(APIView):
             # Audit Log
             AuditLog.objects.create(
                 user=request.user,
-                action=AuditLog.Action.WALLET_ADJUSTED,
+                action=AuditLog.Action.WALLET_CREDITED if action == 'CREDIT' else AuditLog.Action.WALLET_DEBITED,
                 ip_address=request.META.get('REMOTE_ADDR'),
                 new_value={
                     'company_wallet': True,

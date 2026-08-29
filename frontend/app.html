@@ -31,7 +31,7 @@
   <script>
     window.BRAND_CONFIG = {
       name: "FINOVO",
-      logoUrl: "img/logo-title.png",
+      logoUrl: "img/logo.png",
       tagline: "TRADE SMART GROW TOGETHER"
     };
 
@@ -54,7 +54,8 @@
       <!-- LEFT — brand panel -->
       <div class="brand-panel">
         <canvas id="authCanvas"></canvas>
-        <div class="logo"><img class="logo-img" src="img/logo-title.png" alt="FINOVO" style="height: 110px; max-width: 160px; object-fit: contain;">
+        <div class="logo"><img class="logo-img" src="img/logo.png" alt="FINOVO"
+            style="height: 280px; max-width: 460px; width: auto; object-fit: contain; filter: drop-shadow(0 14px 36px rgba(198, 153, 61, 0.45));">
         </div>
 
         <div class="brand-copy">
@@ -84,7 +85,8 @@
               </svg> Back to Homepage
             </a>
           </div>
-          <img class="logo-img mobile-logo" src="img/logo-title.png" alt="FINOVO" style="height: 64px; max-width: 140px; object-fit: contain; margin-bottom: 16px;">
+          <img class="logo-img mobile-logo" src="img/logo.png" alt="FINOVO"
+            style="height: 95px; max-width: 260px; width: auto; object-fit: contain; margin-bottom: 20px; filter: drop-shadow(0 8px 24px rgba(198, 153, 61, 0.35));">
 
           <div class="form-head">
             <h2 id="auth-form-title">Sign in</h2>
@@ -457,14 +459,16 @@
         <!-- Admin Quick Action (shown when admin) -->
         <div id="admin-topbar-actions" style="display: none; gap: 8px;">
           <button class="btn btn-sm btn-gold" onclick="openTriggerROIModal('full_week')"
-            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;" title="Trigger 1 full week ROI for all active investments regardless of elapsed days">
+            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;"
+            title="Trigger 1 full week ROI for all active investments regardless of elapsed days">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
             Trigger ROI
           </button>
           <button class="btn btn-sm btn-secondary" onclick="openTriggerROIModal('by_day')"
-            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;" title="Trigger ROI with days logic (prorated by elapsed weekdays Mon–Fri)">
+            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;"
+            title="Trigger ROI with days logic (prorated by elapsed weekdays Mon–Fri)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
@@ -712,7 +716,8 @@
           <div>
             <div class="eyebrow">PACKAGES &amp; TIERS</div>
             <h2 class="section-title" style="font-size: 26px;">Institutional Investment Plans</h2>
-            <p style="font-size: 13px; color: var(--mute); margin-top: 4px;">Choose your desired investment tier, complete USDT deposit to platform treasury, and receive trading capital allocation upon confirmation.</p>
+            <p style="font-size: 13px; color: var(--mute); margin-top: 4px;">Choose your desired investment tier,
+              complete USDT deposit to platform treasury, and receive trading capital allocation upon confirmation.</p>
           </div>
         </div>
 
@@ -848,7 +853,8 @@
               </div>
             </div>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-              Active Direct Referrals unlock downline levels up to 5 tiers deep. <b>Direct Income:</b> 0, 2, 4, 6, 8 directs • <b>ROI Referral Income:</b> 2, 4, 6, 8, 10 directs.
+              Active Direct Referrals unlock downline levels up to 5 tiers deep. <b>Direct Income:</b> 0, 2, 4, 6, 8
+              directs • <b>ROI Referral Income:</b> 2, 4, 6, 8, 10 directs.
             </p>
             <div id="referral-levels-list">
               <!-- Rendered via JS -->
@@ -904,13 +910,20 @@
           </div>
 
           <!-- Level Filter Pills -->
-          <div class="team-level-filters" id="team-level-pills" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-            <button type="button" class="btn btn-sm btn-primary active team-level-pill" onclick="filterTeamByLevel('all')" id="pill-lvl-all">All Levels (0)</button>
-            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('1')" id="pill-lvl-1">Level 1 (0)</button>
-            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('2')" id="pill-lvl-2">Level 2 (0)</button>
-            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('3')" id="pill-lvl-3">Level 3 (0)</button>
-            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('4')" id="pill-lvl-4">Level 4 (0)</button>
-            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('5')" id="pill-lvl-5">Level 5 (0)</button>
+          <div class="team-level-filters" id="team-level-pills"
+            style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button type="button" class="btn btn-sm btn-primary active team-level-pill"
+              onclick="filterTeamByLevel('all')" id="pill-lvl-all">All Levels (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('1')"
+              id="pill-lvl-1">Level 1 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('2')"
+              id="pill-lvl-2">Level 2 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('3')"
+              id="pill-lvl-3">Level 3 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('4')"
+              id="pill-lvl-4">Level 4 (0)</button>
+            <button type="button" class="btn btn-sm btn-secondary team-level-pill" onclick="filterTeamByLevel('5')"
+              id="pill-lvl-5">Level 5 (0)</button>
           </div>
 
           <div class="filters-row" style="margin-bottom: 16px;">
@@ -1388,7 +1401,8 @@
         <!-- 1. ADMIN OVERVIEW SUB-PAGE -->
         <div id="adm-content-overview" class="admin-subpage active">
           <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="card stat-card admin-stat-card highlight-gold" onclick="switchAdminNav('funds')" style="cursor: pointer;" title="Click to view Company Funds Ledger">
+            <div class="card stat-card admin-stat-card highlight-gold" onclick="switchAdminNav('funds')"
+              style="cursor: pointer;" title="Click to view Company Funds Ledger">
               <div>
                 <div class="stat-title">Company Wallet</div>
                 <div class="stat-value" id="adm-stat-company-wallet" style="color: var(--gold);">$0.00</div>
@@ -1583,7 +1597,8 @@
                 <div class="eyebrow">Corporate Treasury</div>
                 <h2 class="section-title">Company Funds &amp; Treasury Ledger</h2>
                 <p style="font-size: 13px; color: var(--mute); margin-top: 4px; margin-bottom: 0;">
-                  Real-time ledger audit trail for platform retainers, package spreads (Cost − Trading Capital), withdrawal fees, and audited treasury balance adjustments.
+                  Real-time ledger audit trail for platform retainers, package spreads (Cost − Trading Capital),
+                  withdrawal fees, and audited treasury balance adjustments.
                 </p>
               </div>
               <div style="display: flex; gap: 10px; align-items: center;">
@@ -1623,7 +1638,8 @@
             </div>
 
             <!-- Card 2: Treasury Balance (Retained Profit) -->
-            <div class="card stat-card admin-stat-card highlight-gold" onclick="openAdminFundsAdjustModal()" style="cursor: pointer;" title="Click to adjust Company Wallet funds">
+            <div class="card stat-card admin-stat-card highlight-gold" onclick="openAdminFundsAdjustModal()"
+              style="cursor: pointer;" title="Click to adjust Company Wallet funds">
               <div>
                 <div class="stat-title">Treasury Balance</div>
                 <div class="stat-value" id="adm-funds-stat-balance" style="color: var(--gold);">$0.00</div>
@@ -1653,7 +1669,8 @@
             </div>
 
             <!-- Card 4: Total Generation -->
-            <div class="card stat-card admin-stat-card highlight-blue" onclick="openAdminGenerationAdjustModal()" style="cursor: pointer;" title="Click to adjust Total Generation">
+            <div class="card stat-card admin-stat-card highlight-blue" onclick="openAdminGenerationAdjustModal()"
+              style="cursor: pointer;" title="Click to adjust Total Generation">
               <div>
                 <div class="stat-title">Total Generation</div>
                 <div class="stat-value" id="adm-funds-stat-generation" style="color: #60a5fa;">$0.00</div>
@@ -1703,7 +1720,8 @@
 
           <!-- Filter & Search Toolbar -->
           <div class="card" style="margin-bottom: 20px;">
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+            <div
+              style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
               <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex: 1;">
                 <div class="admin-search-wrap" style="flex: 1; min-width: 240px;">
                   <input type="text" id="adm-funds-search" class="form-control"
@@ -2951,27 +2969,45 @@
 
       <div class="modal-body" style="padding: 0 4px;">
         <!-- Summary Cards Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px;">
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
-            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Total Refers (5 Lvl)</div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--font-mono); margin-top: 4px;" id="adm-team-stat-members">0</div>
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px;">
+          <div
+            style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
+            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Total
+              Refers (5 Lvl)</div>
+            <div
+              style="font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--font-mono); margin-top: 4px;"
+              id="adm-team-stat-members">0</div>
           </div>
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
-            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Team Investment</div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--gold); font-family: var(--font-mono); margin-top: 4px;" id="adm-team-stat-investment">$0.00</div>
+          <div
+            style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
+            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Team
+              Investment</div>
+            <div
+              style="font-size: 18px; font-weight: 700; color: var(--gold); font-family: var(--font-mono); margin-top: 4px;"
+              id="adm-team-stat-investment">$0.00</div>
           </div>
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
-            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Direct Income</div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-mono); margin-top: 4px;" id="adm-team-stat-direct">$0.00</div>
+          <div
+            style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
+            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Direct
+              Income</div>
+            <div
+              style="font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--font-mono); margin-top: 4px;"
+              id="adm-team-stat-direct">$0.00</div>
           </div>
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
-            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Referral ROI</div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--font-mono); margin-top: 4px;" id="adm-team-stat-roi">$0.00</div>
+          <div
+            style="background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: center;">
+            <div style="font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.5px;">Referral
+              ROI</div>
+            <div
+              style="font-size: 18px; font-weight: 700; color: var(--text); font-family: var(--font-mono); margin-top: 4px;"
+              id="adm-team-stat-roi">$0.00</div>
           </div>
         </div>
 
         <!-- 5-Level Breakdown Table -->
-        <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <h4
+          style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
           <span>5-Level Downline Breakdown</span>
           <span style="font-size: 11px; color: var(--mute); font-weight: normal;">Levels 1 to 5</span>
         </h4>
@@ -3102,7 +3138,8 @@
           </div>
           <div class="form-group">
             <label class="form-label">Trading Capital ($)</label>
-            <input type="number" id="adm-plan-trading-cap" class="form-control" min="1" step="1" placeholder="120.00" required>
+            <input type="number" id="adm-plan-trading-cap" class="form-control" min="1" step="1" placeholder="120.00"
+              required>
           </div>
         </div>
         <div class="grid-2">
@@ -3112,7 +3149,8 @@
           </div>
           <div class="form-group">
             <label class="form-label">Max Total Return ($)</label>
-            <input type="number" id="adm-plan-max-return" class="form-control" min="1" step="1" placeholder="350.00" required>
+            <input type="number" id="adm-plan-max-return" class="form-control" min="1" step="1" placeholder="350.00"
+              required>
           </div>
         </div>
         <div class="grid-2">
@@ -3132,7 +3170,8 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
           <div>
-            <button type="button" id="btn-adm-delete-plan" class="btn btn-danger" style="display: none;" onclick="handleAdminModalDeletePlan()">Delete Plan</button>
+            <button type="button" id="btn-adm-delete-plan" class="btn btn-danger" style="display: none;"
+              onclick="handleAdminModalDeletePlan()">Delete Plan</button>
           </div>
           <div style="display: flex; gap: 10px;">
             <button type="button" class="btn btn-secondary" onclick="closeModal('modal-admin-plan')">Cancel</button>
@@ -3153,12 +3192,14 @@
       <div>
         <input type="hidden" id="adm-roi-mode" value="full_week">
         <div id="adm-roi-mode-badge-wrap" style="margin-bottom: 12px;">
-          <span class="badge badge-approved" id="adm-roi-mode-badge-text" style="font-size: 11px; padding: 4px 10px;">Full Week Mode (100% Rate)</span>
+          <span class="badge badge-approved" id="adm-roi-mode-badge-text"
+            style="font-size: 11px; padding: 4px 10px;">Full Week Mode (100% Rate)</span>
         </div>
         <p style="font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 14px;" id="adm-roi-modal-desc">
           This will execute the Weekly ROI calculation engine for <b>all active investments</b> across the platform:
         </p>
-        <ul style="font-size: 12px; color: var(--mute); line-height: 1.8; margin-left: 18px; margin-bottom: 16px;" id="adm-roi-modal-bullets">
+        <ul style="font-size: 12px; color: var(--mute); line-height: 1.8; margin-left: 18px; margin-bottom: 16px;"
+          id="adm-roi-modal-bullets">
           <li>Credits weekly return to each investor's spendable wallet balance</li>
           <li>Fills up investor plans toward their maximum cap (300%)</li>
           <li>Distributes weekly ROI level commissions up to 5 levels to upline sponsors' oldest active plans</li>
@@ -3167,7 +3208,8 @@
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
           <button type="button" class="btn btn-secondary"
             onclick="closeModal('modal-admin-trigger-roi')">Cancel</button>
-          <button type="button" class="btn btn-gold" id="adm-roi-modal-submit-btn" onclick="submitTriggerROIEngine()">Execute Distribution
+          <button type="button" class="btn btn-gold" id="adm-roi-modal-submit-btn"
+            onclick="submitTriggerROIEngine()">Execute Distribution
             Now</button>
         </div>
       </div>
@@ -3189,7 +3231,8 @@
       </div>
       <form onsubmit="handleCompanyFundsAdjustSubmit(event)">
         <p style="font-size: 12.5px; color: var(--mute); margin-bottom: 16px; line-height: 1.5;">
-          Inject or deduct funds from the singleton Company Wallet. All manual adjustments are permanently recorded in the immutable ledger and audit logs.
+          Inject or deduct funds from the singleton Company Wallet. All manual adjustments are permanently recorded in
+          the immutable ledger and audit logs.
         </p>
         <div class="form-group">
           <label class="form-label">Adjustment Action <span style="color: var(--accent-danger);">*</span></label>
@@ -3200,27 +3243,34 @@
         </div>
         <div class="form-group">
           <label class="form-label">Amount ($) <span style="color: var(--accent-danger);">*</span></label>
-          <input type="number" id="adm-funds-adj-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 500.00" oninput="updateTreasuryModalPreview()" required>
+          <input type="number" id="adm-funds-adj-amount" class="form-control" min="0.01" step="0.01"
+            placeholder="e.g. 500.00" oninput="updateTreasuryModalPreview()" required>
         </div>
 
         <!-- Live Projection Preview Box -->
-        <div style="background: rgba(198, 153, 61, 0.08); border: 1px solid rgba(198, 153, 61, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+        <div
+          style="background: rgba(198, 153, 61, 0.08); border: 1px solid rgba(198, 153, 61, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
             <span style="color: var(--mute);">Current Treasury Balance:</span>
-            <span id="adm-funds-adj-preview-current" style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
+            <span id="adm-funds-adj-preview-current"
+              style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
             <span style="color: var(--mute);">Projected New Balance:</span>
-            <span id="adm-funds-adj-preview-projected" style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">$0.00</span>
+            <span id="adm-funds-adj-preview-projected"
+              style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">$0.00</span>
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Reason / Justification <span style="color: var(--accent-danger);">*</span></label>
-          <textarea id="adm-funds-adj-reason" class="form-control" rows="3" placeholder="Reason for treasury balance adjustment..." required></textarea>
+          <textarea id="adm-funds-adj-reason" class="form-control" rows="3"
+            placeholder="Reason for treasury balance adjustment..." required></textarea>
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-admin-funds-adjust')">Cancel</button>
+          <button type="button" class="btn btn-secondary"
+            onclick="closeModal('modal-admin-funds-adjust')">Cancel</button>
           <button type="submit" class="btn btn-primary" id="adm-funds-adj-submit-btn">Apply Treasury Adjustment</button>
         </div>
       </form>
@@ -3242,7 +3292,8 @@
       </div>
       <form onsubmit="handleGenerationAdjustSubmit(event)">
         <p style="font-size: 12.5px; color: var(--mute); margin-bottom: 16px; line-height: 1.5;">
-          Add to or override the platform's manual Total Generation. All generation adjustments recalculate platform liquidity and record an immutable ledger entry.
+          Add to or override the platform's manual Total Generation. All generation adjustments recalculate platform
+          liquidity and record an immutable ledger entry.
         </p>
 
         <div class="form-group">
@@ -3255,33 +3306,44 @@
 
         <div class="form-group">
           <label class="form-label">Amount ($) <span style="color: var(--accent-danger);">*</span></label>
-          <input type="number" id="adm-gen-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 5000.00" oninput="updateGenerationModalPreview()" required>
+          <input type="number" id="adm-gen-amount" class="form-control" min="0.01" step="0.01"
+            placeholder="e.g. 5000.00" oninput="updateGenerationModalPreview()" required>
         </div>
 
         <!-- Live Projection Preview Box -->
-        <div style="background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+        <div
+          style="background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
             <span style="color: var(--mute);">Current Total Generation:</span>
-            <span id="adm-gen-preview-current" style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
+            <span id="adm-gen-preview-current"
+              style="font-family: var(--font-mono); font-weight: 600; color: var(--text);">$0.00</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px;">
             <span style="color: var(--mute);">Projected New Generation:</span>
-            <span id="adm-gen-preview-projected" style="font-family: var(--font-mono); font-weight: 700; color: #60a5fa;">$0.00</span>
+            <span id="adm-gen-preview-projected"
+              style="font-family: var(--font-mono); font-weight: 700; color: #60a5fa;">$0.00</span>
           </div>
-          <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 6px 0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
+          <div
+            style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 6px 0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
             <span style="color: var(--mute);">Projected Platform Total Cash:</span>
-            <span id="adm-gen-preview-cash" style="font-family: var(--font-mono); font-weight: 700; color: #10b981;">$0.00</span>
+            <span id="adm-gen-preview-cash"
+              style="font-family: var(--font-mono); font-weight: 700; color: #10b981;">$0.00</span>
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 16px;">
           <label class="form-label" style="font-size: 12px;">Notes / Reason (Optional)</label>
-          <input type="text" id="adm-gen-reason" class="form-control" placeholder="e.g. Injected capital generation / trading returns" style="font-size: 12.5px;">
+          <input type="text" id="adm-gen-reason" class="form-control"
+            placeholder="e.g. Injected capital generation / trading returns" style="font-size: 12.5px;">
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-admin-generation-adjust')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="adm-gen-submit-btn" style="background: #3b82f6; border-color: #3b82f6;">Apply Generation Adjustment</button>
+          <button type="button" class="btn btn-secondary"
+            onclick="closeModal('modal-admin-generation-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="adm-gen-submit-btn"
+            style="background: #3b82f6; border-color: #3b82f6;">Apply Generation Adjustment</button>
         </div>
       </form>
     </div>

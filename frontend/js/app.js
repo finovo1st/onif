@@ -3193,6 +3193,7 @@ async function openManageUserModal(userId) {
     document.getElementById('adm-usr-kyc').value = u.kyc_status || 'UNVERIFIED';
     document.getElementById('adm-usr-verified').checked = !!u.is_email_verified;
     document.getElementById('adm-usr-active').checked = u.is_active !== false;
+    document.getElementById('adm-usr-bypass').checked = !!u.bypass_plan_and_level_requirements;
     document.getElementById('adm-usr-curr-balance').innerText = `$${Number(u.wallet_balance || 0).toFixed(2)}`;
     document.getElementById('adm-adj-amount').value = '';
     document.getElementById('adm-adj-reason').value = '';
@@ -3285,6 +3286,7 @@ async function handleUpdateUserSubmit(e) {
   const kyc_status = document.getElementById('adm-usr-kyc').value;
   const is_email_verified = document.getElementById('adm-usr-verified').checked;
   const is_active = document.getElementById('adm-usr-active').checked;
+  const bypass_plan_and_level_requirements = document.getElementById('adm-usr-bypass').checked;
 
   try {
     await apiCall(`/admin-panel/users/${userId}/`, 'PATCH', {
@@ -3292,6 +3294,7 @@ async function handleUpdateUserSubmit(e) {
       kyc_status,
       is_email_verified,
       is_active,
+      bypass_plan_and_level_requirements,
     });
     showToast('User profile updated successfully.');
     loadAdminUsers();

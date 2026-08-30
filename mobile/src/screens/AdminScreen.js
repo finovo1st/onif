@@ -148,6 +148,9 @@ export default function AdminScreen({ onNavigate }) {
   const [userBalanceAmount, setUserBalanceAmount] = useState('');
   const [userBalanceReason, setUserBalanceReason] = useState('');
   const [userTeamModalVisible, setUserTeamModalVisible] = useState(false);
+  const [manageRoleModalVisible, setManageRoleModalVisible] = useState(false);
+  const [selectedUserRole, setSelectedUserRole] = useState('USER');
+  const [selectedUserBypass, setSelectedUserBypass] = useState(false);
 
   // Support Desk State
   const [supportTickets, setSupportTickets] = useState([
@@ -352,6 +355,37 @@ export default function AdminScreen({ onNavigate }) {
       );
       setManageBalanceModalVisible(false);
       Alert.alert('Balance Updated', `${userBalanceType} of $${amt.toFixed(2)} USDT applied to ${selectedUser.email}.`);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  // Adjust User Role & Privileges
+  const handleUpdateUserPrivileges = async () => {
+    setLoading(true);
+    try {
+      if (!isDemoMode && selectedUser) {
+        await apiCall(`/admin-panel/users/${selectedUser.id}/`, 'PATCH', {
+          role: selectedUserRole,
+          bypass_plan_and_level_requirements: selectedUserBypass,
+        });
+      }
+      setUsersList((prev) =>
+        prev.map((u) => {
+          if (u.id === selectedUser.id) {
+            return {
+              ...u,
+              role: selectedUserRole,
+              bypass_plan_and_level_requirements: selectedUserBypass,
+              is_commission_bypassed: selectedUserRole === 'ADMIN' || selectedUserBypass,
+            };
+          }
+          return u;
+        })
+      );
+      setManageRoleModalVisible(false);
+      Alert.alert('Privileges Updated', `Account privileges for ${selectedUser.email} updated.`);
+      loadAdminData();
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {
@@ -884,8 +918,19 @@ export default function AdminScreen({ onNavigate }) {
             <View key={u.id} style={styles.userCard}>
               <View style={styles.userCardTop}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.userName}>{u.first_name ? `${u.first_name} ${u.last_name}` : u.username}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Text style={styles.userName}>{u.first_name ? `${u.first_name} ${u.last_name}` : u.username}</Text>
+                    <View style={[styles.roleBadge, (u.role || '').toUpperCase() === 'ADMIN' ? styles.roleBadgeAdmin : styles.roleBadgeUser]}>
+                      <Text style={styles.roleBadgeText}>{(u.role || 'USER').toUpperCase()}</Text>
+                    </View>
+                  </View>
                   <Text style={styles.userEmail}>{u.email}</Text>
+                  {(u.is_commission_bypassed || u.bypass_plan_and_level_requirements || (u.role || '').toUpperCase() === 'ADMIN') && (
+                    <View style={styles.unlimitedBadge}>
+                      <Feather name="zap" size={10} color={colors.goldSoft} style={{ marginRight: 3 }} />
+                      <Text style={styles.unlimitedBadgeText}>UNLIMITED EARNER (NO PLAN/LEVEL REQ)</Text>
+                    </View>
+                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={styles.userBalance}>${Number(u.wallet_balance).toFixed(2)} USDT</Text>
@@ -898,13 +943,26 @@ export default function AdminScreen({ onNavigate }) {
                   style={styles.userActionBtn}
                   onPress={() => {
                     setSelectedUser(u);
+                    setSelectedUserRole((u.role || 'USER').toUpperCase());
+                    setSelectedUserBypass(Boolean(u.bypass_plan_and_level_requirements));
+                    setManageRoleModalVisible(true);
+                  }}
+                >
+                  <Feather name="shield" size={12} color={colors.accentBlue} style={{ marginRight: 3 }} />
+                  <Text style={styles.userActionBtnText}>Role &amp; Privileges</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.userActionBtn}
+                  onPress={() => {
+                    setSelectedUser(u);
                     setUserBalanceAmount('');
                     setUserBalanceReason('');
                     setManageBalanceModalVisible(true);
                   }}
                 >
                   <Feather name="dollar-sign" size={12} color={colors.goldSoft} style={{ marginRight: 3 }} />
-                  <Text style={styles.userActionBtnText}>Manage Balance</Text>
+                  <Text style={styles.userActionBtnText}>Balance</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -915,7 +973,7 @@ export default function AdminScreen({ onNavigate }) {
                   }}
                 >
                   <Feather name="git-branch" size={12} color={colors.accentGreenSoft} style={{ marginRight: 3 }} />
-                  <Text style={styles.userActionBtnText}>Downlines ({u.direct_team_count || 0})</Text>
+                  <Text style={styles.userActionBtnText}>Team ({u.direct_team_count || 0})</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1135,6 +1193,78 @@ export default function AdminScreen({ onNavigate }) {
                 onPress={handleUserBalanceSubmit}
               >
                 <Text style={styles.modalBtnConfirmText}>Apply Balance</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL: Manage User Role & Earning Privileges */}
+      <Modal visible={manageRoleModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Role &amp; Privileges</Text>
+            <Text style={{ fontSize: 11, color: colors.textDim, marginBottom: 12 }}>
+              Account: {selectedUser?.email}
+            </Text>
+            
+            <Text style={styles.label}>Account Role</Text>
+            <View style={styles.toggleRow}>
+              {['USER', 'ADMIN', 'SUPPORT', 'FINANCE'].map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.toggleBtn, selectedUserRole === r && styles.toggleBtnActive]}
+                  onPress={() => setSelectedUserRole(r)}
+                >
+                  <Text style={[styles.toggleBtnText, selectedUserRole === r && styles.toggleBtnTextActive]}>
+                    {r}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 14 }]}>Unlimited Earning Privilege</Text>
+            <TouchableOpacity
+              style={[
+                styles.bypassToggleBtn,
+                (selectedUserBypass || selectedUserRole === 'ADMIN') && styles.bypassToggleBtnActive,
+              ]}
+              onPress={() => {
+                if (selectedUserRole !== 'ADMIN') {
+                  setSelectedUserBypass(!selectedUserBypass);
+                }
+              }}
+            >
+              <Feather
+                name={(selectedUserBypass || selectedUserRole === 'ADMIN') ? 'check-circle' : 'circle'}
+                size={16}
+                color={(selectedUserBypass || selectedUserRole === 'ADMIN') ? colors.goldSoft : colors.textDim}
+                style={{ marginRight: 8, marginTop: 2 }}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bypassToggleTitle}>
+                  {(selectedUserBypass || selectedUserRole === 'ADMIN')
+                    ? 'Bypass Enabled (Unlimited Earning)'
+                    : 'Standard Rules (Requires Plan & Directs)'}
+                </Text>
+                <Text style={styles.bypassToggleDesc}>
+                  Earns unlimited Direct &amp; ROI commissions from all 5 levels without needing an active investment plan and without direct unlock requirements.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={styles.modalBtnCancel}
+                onPress={() => setManageRoleModalVisible(false)}
+              >
+                <Text style={{ color: colors.textMuted }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalBtnConfirm}
+                onPress={handleUpdateUserPrivileges}
+              >
+                <Text style={styles.modalBtnConfirmText}>Save Privileges</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1778,5 +1908,68 @@ const styles = StyleSheet.create({
     color: '#030507',
     fontWeight: '700',
     fontSize: 12.5,
+  },
+  roleBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 3,
+    borderWidth: 1,
+  },
+  roleBadgeAdmin: {
+    backgroundColor: 'rgba(198, 153, 61, 0.15)',
+    borderColor: colors.bgCardBorderGold,
+  },
+  roleBadgeUser: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.bgCardBorder,
+  },
+  roleBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: colors.goldSoft,
+    letterSpacing: 0.5,
+  },
+  unlimitedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  unlimitedBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: colors.accentGreenSoft,
+    letterSpacing: 0.4,
+  },
+  bypassToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 6,
+  },
+  bypassToggleBtnActive: {
+    backgroundColor: 'rgba(198, 153, 61, 0.1)',
+    borderColor: colors.bgCardBorderGold,
+  },
+  bypassToggleTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMain,
+    marginBottom: 2,
+  },
+  bypassToggleDesc: {
+    fontSize: 10,
+    color: colors.textDim,
+    lineHeight: 14,
   },
 });

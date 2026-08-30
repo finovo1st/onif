@@ -27,6 +27,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     active_investments_count = serializers.SerializerMethodField()
     kyc_document_front_url = serializers.SerializerMethodField()
     kyc_document_back_url = serializers.SerializerMethodField()
+    is_commission_bypassed = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -37,6 +38,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified',
             'referral_code', 'parent_email', 'active_level', 'active_roi_level',
+            'bypass_plan_and_level_requirements', 'is_commission_bypassed',
             'wallet_balance', 'total_invested', 'total_withdrawn', 'active_investments_count',
             'total_roi_earned', 'total_direct_income', 'total_referral_income',
             'team_total_members', 'team_total_investment',
@@ -105,7 +107,7 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
     """Admin role / KYC / status updates."""
     class Meta:
         model = User
-        fields = ['role', 'kyc_status', 'kyc_rejection_reason', 'is_email_verified', 'is_staff', 'is_active']
+        fields = ['role', 'bypass_plan_and_level_requirements', 'kyc_status', 'kyc_rejection_reason', 'is_email_verified', 'is_staff', 'is_active']
 
 
 

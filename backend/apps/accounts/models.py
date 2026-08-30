@@ -142,9 +142,31 @@ class User(AbstractUser):
         default=0, verbose_name=_('Active ROI Level')
     )
 
+    # Special Earning Privileges (Plan & Level Bypass for Unlimited Earning)
+    bypass_plan_and_level_requirements = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_('Bypass Plan & Level Limits / Unlimited Earning'),
+        help_text=_('Allows this user to earn unlimited direct & ROI commissions without an active plan and with all levels unlocked.')
+    )
+
     @property
     def active_direct_level(self) -> int:
         return self.active_level
+
+    @property
+    def is_commission_bypassed(self) -> bool:
+        """
+        Whether this user can earn direct & ROI commission without needing an active plan
+        and without requiring level unlocks or max return caps.
+        True for ADMIN role, superusers, staff, or any account with bypass_plan_and_level_requirements enabled.
+        """
+        return bool(
+            self.role == self.Role.ADMIN
+            or self.is_superuser
+            or self.is_staff
+            or self.bypass_plan_and_level_requirements
+        )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

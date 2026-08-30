@@ -27,6 +27,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['role'] = user.role
         token['is_email_verified'] = user.is_email_verified
+        token['is_commission_bypassed'] = user.is_commission_bypassed
         return token
 
 
@@ -101,6 +102,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     parent_email = serializers.SerializerMethodField(read_only=True)
     kyc_document_front_url = serializers.SerializerMethodField(read_only=True)
     kyc_document_back_url = serializers.SerializerMethodField(read_only=True)
+    is_commission_bypassed = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -112,6 +114,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified', 'is_2fa_enabled',
             'referral_code', 'parent_email', 'active_level', 'active_direct_level', 'active_roi_level',
+            'bypass_plan_and_level_requirements', 'is_commission_bypassed',
             'date_joined', 'created_at',
         ]
         read_only_fields = [
@@ -119,6 +122,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'kyc_document_type', 'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url',
             'kyc_submitted_at', 'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified', 'referral_code', 'active_level', 'active_direct_level', 'active_roi_level',
+            'bypass_plan_and_level_requirements', 'is_commission_bypassed',
             'date_joined', 'created_at', 'parent_email',
         ]
 

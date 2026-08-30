@@ -103,6 +103,10 @@ class DashboardView(APIView):
             'total_team': total_team,
             'direct_team': direct_team,
             'active_level': user.active_level,
+            'active_direct_level': user.active_level,
+            'active_roi_level': getattr(user, 'active_roi_level', user.active_level),
+            'is_commission_bypassed': getattr(user, 'is_commission_bypassed', False),
+            'bypass_plan_and_level_requirements': getattr(user, 'bypass_plan_and_level_requirements', False),
 
             # Company Deposit Wallets
             'deposit_wallets': {

@@ -157,13 +157,14 @@ class LevelStatsView(APIView):
             dir_req = _dir_level_unlock_threshold(level)
             roi_req = _roi_level_unlock_threshold(level)
 
+            is_bypassed = getattr(user, 'is_commission_bypassed', False)
             stats.append({
                 'level': level,
                 'dir_req': dir_req,
                 'roi_req': roi_req,
                 'req': dir_req,  # Backward compatibility
-                'is_direct_unlocked': active_directs >= dir_req,
-                'is_roi_unlocked': active_directs >= roi_req,
+                'is_direct_unlocked': is_bypassed or (active_directs >= dir_req),
+                'is_roi_unlocked': is_bypassed or (active_directs >= roi_req),
                 'user_active_directs': active_directs,
                 'total_refers': total_refers,
                 'total_investment': float(total_investment),

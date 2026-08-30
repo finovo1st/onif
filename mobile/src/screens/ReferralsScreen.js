@@ -155,17 +155,17 @@ export default function ReferralsScreen() {
 
   const levelsToRender = levelStats.length > 0
     ? levelStats.map(s => ({
-        lvl: s.level,
-        dirReq: s.dir_req !== undefined ? s.dir_req : (s.level === 1 ? 0 : (s.level - 1) * 2),
-        roiReq: s.roi_req !== undefined ? s.roi_req : s.level * 2,
-        isDirUnlocked: s.is_direct_unlocked !== undefined ? s.is_direct_unlocked : (currentDirLevel >= s.level),
-        isRoiUnlocked: s.is_roi_unlocked !== undefined ? s.is_roi_unlocked : (currentRoiLevel >= s.level),
-      }))
+      lvl: s.level,
+      dirReq: s.dir_req !== undefined ? s.dir_req : (s.level === 1 ? 0 : (s.level - 1) * 2),
+      roiReq: s.roi_req !== undefined ? s.roi_req : s.level * 2,
+      isDirUnlocked: s.is_direct_unlocked !== undefined ? s.is_direct_unlocked : (currentDirLevel >= s.level),
+      isRoiUnlocked: s.is_roi_unlocked !== undefined ? s.is_roi_unlocked : (currentRoiLevel >= s.level),
+    }))
     : defaultLevels.map(item => ({
-        ...item,
-        isDirUnlocked: currentDirLevel >= item.lvl,
-        isRoiUnlocked: currentRoiLevel >= item.lvl,
-      }));
+      ...item,
+      isDirUnlocked: currentDirLevel >= item.lvl,
+      isRoiUnlocked: currentRoiLevel >= item.lvl,
+    }));
 
   const filteredTeam = team.filter((m) => {
     const q = searchQuery.toLowerCase();

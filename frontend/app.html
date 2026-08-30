@@ -2912,12 +2912,15 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+        <div style="display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
           <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
             <input type="checkbox" id="adm-usr-verified"> Email Verified
           </label>
           <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
             <input type="checkbox" id="adm-usr-active"> Account Active
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;" title="Allow this user to bypass plan cost and level (active_level) requirements when investing">
+            <input type="checkbox" id="adm-usr-bypass"> Bypass Plan &amp; Level Requirements
           </label>
         </div>
         <button type="submit" class="btn btn-sm btn-primary">Save Profile Settings</button>

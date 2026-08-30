@@ -22,6 +22,7 @@ def make_user(email, username, parent=None):
     u = User.objects.create_user(email=email, username=username, password='Pass123!')
     u.parent = parent
     u.save(update_fields=['parent'])
+    Wallet.objects.get_or_create(user=u)
     return u
 
 
@@ -530,5 +531,140 @@ class InvestmentViewTests(APITestCase):
                 amount=expected_roi_remainder
             ).exists()
         )
+
+
+class UnlimitedEarningBypassTests(TestCase):
+    def setUp(self):
+        self.plan = Plan.objects.create(
+            name='Test Plan',
+            cost=Decimal('100.00'),
+            trading_capital=Decimal('1000.00'),
+            max_return_factor=Decimal('3.00'),
+            max_total_return=Decimal('3000.00'),
+            weekly_roi_rate=Decimal('10.00'),
+        )
+        # Admin account (has role=ADMIN, no active investments)
+        self.admin = make_user('admin@finovo.com', 'adminuser')
+        self.admin.role = User.Role.ADMIN
+        self.admin.save(update_fields=['role'])
+
+        # Custom bypassed account (role=USER, but bypass flag enabled, no active investments)
+        self.bypassed_user = make_user('bypassed@finovo.com', 'bypasseduser', parent=self.admin)
+        self.bypassed_user.bypass_plan_and_level_requirements = True
+        self.bypassed_user.save(update_fields=['bypass_plan_and_level_requirements'])
+
+        # Downline user who will invest
+        self.downline = make_user('downline@finovo.com', 'downlineuser', parent=self.bypassed_user)
+
+    def test_admin_and_bypassed_user_earn_direct_income_without_active_plan(self):
+        # Downline makes an investment
+        investment = make_active_investment(self.downline, self.plan, '100.00')
+
+        # Distribute direct income
+        commissions = distribute_direct_income(investment)
+
+        # Both bypassed_user (Level 1) and admin (Level 2) should receive direct commissions
+        # Level 1 (2% of $1000 = $20.00) -> bypassed_user
+        # Level 2 (2% of $1000 = $20.00) -> admin
+        self.assertEqual(len(commissions), 2)
+
+        # Verify commissions in DB
+        comm_bypassed = ReferralCommission.objects.filter(user=self.bypassed_user, commission_type=ReferralCommission.CommissionType.DIRECT).first()
+        self.assertIsNotNone(comm_bypassed)
+        self.assertEqual(comm_bypassed.amount, Decimal('20.00'))
+        self.assertEqual(comm_bypassed.level, 1)
+
+        comm_admin = ReferralCommission.objects.filter(user=self.admin, commission_type=ReferralCommission.CommissionType.DIRECT).first()
+        self.assertIsNotNone(comm_admin)
+        self.assertEqual(comm_admin.amount, Decimal('20.00'))
+        self.assertEqual(comm_admin.level, 2)
+
+        # Verify wallet balances were credited directly (since neither has an active investment plan)
+        self.bypassed_user.wallet.refresh_from_db()
+        self.assertEqual(self.bypassed_user.wallet.balance, Decimal('20.00'))
+        self.assertEqual(self.bypassed_user.wallet.total_direct_income, Decimal('20.00'))
+
+        self.admin.wallet.refresh_from_db()
+        self.assertEqual(self.admin.wallet.balance, Decimal('20.00'))
+        self.assertEqual(self.admin.wallet.total_direct_income, Decimal('20.00'))
+
+    def test_admin_and_bypassed_user_earn_roi_commissions_without_active_plan_and_zero_directs(self):
+        # Downline has active investment earning $100.00 weekly ROI (10% of 1000)
+        investment = make_active_investment(self.downline, self.plan, '100.00')
+
+        # Neither bypassed_user nor admin have 2+ active directs (bypassed_user has 1, admin has 0 active directs)
+        # and neither has an active investment plan.
+        distribute_roi_for_investment(investment, mode='full_week')
+
+        # ROI rate = 18.75% of $100.00 = $18.75
+        comm_bypassed = ReferralCommission.objects.filter(user=self.bypassed_user, commission_type=ReferralCommission.CommissionType.ROI).first()
+        self.assertIsNotNone(comm_bypassed)
+        self.assertEqual(comm_bypassed.amount, Decimal('18.75'))
+
+        comm_admin = ReferralCommission.objects.filter(user=self.admin, commission_type=ReferralCommission.CommissionType.ROI).first()
+        self.assertIsNotNone(comm_admin)
+        self.assertEqual(comm_admin.amount, Decimal('18.75'))
+
+        # Check wallets
+        self.bypassed_user.wallet.refresh_from_db()
+        self.assertEqual(self.bypassed_user.wallet.balance, Decimal('18.75'))
+        self.assertEqual(self.bypassed_user.wallet.total_referral_income, Decimal('18.75'))
+
+        self.admin.wallet.refresh_from_db()
+        self.assertEqual(self.admin.wallet.balance, Decimal('18.75'))
+        self.assertEqual(self.admin.wallet.total_referral_income, Decimal('18.75'))
+
+    def test_bypassed_user_earns_unlimited_income_beyond_plan_max_return_cap(self):
+        # Give bypassed_user a small plan with only $5 remaining capacity
+        small_inv = Investment.objects.create(
+            user=self.bypassed_user,
+            plan=self.plan,
+            cost=Decimal('50.00'),
+            trading_capital=Decimal('50.00'),
+            amount=Decimal('50.00'),
+            max_return=Decimal('100.00'),
+            total_credited=Decimal('95.00'), # only $5 left
+            status=Investment.Status.ACTIVE,
+            start_date=timezone.now().date(),
+        )
+
+        # Downline investment yields $20 direct income
+        inv = make_active_investment(self.downline, self.plan, '100.00')
+        distribute_direct_income(inv)
+
+        # Plan gets completed with $5 credit
+        small_inv.refresh_from_db()
+        self.assertEqual(small_inv.total_credited, Decimal('100.00'))
+        self.assertEqual(small_inv.status, Investment.Status.COMPLETED)
+
+        # But the FULL $20 is credited to the bypassed user's wallet without truncation ($5 to plan + $15 overflow to wallet)
+        self.bypassed_user.wallet.refresh_from_db()
+        self.assertEqual(self.bypassed_user.wallet.balance, Decimal('20.00'))
+        self.assertEqual(self.bypassed_user.wallet.total_direct_income, Decimal('20.00'))
+
+    def test_update_active_level_permanently_unlocks_level_5_for_bypassed_users(self):
+        update_user_active_level(self.bypassed_user)
+        self.bypassed_user.refresh_from_db()
+        self.assertEqual(self.bypassed_user.active_level, 5)
+        self.assertEqual(self.bypassed_user.active_roi_level, 5)
+
+        update_user_active_level(self.admin)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.active_level, 5)
+        self.assertEqual(self.admin.active_roi_level, 5)
+
+    def test_regular_user_without_bypass_requires_active_plan(self):
+        # Create regular user without bypass and with NO active plan
+        reg_sponsor = make_user('reg_sponsor@finovo.com', 'regsponsor')
+        reg_downline = make_user('reg_downline@finovo.com', 'regdownline', parent=reg_sponsor)
+
+        inv = make_active_investment(reg_downline, self.plan, '100.00')
+        commissions = distribute_direct_income(inv)
+
+        # Regular sponsor has no active plan -> receives $0 commission
+        self.assertEqual(len(commissions), 0)
+        reg_sponsor.wallet.refresh_from_db()
+        self.assertEqual(reg_sponsor.wallet.balance, Decimal('0.00'))
+
 
 

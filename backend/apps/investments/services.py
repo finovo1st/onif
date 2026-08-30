@@ -70,22 +70,27 @@ def _count_active_directs(user) -> int:
 def update_user_active_level(user) -> int:
     """
     Recalculate and persist the user's active_level (Direct: 0,2,4,6,8) and active_roi_level (ROI: 2,4,6,8,10).
+    For accounts with unlimited earning bypass (admin or bypass flag), both levels are permanently 5.
     Returns the new active direct level (0–5).
     """
-    active_directs = _count_active_directs(user)
-    new_dir_level = 0
-    for lvl in range(1, 6):
-        if active_directs >= _dir_level_unlock_threshold(lvl):
-            new_dir_level = lvl
-        else:
-            break
+    if getattr(user, 'is_commission_bypassed', False):
+        new_dir_level = 5
+        new_roi_level = 5
+    else:
+        active_directs = _count_active_directs(user)
+        new_dir_level = 0
+        for lvl in range(1, 6):
+            if active_directs >= _dir_level_unlock_threshold(lvl):
+                new_dir_level = lvl
+            else:
+                break
 
-    new_roi_level = 0
-    for lvl in range(1, 6):
-        if active_directs >= _roi_level_unlock_threshold(lvl):
-            new_roi_level = lvl
-        else:
-            break
+        new_roi_level = 0
+        for lvl in range(1, 6):
+            if active_directs >= _roi_level_unlock_threshold(lvl):
+                new_roi_level = lvl
+            else:
+                break
 
     update_fields = []
     if user.active_level != new_dir_level:
@@ -249,6 +254,18 @@ def credit_oldest_active_plan(
                     reference_id=str(inv.id),
                 )
 
+    # For accounts with unlimited earning bypass (admin or bypass flag enabled),
+    # credit any remaining overflow or full commission directly to their wallet.
+    if amount_remaining_to_distribute > Decimal('0.00') and getattr(user, 'is_commission_bypassed', False):
+        credit_wallet(
+            user=user,
+            amount=amount_remaining_to_distribute,
+            category=category,
+            description=f"{description} (unlimited bypass)",
+            reference_id=reference_id,
+        )
+        total_credited_across_plans += amount_remaining_to_distribute
+
     return total_credited_across_plans
 
 
@@ -277,11 +294,12 @@ def distribute_direct_income(investment: Investment) -> list:
             break
 
         # Check level unlock (Direct: 0, 2, 4, 6, 8 directs)
-        active_directs = _count_active_directs(sponsor)
-        required = _dir_level_unlock_threshold(level)
-        if active_directs < required:
-            current_user = sponsor
-            continue
+        if not getattr(sponsor, 'is_commission_bypassed', False):
+            active_directs = _count_active_directs(sponsor)
+            required = _dir_level_unlock_threshold(level)
+            if active_directs < required:
+                current_user = sponsor
+                continue
 
         commission_amount = (investment.trading_capital * rate).quantize(
             Decimal('0.01'), rounding=ROUND_DOWN
@@ -451,11 +469,12 @@ def _distribute_roi_commissions(investment: Investment, roi_amount: Decimal) -> 
             break
 
         # Level unlock check (ROI: 2, 4, 6, 8, 10 directs)
-        active_directs = _count_active_directs(sponsor)
-        required = _roi_level_unlock_threshold(level)
-        if active_directs < required:
-            current_user = sponsor
-            continue
+        if not getattr(sponsor, 'is_commission_bypassed', False):
+            active_directs = _count_active_directs(sponsor)
+            required = _roi_level_unlock_threshold(level)
+            if active_directs < required:
+                current_user = sponsor
+                continue
 
         # Credit sponsor's OLDEST active plan
         credited_amount = credit_oldest_active_plan(

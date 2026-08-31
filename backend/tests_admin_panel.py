@@ -293,6 +293,7 @@ class AdminPanelTestCase(TestCase):
         self.assertEqual(final_data['total_trading_capital'], 500.0)
         self.assertEqual(final_data['total_cash'], 700.0)
         self.assertEqual(final_data['remaining_funds'], 200.0)
+        self.assertEqual(final_data['balance'], 0.0)
 
         # 7. Verify ledger entries created for generation
         self.assertTrue(

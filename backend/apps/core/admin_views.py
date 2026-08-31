@@ -912,8 +912,10 @@ class AdminCompanyFundsSummaryView(APIView):
         total_cash = total_plan_amounts + total_generation - total_withdrawals + total_withdrawal_fees
         remaining_funds = total_cash - total_trading_capital
 
+        treasury_balance = wallet.balance - total_generation
+
         return Response({
-            'balance': float(wallet.balance),
+            'balance': float(treasury_balance),
             'total_credits': float(total_credits),
             'total_debits': float(total_debits),
             'total_investment_remainders': float(total_investment_remainders),

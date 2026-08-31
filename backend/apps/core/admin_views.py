@@ -87,7 +87,11 @@ class AdminOverviewView(APIView):
         total_direct_income = Wallet.objects.aggregate(total=Sum('total_direct_income'))['total'] or Decimal('0.00')
         total_referral_income = Wallet.objects.aggregate(total=Sum('total_referral_income'))['total'] or Decimal('0.00')
         total_commissions_paid = total_direct_income + total_referral_income
-        company_wallet_balance = CompanyWallet.get_wallet().balance
+        try:
+            total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
+        except Exception:
+            total_generation = Decimal('0.00')
+        company_wallet_balance = CompanyWallet.get_wallet().balance - total_generation
 
         # Support Tickets
         open_tickets_count = Ticket.objects.filter(status=Ticket.Status.OPEN).count()

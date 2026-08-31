@@ -655,6 +655,9 @@
               </tbody>
             </table>
           </div>
+          <div id="dash-ledger-pagination" class="pagination-controls">
+            <!-- Rendered via JS -->
+          </div>
         </div>
       </section>
 
@@ -837,6 +840,53 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- Complete Wallet Ledger History Table -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div class="eyebrow">Audit Trail</div>
+              <h2 class="section-title">Complete Wallet Transaction Ledger</h2>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <select id="wallet-ledger-filter-type" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
+                <option value="all">All Types</option>
+                <option value="CREDIT">Credits (+)</option>
+                <option value="DEBIT">Debits (-)</option>
+              </select>
+              <select id="wallet-ledger-filter-category" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
+                <option value="all">All Categories</option>
+                <option value="DEPOSIT">Deposit</option>
+                <option value="WITHDRAWAL">Withdrawal</option>
+                <option value="ROI_PAYOUT">ROI Payout</option>
+                <option value="DIRECT_COMMISSION">Direct Commission</option>
+                <option value="ROI_COMMISSION">ROI Commission</option>
+                <option value="INVESTMENT_PURCHASE">Investment Purchase</option>
+                <option value="CAPITAL_REFUND">Capital Refund</option>
+              </select>
+              <button class="btn btn-sm btn-secondary" onclick="resetWalletLedgerFilters()">Reset</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Balance After</th>
+                  <th>Date & Description</th>
+                </tr>
+              </thead>
+              <tbody id="wallet-ledger-tbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="wallet-ledger-pagination" class="pagination-controls">
+            <!-- Rendered via JS -->
           </div>
         </div>
       </section>

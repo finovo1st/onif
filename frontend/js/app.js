@@ -25,6 +25,7 @@ let state = {
   levelStats: [],
   teamLevel: 'all',
   pagination: {
+    ledger: { next: null, previous: null, count: 0 },
     team: { next: null, previous: null, count: 0 },
     adminUsers: { next: null, previous: null, count: 0 },
     adminFunds: { next: null, previous: null, count: 0 }
@@ -276,6 +277,11 @@ async function loadAllAPIData() {
     state.investments = Array.isArray(investmentsData) ? investmentsData : (investmentsData.results || []);
     state.plans = Array.isArray(plansData) ? plansData : (plansData.results || []);
     state.ledger = Array.isArray(ledgerData) ? ledgerData : (ledgerData.results || []);
+    if (ledgerData && !Array.isArray(ledgerData)) {
+      state.pagination.ledger = { next: ledgerData.next, previous: ledgerData.previous, count: ledgerData.count };
+    } else {
+      state.pagination.ledger = { next: null, previous: null, count: state.ledger.length };
+    }
     state.team = Array.isArray(teamData) ? teamData : (teamData.results || []);
     if (teamData && !Array.isArray(teamData)) {
       state.pagination.team = { next: teamData.next, previous: teamData.previous, count: teamData.count };
@@ -410,7 +416,14 @@ function renderAllViews() {
   renderActiveInvestmentsList();
 
   // Ledger Table
-  renderLedgerTable(state.ledger.slice(0, 8), 'dash-ledger-tbody');
+  renderLedgerTable(state.ledger, 'dash-ledger-tbody');
+  renderPaginationControls('dash-ledger-pagination', state.pagination.ledger, loadLedgerData);
+
+  const walletTbody = document.getElementById('wallet-ledger-tbody');
+  if (walletTbody) {
+    renderLedgerTable(state.ledger, 'wallet-ledger-tbody');
+    renderPaginationControls('wallet-ledger-pagination', state.pagination.ledger, loadLedgerData);
+  }
 
   // Wallet View Totals
   document.getElementById('wallet-pg-balance').innerText = `$${Number(state.wallet.balance || 0).toFixed(2)}`;
@@ -675,6 +688,7 @@ function renderMyInvestmentsTable() {
 
 function renderLedgerTable(items, elementId) {
   const tbody = document.getElementById(elementId);
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (!items || items.length === 0) {
@@ -701,10 +715,55 @@ function renderLedgerTable(items, elementId) {
         <td><b>${item.category}</b></td>
         <td style="color: ${color}; font-weight: 700; font-family: var(--font-mono);">${isCredit ? '+' : '-'}$${Number(item.amount).toFixed(2)}</td>
         <td style="font-family: var(--font-mono);">$${Number(item.balance_after || 0).toFixed(2)}</td>
-        <td style="font-size: 13px; color: var(--text-muted);">${item.description} (${dateStr})</td>
+        <td style="font-size: 13px; color: var(--text-muted);">${item.description || '—'} (${dateStr})</td>
       </tr>
     `;
   });
+}
+
+async function loadLedgerData(overrideUrl = null) {
+  let url = overrideUrl || '/wallet/transactions/';
+  try {
+    const data = await apiCall(url);
+    const ledgerData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.ledger = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.ledger = { next: null, previous: null, count: ledgerData.length };
+    }
+    state.ledger = ledgerData;
+    renderLedgerTable(state.ledger, 'dash-ledger-tbody');
+    renderPaginationControls('dash-ledger-pagination', state.pagination.ledger, loadLedgerData);
+
+    const walletTbody = document.getElementById('wallet-ledger-tbody');
+    if (walletTbody) {
+      renderLedgerTable(state.ledger, 'wallet-ledger-tbody');
+      renderPaginationControls('wallet-ledger-pagination', state.pagination.ledger, loadLedgerData);
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+function filterWalletLedger() {
+  const typeFilter = document.getElementById('wallet-ledger-filter-type')?.value || 'all';
+  const catFilter = document.getElementById('wallet-ledger-filter-category')?.value || 'all';
+  let url = '/wallet/transactions/?';
+  const params = [];
+  if (typeFilter && typeFilter !== 'all') params.push(`transaction_type=${encodeURIComponent(typeFilter)}`);
+  if (catFilter && catFilter !== 'all') params.push(`category=${encodeURIComponent(catFilter)}`);
+  if (params.length > 0) {
+    url += params.join('&');
+  }
+  loadLedgerData(url);
+}
+
+function resetWalletLedgerFilters() {
+  const typeFilter = document.getElementById('wallet-ledger-filter-type');
+  const catFilter = document.getElementById('wallet-ledger-filter-category');
+  if (typeFilter) typeFilter.value = 'all';
+  if (catFilter) catFilter.value = 'all';
+  loadLedgerData();
 }
 
 function renderDepositsTable() {
@@ -1577,6 +1636,12 @@ function handleLogout() {
   state.deposits = [];
   state.withdrawals = [];
   state.ledger = [];
+  state.pagination = {
+    ledger: { next: null, previous: null, count: 0 },
+    team: { next: null, previous: null, count: 0 },
+    adminUsers: { next: null, previous: null, count: 0 },
+    adminFunds: { next: null, previous: null, count: 0 }
+  };
   state.team = [];
   state.commissions = [];
   state.tickets = [];
@@ -2683,12 +2748,37 @@ function renderPaginationControls(containerId, paginationState, loadFunction) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  if (!paginationState.next && !paginationState.previous) {
-    container.innerHTML = '';
+  if (!paginationState || (!paginationState.next && !paginationState.previous)) {
+    if (paginationState && paginationState.count > 0) {
+      container.innerHTML = `<div class="pagination-info">Total Records: <b>${paginationState.count}</b> (Page 1 of 1)</div>`;
+    } else {
+      container.innerHTML = '';
+    }
     return;
   }
 
-  let pageInfo = `Total Records: <b>${paginationState.count}</b>`;
+  const count = paginationState.count || 0;
+  const pageSize = 20;
+  const totalPages = Math.max(1, Math.ceil(count / pageSize));
+  let currentPage = 1;
+
+  if (paginationState.previous) {
+    const prevMatch = paginationState.previous.match(/[?&]page=(\d+)/);
+    if (prevMatch) {
+      currentPage = parseInt(prevMatch[1], 10) + 1;
+    } else {
+      currentPage = 2;
+    }
+  } else if (paginationState.next) {
+    const nextMatch = paginationState.next.match(/[?&]page=(\d+)/);
+    if (nextMatch) {
+      currentPage = Math.max(1, parseInt(nextMatch[1], 10) - 1);
+    } else {
+      currentPage = 1;
+    }
+  }
+
+  let pageInfo = `Page <b>${currentPage}</b> of <b>${totalPages}</b> &bull; Total: <b>${count}</b> Records`;
 
   container.innerHTML = `
     <div class="pagination-info">${pageInfo}</div>

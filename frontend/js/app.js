@@ -2293,19 +2293,28 @@ function renderAdminFundsSummary(summary) {
   const totalCashVal = Number(summary.total_cash || 0);
   const remainingVal = Number(summary.remaining_funds ?? (totalCashVal - totalTradingCap));
 
-  // 1. Total Trading Capital
+  // 1. Total Cash
+  const totalCashEl = document.getElementById('adm-funds-stat-total-cash');
+  if (totalCashEl) {
+    totalCashEl.innerText = `$${totalCashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  const totalCashSub = document.getElementById('adm-funds-stat-total-cash-sub');
+  if (totalCashSub) {
+    totalCashSub.innerText = `Plan Inflows − Withdrawals + Fees`;
+  }
+
+  // 2. Total Trading Capital
   const tradingCapEl = document.getElementById('adm-funds-stat-trading-capital') || document.getElementById('adm-funds-stat-plan-amounts');
   if (tradingCapEl) {
     tradingCapEl.innerText = `$${totalTradingCap.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
-
   const tradingCapSub = document.getElementById('adm-funds-stat-trading-capital-sub');
   if (tradingCapSub) {
     tradingCapSub.innerText = `Active & completed packages`;
   }
 
-  // 2. Remaining Funds (Total Cash - Total Trading Capital)
-  const remainingEl = document.getElementById('adm-funds-stat-remaining-funds') || document.getElementById('adm-funds-stat-total-cash');
+  // 3. Remaining Funds (Total Cash - Total Trading Capital)
+  const remainingEl = document.getElementById('adm-funds-stat-remaining-funds');
   if (remainingEl) {
     remainingEl.innerText = `$${remainingVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (remainingVal >= 0) {
@@ -2314,26 +2323,18 @@ function renderAdminFundsSummary(summary) {
       remainingEl.style.color = '#ef4444';
     }
   }
+  const remainingSub = document.getElementById('adm-funds-stat-remaining-funds-sub');
+  if (remainingSub) {
+    remainingSub.innerText = `Total Cash − Trading Capital`;
+  }
 
-  // const remainingSub = document.getElementById('adm-funds-stat-remaining-funds-sub') || document.getElementById('adm-funds-stat-total-cash-sub');
-  // if (remainingSub) {
-  //   const cashFormatted = totalCashVal.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  //   const capFormatted = totalTradingCap.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  //   remainingSub.innerText = `Total Cash ($${cashFormatted}) − Trading Cap ($${capFormatted})`;
-  // }
-
-  // 3. Fallback / supplementary elements if present
+  // 4. Fallback / supplementary elements if present
   const planAmountsEl = document.getElementById('adm-funds-stat-plan-amounts');
   if (planAmountsEl && planAmountsEl !== tradingCapEl) {
     planAmountsEl.innerText = `$${Number(summary.total_plan_amounts || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
-  const totalCashEl = document.getElementById('adm-funds-stat-total-cash');
-  if (totalCashEl && totalCashEl !== remainingEl) {
-    totalCashEl.innerText = `$${totalCashVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-
-  // 4. Generation
+  // 5. Generation
   const genEl = document.getElementById('adm-funds-stat-generation');
   if (genEl) {
     genEl.innerText = `$${Number(summary.total_generation || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

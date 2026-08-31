@@ -911,9 +911,9 @@ class AdminCompanyFundsSummaryView(APIView):
             status=Withdrawal.Status.APPROVED
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Net cash = Plan inflows + Manual generation − Gross withdrawals paid out + Fees retained
+        # Net cash = Plan inflows − Gross withdrawals paid out + Fees retained
         # Fees are debited then credited back in the ledger, so we add them back to reconcile.
-        total_cash = total_plan_amounts + total_generation - total_withdrawals + total_withdrawal_fees
+        total_cash = total_plan_amounts - total_withdrawals + total_withdrawal_fees
         remaining_funds = total_cash - total_trading_capital
 
         treasury_balance = wallet.balance - total_generation
@@ -1039,8 +1039,8 @@ class AdminCompanyFundsGenerationView(APIView):
             category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Net cash = Plan inflows + Manual generation − Gross withdrawals + Fees retained
-        total_cash = total_plan_amounts + new_generation - total_withdrawals + total_withdrawal_fees
+        # Net cash = Plan inflows − Gross withdrawals + Fees retained
+        total_cash = total_plan_amounts - total_withdrawals + total_withdrawal_fees
         remaining_funds = total_cash - total_trading_capital
 
         return Response({

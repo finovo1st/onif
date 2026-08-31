@@ -894,6 +894,10 @@ class AdminCompanyFundsSummaryView(APIView):
             status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
         ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
 
+        total_trading_capital = Investment.objects.filter(
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+        ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
+
         try:
             total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
         except Exception:
@@ -906,6 +910,7 @@ class AdminCompanyFundsSummaryView(APIView):
         # Net cash = Plan inflows + Manual generation − Gross withdrawals paid out + Fees retained
         # Fees are debited then credited back in the ledger, so we add them back to reconcile.
         total_cash = total_plan_amounts + total_generation - total_withdrawals + total_withdrawal_fees
+        remaining_funds = total_cash - total_trading_capital
 
         return Response({
             'balance': float(wallet.balance),
@@ -916,6 +921,8 @@ class AdminCompanyFundsSummaryView(APIView):
             'total_adjustments': float(total_adjustments),
             'total_count': total_count,
             'total_plan_amounts': float(total_plan_amounts),
+            'total_trading_capital': float(total_trading_capital),
+            'remaining_funds': float(remaining_funds),
             'total_generation': float(total_generation),
             'total_withdrawals': float(total_withdrawals),
             'total_cash': float(total_cash),
@@ -1014,6 +1021,10 @@ class AdminCompanyFundsGenerationView(APIView):
             status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
         ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
 
+        total_trading_capital = Investment.objects.filter(
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+        ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
+
         total_withdrawals = Withdrawal.objects.filter(
             status=Withdrawal.Status.APPROVED
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
@@ -1024,11 +1035,14 @@ class AdminCompanyFundsGenerationView(APIView):
 
         # Net cash = Plan inflows + Manual generation − Gross withdrawals + Fees retained
         total_cash = total_plan_amounts + new_generation - total_withdrawals + total_withdrawal_fees
+        remaining_funds = total_cash - total_trading_capital
 
         return Response({
             'detail': f'Total generation successfully updated to ${new_generation:,.2f}.',
             'total_generation': float(new_generation),
             'total_plan_amounts': float(total_plan_amounts),
+            'total_trading_capital': float(total_trading_capital),
+            'remaining_funds': float(remaining_funds),
             'total_withdrawals': float(total_withdrawals),
             'total_withdrawal_fees': float(total_withdrawal_fees),
             'total_cash': float(total_cash),

@@ -3,7 +3,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
-from django.db.models import Sum, Count, Subquery, OuterRef, Case, When, Value, IntegerField
+from decimal import Decimal
+from django.db.models import Sum, Count, Subquery, OuterRef, Case, When, Value, IntegerField, DecimalField
+from django.db.models.functions import Coalesce
 from apps.investments.models import Investment
 from apps.investments.services import (
     _level_unlock_threshold,
@@ -50,7 +52,13 @@ class MyTeamView(generics.ListAPIView):
             target_ids = l1_ids + l2_ids + l3_ids + l4_ids + l5_ids
 
         if not target_ids:
-            return User.objects.none()
+            return User.objects.none().annotate(
+                level=Value(1, output_field=IntegerField()),
+                total_refers=Value(0, output_field=IntegerField()),
+                investment_sum=Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2)),
+                direct_income_sum=Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2)),
+                roi_income_sum=Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2)),
+            )
 
         # Build level expression for annotation
         level_whens = []
@@ -91,10 +99,10 @@ class MyTeamView(generics.ListAPIView):
 
         return User.objects.filter(id__in=target_ids).select_related('parent').annotate(
             level=level_expr,
-            total_refers=Subquery(refers_sq),
-            investment_sum=Subquery(inv_sq),
-            direct_income_sum=Subquery(dir_sq),
-            roi_income_sum=Subquery(roi_sq)
+            total_refers=Coalesce(Subquery(refers_sq), Value(0)),
+            investment_sum=Coalesce(Subquery(inv_sq), Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2))),
+            direct_income_sum=Coalesce(Subquery(dir_sq), Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2))),
+            roi_income_sum=Coalesce(Subquery(roi_sq), Value(Decimal('0.00'), output_field=DecimalField(max_digits=18, decimal_places=2)))
         )
 
 

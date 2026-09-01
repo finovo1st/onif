@@ -240,10 +240,10 @@ class AdminPanelTestCase(TestCase):
         self.assertEqual(data['total_trading_capital'], 500.0)
         self.assertEqual(data['total_withdrawals'], 100.0)
         self.assertEqual(data['total_generation'], 0.0)
-        # Total Cash = 500 + 0 - 100 = 400
-        self.assertEqual(data['total_cash'], 400.0)
-        # Remaining Funds = Total Cash - Trading Capital = 400 - 500 = -100
-        self.assertEqual(data['remaining_funds'], -100.0)
+        # Total Cash = 500
+        self.assertEqual(data['total_cash'], 500.0)
+        # Remaining Funds = Total Cash - Trading Capital + Generation - Net Withdrawals = 500 - 500 + 0 - 99 = -99
+        self.assertEqual(data['remaining_funds'], -99.0)
 
         # 4. Add $250 to generation
         res_gen = self.client.post(
@@ -260,10 +260,10 @@ class AdminPanelTestCase(TestCase):
         gen_data = res_gen.json()
         self.assertEqual(gen_data['total_generation'], 250.0)
         self.assertEqual(gen_data['total_trading_capital'], 500.0)
-        # Total Cash = 500 - 100 = 400
-        self.assertEqual(gen_data['total_cash'], 400.0)
-        # Remaining Funds = 400 - 500 = -100
-        self.assertEqual(gen_data['remaining_funds'], -100.0)
+        # Total Cash = 500
+        self.assertEqual(gen_data['total_cash'], 500.0)
+        # Remaining Funds = 500 - 500 + 250 - 99 = 151.0
+        self.assertEqual(gen_data['remaining_funds'], 151.0)
 
         # 5. Add another $50
         res_gen2 = self.client.post(
@@ -278,9 +278,10 @@ class AdminPanelTestCase(TestCase):
         self.assertEqual(res_gen2.status_code, 200)
         self.assertEqual(res_gen2.json()['total_generation'], 300.0)
         self.assertEqual(res_gen2.json()['total_trading_capital'], 500.0)
-        # Total Cash = 500 - 100 = 400
-        self.assertEqual(res_gen2.json()['total_cash'], 400.0)
-        self.assertEqual(res_gen2.json()['remaining_funds'], -100.0)
+        # Total Cash = 500
+        self.assertEqual(res_gen2.json()['total_cash'], 500.0)
+        # Remaining Funds = 500 - 500 + 300 - 99 = 201.0
+        self.assertEqual(res_gen2.json()['remaining_funds'], 201.0)
 
         # 6. Verify summary endpoint reflects changes
         res_final = self.client.get(
@@ -291,8 +292,8 @@ class AdminPanelTestCase(TestCase):
         final_data = res_final.json()
         self.assertEqual(final_data['total_generation'], 300.0)
         self.assertEqual(final_data['total_trading_capital'], 500.0)
-        self.assertEqual(final_data['total_cash'], 400.0)
-        self.assertEqual(final_data['remaining_funds'], -100.0)
+        self.assertEqual(final_data['total_cash'], 500.0)
+        self.assertEqual(final_data['remaining_funds'], 201.0)
         self.assertEqual(final_data['balance'], 0.0)
 
         # 7. Verify ledger entries created for generation

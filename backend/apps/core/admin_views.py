@@ -911,10 +911,14 @@ class AdminCompanyFundsSummaryView(APIView):
             status=Withdrawal.Status.APPROVED
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Net cash = Plan inflows − Gross withdrawals paid out + Fees retained
-        # Fees are debited then credited back in the ledger, so we add them back to reconcile.
-        total_cash = total_plan_amounts - total_withdrawals + total_withdrawal_fees
-        remaining_funds = total_cash - total_trading_capital
+        total_net_withdrawals = Withdrawal.objects.filter(
+            status=Withdrawal.Status.APPROVED
+        ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
+
+        # Total cash = Total plan inflows (gross package deposits)
+        total_cash = total_plan_amounts
+        # Remaining funds = Total Cash − Total Trading Capital + Total Generation − Net Withdrawals
+        remaining_funds = total_cash - total_trading_capital + total_generation - total_net_withdrawals
 
         treasury_balance = wallet.balance - total_generation
 
@@ -931,6 +935,7 @@ class AdminCompanyFundsSummaryView(APIView):
             'remaining_funds': float(remaining_funds),
             'total_generation': float(total_generation),
             'total_withdrawals': float(total_withdrawals),
+            'total_net_withdrawals': float(total_net_withdrawals),
             'total_cash': float(total_cash),
             'updated_at': wallet.updated_at,
         })
@@ -1035,13 +1040,17 @@ class AdminCompanyFundsGenerationView(APIView):
             status=Withdrawal.Status.APPROVED
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
+        total_net_withdrawals = Withdrawal.objects.filter(
+            status=Withdrawal.Status.APPROVED
+        ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
+
         total_withdrawal_fees = CompanyWalletTransaction.objects.filter(
             category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Net cash = Plan inflows − Gross withdrawals + Fees retained
-        total_cash = total_plan_amounts - total_withdrawals + total_withdrawal_fees
-        remaining_funds = total_cash - total_trading_capital
+        # Total cash = Total plan inflows (gross package deposits)
+        total_cash = total_plan_amounts
+        remaining_funds = total_cash - total_trading_capital + new_generation - total_net_withdrawals
 
         return Response({
             'detail': f'Total generation successfully updated to ${new_generation:,.2f}.',
@@ -1050,6 +1059,7 @@ class AdminCompanyFundsGenerationView(APIView):
             'total_trading_capital': float(total_trading_capital),
             'remaining_funds': float(remaining_funds),
             'total_withdrawals': float(total_withdrawals),
+            'total_net_withdrawals': float(total_net_withdrawals),
             'total_withdrawal_fees': float(total_withdrawal_fees),
             'total_cash': float(total_cash),
         }, status=status.HTTP_200_OK)

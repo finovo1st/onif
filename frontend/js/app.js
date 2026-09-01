@@ -2291,7 +2291,9 @@ function renderAdminFundsSummary(summary) {
 
   const totalTradingCap = Number(summary.total_trading_capital ?? summary.total_plan_amounts ?? 0);
   const totalCashVal = Number(summary.total_cash || 0);
-  const remainingVal = Number(summary.remaining_funds ?? (totalCashVal - totalTradingCap));
+  const totalGenVal = Number(summary.total_generation || 0);
+  const totalNetWdrVal = Number(summary.total_net_withdrawals ?? summary.total_withdrawals ?? 0);
+  const remainingVal = Number(summary.remaining_funds ?? (totalCashVal - totalTradingCap + totalGenVal - totalNetWdrVal));
 
   // 1. Total Cash
   const totalCashEl = document.getElementById('adm-funds-stat-total-cash');
@@ -2300,7 +2302,7 @@ function renderAdminFundsSummary(summary) {
   }
   const totalCashSub = document.getElementById('adm-funds-stat-total-cash-sub');
   if (totalCashSub) {
-    totalCashSub.innerText = `Plan Inflows − Withdrawals + Fees`;
+    totalCashSub.innerText = `Total Plan Inflows (Gross Deposits)`;
   }
 
   // 2. Total Trading Capital
@@ -2313,7 +2315,7 @@ function renderAdminFundsSummary(summary) {
     tradingCapSub.innerText = `Active & completed packages`;
   }
 
-  // 3. Remaining Funds (Total Cash - Total Trading Capital)
+  // 3. Remaining Funds (Total Cash - Total Trading Capital + Total Generation - Net Withdrawals)
   const remainingEl = document.getElementById('adm-funds-stat-remaining-funds');
   if (remainingEl) {
     remainingEl.innerText = `$${remainingVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2325,7 +2327,7 @@ function renderAdminFundsSummary(summary) {
   }
   const remainingSub = document.getElementById('adm-funds-stat-remaining-funds-sub');
   if (remainingSub) {
-    remainingSub.innerText = `Total Cash − Trading Capital`;
+    remainingSub.innerText = `Cash − Trading Cap + Gen − Net Wdr`;
   }
 
   // 4. Fallback / supplementary elements if present

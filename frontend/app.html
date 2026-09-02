@@ -11,6 +11,9 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet">
+  <!-- Favicon / Brand Icon -->
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="apple-touch-icon" href="img/logo.png">
   <!-- Styles -->
   <link rel="stylesheet" href="css/style.css?v=3">
 </head>
@@ -61,7 +64,7 @@
         <div class="brand-copy">
           <div class="eyebrow">WELCOME BACK</div>
           <h1>Your portfolio, exactly<br>where you left it.</h1>
-          <p>Sign in to track balances, review market-linked yield, and manage withdrawals from one dashboard.</p>
+          <p><span style="color: var(--gold); font-weight: 600;">Sign in</span> to track balances, review market-linked yield, and manage withdrawals from one dashboard.</p>
 
           <div class="trust-list">
             <div class="item"><span class="tick">&check;</span> Segregated custody</div>
@@ -89,24 +92,28 @@
             style="height: 95px; max-width: 260px; width: auto; object-fit: contain; margin-bottom: 20px; filter: drop-shadow(0 8px 24px rgba(198, 153, 61, 0.35));">
 
           <div class="form-head">
-            <h2 id="auth-form-title">Sign in</h2>
+            <h2 id="auth-form-title" style="color: var(--gold);">Sign in</h2>
             <p id="auth-form-subtitle">New to Finovo? <a href="#"
-                onclick="switchAuthTab('register'); return false;">Create an account</a></p>
+                onclick="switchAuthTab('register'); return false;" style="color: var(--gold); font-weight: 600;">Register</a></p>
           </div>
 
           <!-- Login Form -->
           <form id="form-login" onsubmit="handleLogin(event)">
+            <div id="login-error-msg" class="auth-error-alert" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 11px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px; line-height: 1.4;">
+              <span style="font-size: 16px;">⚠️</span> <span id="login-error-text">Wrong credentials. Please check your username/email and password.</span>
+            </div>
+
             <div class="field">
               <label>Email or Username</label>
               <div class="input-row">
-                <input type="text" id="login-email" placeholder="you@example.com or johndoe" required>
+                <input type="text" id="login-email" placeholder="you@example.com or johndoe" oninput="clearLoginError()" required>
               </div>
             </div>
 
             <div class="field">
               <label>Password</label>
               <div class="input-row">
-                <input type="password" id="login-password" placeholder="Enter your password" required>
+                <input type="password" id="login-password" placeholder="Enter your password" oninput="clearLoginError()" required>
                 <button type="button" class="toggle-pw"
                   onclick="const pw = document.getElementById('login-password'); pw.type = pw.type === 'password' ? 'text' : 'password'; this.innerText = pw.type === 'password' ? 'SHOW' : 'HIDE';">SHOW</button>
               </div>
@@ -122,7 +129,8 @@
             <button type="submit" class="btn btn-primary">Sign In</button>
 
             <div class="legal">
-              By continuing, you agree to Finovo's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+              By continuing, you agree to FINOVO's <a href="#" onclick="openTermsModal(event)">Terms &amp;
+                Conditions</a>.
             </div>
           </form>
 
@@ -171,13 +179,28 @@
               </div>
             </div>
 
-            <button type="submit" id="reg-submit-btn" class="btn btn-primary">Create Account</button>
+            <!-- Terms & Conditions Checkbox -->
+            <div class="field" style="margin-top: 14px; margin-bottom: 14px;">
+              <label class="remember"
+                style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--mute); line-height: 1.5; cursor: pointer;">
+                <input type="checkbox" id="reg-tnc" required
+                  style="margin-top: 2px; accent-color: var(--gold); width: 16px; height: 16px; flex-shrink: 0; cursor: pointer;">
+                <span>
+                  I confirm that I am 18+ and have read, understood, and agree to the
+                  <a href="#" onclick="openTermsModal(event)"
+                    style="color: var(--gold); text-decoration: underline; font-weight: 600;">Terms &amp; Conditions</a>
+                  and investment risk disclosure.
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" id="reg-submit-btn" class="btn btn-primary">Register</button>
 
             <div class="divider">or</div>
 
             <div class="row-between" style="justify-content: center;">
               <span>Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;"
-                  class="forgot">Sign in</a></span>
+                  class="forgot" style="color: var(--gold); font-weight: 600;">Sign in</a></span>
             </div>
           </form>
 
@@ -219,8 +242,8 @@
             </div>
 
             <div style="margin-top: 20px; text-align:center;">
-              <a href="#" onclick="switchAuthTab('register'); return false;" class="forgot" style="font-size:13px;">←
-                Back to registration</a>
+              <a href="#" onclick="switchAuthTab('register'); return false;" class="forgot" style="font-size:13px; color: var(--gold); font-weight: 600;">←
+                Back to Register</a>
             </div>
           </div>
 
@@ -240,7 +263,7 @@
 
             <div class="row-between" style="justify-content: center;">
               <span>Remember your password? <a href="#" onclick="switchAuthTab('login'); return false;"
-                  class="forgot">Sign in</a></span>
+                  class="forgot" style="color: var(--gold); font-weight: 600;">Sign in</a></span>
             </div>
           </form>
 
@@ -305,7 +328,7 @@
     <header class="topbar glass-header">
       <div class="topbar-brand">
         <a href="/" title="FINOVO Home" style="display: flex; align-items: center; text-decoration: none;">
-          <img src="img/logo-title.png" alt="FINOVO" style="height: 52px; width: auto; object-fit: contain;">
+          <img src="img/logo-title.png" alt="FINOVO" style="height: 48px; width: auto; object-fit: contain;">
         </a>
       </div>
 
@@ -851,12 +874,14 @@
               <h2 class="section-title">Complete Wallet Transaction Ledger</h2>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-              <select id="wallet-ledger-filter-type" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
+              <select id="wallet-ledger-filter-type" class="form-control"
+                style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
                 <option value="all">All Types</option>
                 <option value="CREDIT">Credits (+)</option>
                 <option value="DEBIT">Debits (-)</option>
               </select>
-              <select id="wallet-ledger-filter-category" class="form-control" style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
+              <select id="wallet-ledger-filter-category" class="form-control"
+                style="width: auto; padding: 6px 12px; font-size: 12px;" onchange="filterWalletLedger()">
                 <option value="all">All Categories</option>
                 <option value="DEPOSIT">Deposit</option>
                 <option value="WITHDRAWAL">Withdrawal</option>
@@ -1709,7 +1734,8 @@
               <div>
                 <div class="stat-title">Remaining Funds</div>
                 <div class="stat-value" id="adm-funds-stat-remaining-funds" style="color: #10b981;">$0.00</div>
-                <div class="stat-subtext" id="adm-funds-stat-remaining-funds-sub">Total Cash − Trading Capital + Generation − Net Withdrawals</div>
+                <div class="stat-subtext" id="adm-funds-stat-remaining-funds-sub">Total Cash − Trading Capital +
+                  Generation − Net Withdrawals</div>
               </div>
               <div class="stat-icon icon-invest" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3416,6 +3442,148 @@
             style="background: #3b82f6; border-color: #3b82f6;">Apply Generation Adjustment</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Terms & Conditions Modal -->
+  <div id="modal-terms-conditions" class="modal-backdrop">
+    <div class="modal"
+      style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column; padding: 20px 24px;">
+      <div class="modal-header" style="flex-shrink: 0; padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div
+            style="width: 32px; height: 32px; border-radius: 8px; background: rgba(198, 153, 61, 0.15); display: flex; align-items: center; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="font-size: 17px; margin-bottom: 2px;">Terms &amp; Conditions</h3>
+            <div style="font-size: 11px; color: var(--mute);">FINOVO Platform Governance &amp; Investment Risk
+              Declaration</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-terms-conditions')">&times;</button>
+      </div>
+
+      <div class="modal-body"
+        style="overflow-y: auto; flex: 1; padding: 18px 24px; font-size: 12.5px; color: var(--mute); line-height: 1.7;">
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 0; margin-bottom: 6px;">1. Introduction</h4>
+        <p style="margin-bottom: 12px;">These Terms &amp; Conditions (“Terms”) govern your access to and use of the
+          FINOVO website, application, dashboard, trading-related services, and associated features (“Platform”). By
+          registering for or using FINOVO, you confirm that you have read, understood, and agreed to these Terms.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">2. Systematic AI Model
+        </h4>
+        <p style="margin-bottom: 12px;">Finovo is an AI based automatic systematic generation plan based company.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">3. Global Market
+          Investments</h4>
+        <p style="margin-bottom: 12px;">Finovo invests in global markets and tokens.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">4. Regulatory
+          Compliance</h4>
+        <p style="margin-bottom: 12px;">Users must satisfy all applicable legal and regulatory requirements in UAE.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">5. Compliance &amp;
+          Sanctions Access</h4>
+        <p style="margin-bottom: 12px;">FINOVO may restrict or refuse access where providing the service would violate
+          applicable laws, regulations, sanctions, or internal compliance requirements.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">6. User Accounts &amp;
+          Security</h4>
+        <p style="margin-bottom: 12px;">Users are responsible for providing accurate, complete, and up-to-date
+          information during registration and KYC verification. Each user must maintain the confidentiality of their
+          login credentials and is responsible for activity conducted through their account. FINOVO may suspend,
+          restrict, or terminate an account where there is suspected fraud, misuse, false information, security
+          concerns, or violation of these Terms.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">7. KYC &amp;
+          Verification</h4>
+        <p style="margin-bottom: 12px;">FINOVO may require identity verification and supporting documents before
+          allowing deposits, withdrawals, or other services. Additional verification may be requested at any time where
+          required for compliance, security, or fraud prevention.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">8. Deposits</h4>
+        <p style="margin-bottom: 12px;">Deposits must be made only through payment methods and wallet addresses
+          officially displayed by FINOVO. Users are responsible for verifying transaction details before confirming a
+          deposit. FINOVO is not responsible for losses caused by sending funds to an incorrect or unofficial address.
+        </p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">9. Withdrawals</h4>
+        <p style="margin-bottom: 12px;">Withdrawal requests are subject to account verification, compliance checks,
+          available balance, applicable fees, and the terms of the selected service. FINOVO may temporarily delay a
+          withdrawal where additional verification or security review is required. Minimum withdrawal amounts and
+          transaction charges, if applicable, will be displayed on the Platform and may be updated from time to time.
+        </p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">10. Investment
+          Performance &amp; Risk Disclosure</h4>
+        <p style="margin-bottom: 12px;">Where the Platform displays investment performance or profit distributions, such
+          figures are subject to actual market conditions and the applicable FINOVO program terms. No statement on the
+          Platform should be interpreted as a promise of fixed, guaranteed, or risk-free returns.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">11. Fees</h4>
+        <p style="margin-bottom: 12px;">Applicable management fees, transaction charges, withdrawal fees, network fees,
+          or other service charges will be disclosed through the Platform. FINOVO reserves the right to modify
+          applicable fees prospectively by providing appropriate notice.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">12. Referral &amp; Team
+          Programs</h4>
+        <p style="margin-bottom: 12px;">Where FINOVO offers referral or team-based rewards, eligibility, calculation
+          methodology, levels, limits, and payment conditions will be governed by the applicable program rules. FINOVO
+          may reject rewards generated through fraudulent, artificial, duplicate, self-referral, or otherwise prohibited
+          activity.</p>
+
+        <h4 style="color: var(--text); font-size: 13.5px; margin-top: 14px; margin-bottom: 6px;">13. Prohibited
+          Activities</h4>
+        <p style="margin-bottom: 6px;">Users must not:</p>
+        <ul style="padding-left: 20px; margin-bottom: 12px;">
+          <li>Provide false or misleading information.</li>
+          <li>Use another person's account.</li>
+          <li>Attempt to manipulate Platform records or trading information.</li>
+          <li>Conduct fraudulent transactions.</li>
+          <li>Use the Platform for unlawful activities.</li>
+          <li>Attempt unauthorized access to FINOVO systems.</li>
+        </ul>
+
+        <div
+          style="background: rgba(198, 153, 61, 0.08); border: 1px solid rgba(198, 153, 61, 0.25); border-radius: var(--radius-sm); padding: 14px; margin-top: 16px;">
+          <h4 style="color: var(--gold); font-size: 13.5px; margin-top: 0; margin-bottom: 8px;">14. User Acknowledgment
+            &amp; Declaration</h4>
+          <p style="margin-bottom: 8px; color: var(--text);">By proceeding with registration, investment, or use of our
+            services, I hereby acknowledge and confirm that:</p>
+          <ol style="padding-left: 20px; margin-bottom: 8px;">
+            <li><strong>Age &amp; Eligibility:</strong> I confirm that I am 18 years of age or older and legally
+              eligible to use the services offered by the Company.</li>
+            <li><strong>Terms &amp; Conditions:</strong> I confirm that I have read, understood, and agreed to all
+              applicable Terms &amp; Conditions, policies, disclosures, and guidelines of the Company.</li>
+            <li><strong>Investment Risk:</strong> I understand and acknowledge that all investments involve a certain
+              level of risk, and that the value of an investment may fluctuate. I understand that returns are not
+              guaranteed unless expressly stated otherwise by the Company.</li>
+            <li><strong>Independent Decision:</strong> I confirm that I am making my investment or financial decision
+              voluntarily and at my own discretion, after considering the associated risks and my own financial
+              circumstances.</li>
+            <li><strong>Risk Acceptance:</strong> I acknowledge that I have understood the nature and risks associated
+              with the investment/service and accept the risks involved before proceeding.</li>
+            <li><strong>Accuracy of Information:</strong> I confirm that all information and documents provided by me to
+              the Company are true, accurate, complete, and up to date.</li>
+          </ol>
+          <p style="margin-top: 8px; font-weight: 600; color: var(--gold); font-size: 12px;">By selecting “I Agree / I
+            Acknowledge”, I confirm that I have read, understood, and voluntarily accepted the above declaration and the
+            Company's applicable Terms &amp; Conditions.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer"
+        style="padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); flex-shrink: 0;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terms-conditions')">Close</button>
+        <button type="button" class="btn btn-primary" onclick="acceptTermsAndClose()">I Agree &amp; Acknowledge</button>
+      </div>
     </div>
   </div>
 

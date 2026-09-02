@@ -1201,12 +1201,15 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   margin-bottom: 32px;
 }
 
-.form-head h2 {
+.form-head h2,
+#auth-form-title {
   font-family: var(--font-heading);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 28px;
   margin-bottom: 8px;
   letter-spacing: -0.015em;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(198, 153, 61, 0.25);
 }
 
 .form-head p {
@@ -1215,13 +1218,15 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 }
 
 .form-head p a {
-  color: var(--gold-soft);
-  font-weight: 500;
+  color: var(--gold);
+  font-weight: 600;
   text-decoration: none;
 }
 
 .form-head p a:hover {
+  color: var(--gold-soft);
   text-decoration: underline;
+  text-shadow: 0 0 12px rgba(198, 153, 61, 0.4);
 }
 
 .field {
@@ -1303,13 +1308,16 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 }
 
 .forgot {
-  color: var(--gold-soft);
+  color: var(--gold);
   text-decoration: none;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .forgot:hover {
+  color: var(--gold-soft);
   text-decoration: underline;
+  text-shadow: 0 0 10px rgba(198, 153, 61, 0.4);
 }
 
 .divider {

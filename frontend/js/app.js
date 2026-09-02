@@ -91,6 +91,11 @@ async function apiCall(endpoint, method = 'GET', body = null, isFormData = false
     updateConnectionBadge(true);
 
     if (response.status === 401) {
+      if (endpoint.includes('/auth/login/')) {
+        const errData = await response.json().catch(() => ({}));
+        const errorMsg = errData.detail || parseErrorMessage(errData) || 'Wrong credentials. Please check your username/email and password.';
+        throw new Error(errorMsg);
+      }
       handleLogout();
       throw new Error('Session expired. Please sign in again.');
     }
@@ -1285,12 +1290,13 @@ function switchAuthTab(tab) {
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
   if (title && subtitle) {
+    title.style.color = 'var(--gold)';
     if (tab === 'login') {
       title.innerText = 'Sign in to your account';
-      subtitle.innerHTML = 'Don\'t have an account? <a href="#" onclick="switchAuthTab(\'register\'); return false;">Register</a>';
+      subtitle.innerHTML = 'Don\'t have an account? <a href="#" onclick="switchAuthTab(\'register\'); return false;" style="color: var(--gold); font-weight: 600;">Register</a>';
     } else if (tab === 'register') {
-      title.innerText = 'Create your account';
-      subtitle.innerHTML = 'Already have an account? <a href="#" onclick="switchAuthTab(\'login\'); return false;">Sign in</a>';
+      title.innerText = 'Register your account';
+      subtitle.innerHTML = 'Already have an account? <a href="#" onclick="switchAuthTab(\'login\'); return false;" style="color: var(--gold); font-weight: 600;">Sign in</a>';
     } else if (tab === 'forgot') {
       title.innerText = 'Reset your password';
       subtitle.innerHTML = 'Enter your email or username to receive a reset code.';
@@ -1399,10 +1405,21 @@ function setOTPDigitState(state) {
   });
 }
 
+function clearLoginError() {
+  const el = document.getElementById('login-error-msg');
+  if (el) el.style.display = 'none';
+}
+
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+  const errorAlert = document.getElementById('login-error-msg');
+  const errorText = document.getElementById('login-error-text');
+
+  if (errorAlert) errorAlert.style.display = 'none';
 
   try {
     const data = await apiCall('/auth/login/', 'POST', { email, password });
@@ -1410,12 +1427,33 @@ async function handleLogin(e) {
       state.token = data.access;
       localStorage.setItem('finovo_token', data.access);
       showToast('Signed in successfully!');
-      const pwInput = document.getElementById('login-password');
-      if (pwInput) pwInput.value = '';
+      if (passwordInput) passwordInput.value = '';
       await loadAllAPIData();
     }
   } catch (err) {
-    showToast(err.message, true);
+    const isCredsError = err.message && (
+      err.message.toLowerCase().includes('credential') ||
+      err.message.toLowerCase().includes('no active account') ||
+      err.message.toLowerCase().includes('wrong') ||
+      err.message.toLowerCase().includes('invalid')
+    );
+    const msg = isCredsError ? 'Wrong credentials. Please check your username/email and password.' : err.message;
+
+    showToast(msg, true);
+
+    if (errorAlert && errorText) {
+      errorText.innerText = msg;
+      errorAlert.style.display = 'flex';
+    }
+
+    if (emailInput) {
+      emailInput.style.borderColor = 'var(--accent-danger, #ef4444)';
+      setTimeout(() => { emailInput.style.borderColor = ''; }, 4000);
+    }
+    if (passwordInput) {
+      passwordInput.style.borderColor = 'var(--accent-danger, #ef4444)';
+      setTimeout(() => { passwordInput.style.borderColor = ''; }, 4000);
+    }
   }
 }
 
@@ -1428,6 +1466,12 @@ async function handleRegister(e) {
   const password = document.getElementById('reg-password').value;
   const password2 = document.getElementById('reg-password2').value;
   const referral_code = document.getElementById('reg-refcode').value;
+  const tncCheckbox = document.getElementById('reg-tnc');
+
+  if (tncCheckbox && !tncCheckbox.checked) {
+    showToast('Please read and agree to the Terms & Conditions before creating an account.', true);
+    return;
+  }
 
   if (password !== password2) {
     showToast('Passwords do not match.', true);
@@ -1458,6 +1502,18 @@ async function handleRegister(e) {
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Create Account'; }
   }
+}
+
+function openTermsModal(e) {
+  if (e) e.preventDefault();
+  openModal('modal-terms-conditions');
+}
+
+function acceptTermsAndClose() {
+  const chk = document.getElementById('reg-tnc');
+  if (chk) chk.checked = true;
+  closeModal('modal-terms-conditions');
+  showToast('Terms & Conditions accepted.');
 }
 
 async function handleVerifyOTP(e) {

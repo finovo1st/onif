@@ -121,13 +121,21 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-shrink: 0;
+  text-decoration: none;
+  transition: opacity 0.25s ease;
 }
 
+.nav-brand:hover {
+  opacity: 0.9;
+}
+
+.nav-brand-title,
 .nav-brand img {
-  height: 72px;
+  height: 42px;
+  width: auto;
   object-fit: contain;
+  display: block;
 }
 
 .nav-links {
@@ -1259,8 +1267,40 @@ footer {
   margin-bottom: 48px;
 }
 
-.footer-brand img {
-  height: 72px;
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.footer-crest-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.footer-crest {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  object-position: center 15%;
+  filter: drop-shadow(0 2px 10px rgba(198, 153, 61, 0.45));
+}
+
+.footer-title {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-brand img:not(.footer-crest):not(.footer-title) {
+  height: 52px;
   object-fit: contain;
   margin-bottom: 16px;
 }
@@ -1815,3 +1855,190 @@ footer {
   background: radial-gradient(ellipse at bottom, rgba(198,153,61,0.2) 0%, transparent 70%);
   border-bottom: 3px solid #c6993d;
 }
+
+/* ============================================================
+   BRAND LOGO INTEGRATION & ACCENTS
+   ============================================================ */
+
+/* Hero Eyebrow Logo Crest */
+.hero-eyebrow-crest {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  object-position: center 15%;
+  filter: drop-shadow(0 2px 6px rgba(198, 153, 61, 0.45));
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Cockpit HUD Logo */
+.cockpit-logo-crest {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  object-position: center 15%;
+  filter: drop-shadow(0 0 6px rgba(198, 153, 61, 0.6));
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+/* Cockpit Trading Desk Watermark */
+.cockpit-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 190px;
+  height: 190px;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cockpit-watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 24px rgba(198, 153, 61, 0.7));
+}
+
+/* CTA Brand Crest (Static, No Movement) */
+.cta-crest-badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.cta-crest-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  object-position: center 15%;
+  filter: drop-shadow(0 0 24px rgba(198, 153, 61, 0.55)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+/* ============================================================
+   HERO PURE LOGO (Clean Floating Brand Centerpiece)
+   ============================================================ */
+.hero-pure-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+}
+
+.hero-logo-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(198, 153, 61, 0.28) 0%, rgba(198, 153, 61, 0.08) 50%, transparent 72%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(36px);
+  z-index: 0;
+  animation: heroHaloBreath 6s ease-in-out infinite alternate;
+}
+
+@keyframes heroHaloBreath {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+
+.hero-pure-logo {
+  position: relative;
+  z-index: 1;
+  width: 420px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 50px rgba(198, 153, 61, 0.52)) drop-shadow(0 4px 18px rgba(0, 0, 0, 0.85));
+  animation: heroPureLogoFloat 6s ease-in-out infinite alternate;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
+  user-select: none;
+}
+
+@keyframes heroPureLogoFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-12px) rotate(0.4deg);
+  }
+}
+
+.hero-pure-logo:hover {
+  transform: translateY(-16px) scale(1.04);
+  filter: drop-shadow(0 26px 60px rgba(198, 153, 61, 0.75)) drop-shadow(0 6px 24px rgba(0, 0, 0, 0.95));
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .hero-pure-logo {
+    width: 340px;
+  }
+  .hero-logo-halo {
+    width: 360px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-pure-logo {
+    width: 280px;
+  }
+  .hero-logo-halo {
+    width: 300px;
+    height: 300px;
+  }
+  .footer-brand-header {
+    justify-content: flex-start;
+  }
+  .footer-crest {
+    width: 42px;
+    height: 42px;
+  }
+  .footer-title {
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-pure-logo {
+    width: 220px;
+  }
+  .hero-logo-halo {
+    width: 240px;
+    height: 240px;
+  }
+}
+
+/* Navigation & Footer Sign In / Register Links in Gold */
+#nav-signin,
+.nav-mobile-menu a[href*="app.html"]:not(.btn-primary),
+#footer-signin,
+#footer-register {
+  color: var(--gold) !important;
+  font-weight: 600;
+}
+
+#nav-signin:hover,
+.nav-mobile-menu a[href*="app.html"]:not(.btn-primary):hover,
+#footer-signin:hover,
+#footer-register:hover {
+  color: var(--gold-soft) !important;
+  text-shadow: 0 0 14px rgba(198, 153, 61, 0.5);
+}
+

@@ -13,6 +13,10 @@ User = get_user_model()
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """JWT token serializer with extra user claims."""
 
+    default_error_messages = {
+        'no_active_account': 'Wrong credentials. Please check your username/email and password.'
+    }
+
     def validate(self, attrs):
         login_id = attrs.get(self.username_field)
         if login_id and '@' not in login_id:

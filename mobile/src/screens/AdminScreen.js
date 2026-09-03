@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
@@ -109,7 +110,8 @@ export default function AdminScreen({ onNavigate }) {
   // User Team Modal State
   const [userTeamModalVisible, setUserTeamModalVisible] = useState(false);
   const [userTeamLoading, setUserTeamLoading] = useState(false);
-  const [userTeamList, setUserTeamList] = useState([]);
+  const [userTeamData, setUserTeamData] = useState(null); // { user, summary, levels }
+  const [userTeamSelectedLevel, setUserTeamSelectedLevel] = useState('all'); // 'all' | 1 | 2 | 3 | 4 | 5
 
   // ─── 6. HELPDESK CONSOLE STATE ───
   const [supportTickets, setSupportTickets] = useState([]);
@@ -421,12 +423,61 @@ export default function AdminScreen({ onNavigate }) {
     setSelectedUser(u);
     setUserTeamModalVisible(true);
     setUserTeamLoading(true);
+    setUserTeamData(null);
+    setUserTeamSelectedLevel('all');
     try {
-      const res = await apiCall(`/admin-panel/users/${u.id}/team/`).catch(() => []);
-      const list = Array.isArray(res) ? res : (res?.results || []);
-      setUserTeamList(list);
+      const res = await apiCall(`/admin-panel/users/${u.id}/team/`).catch(() => null);
+      if (res && (res.summary || res.levels || res.user)) {
+        setUserTeamData(res);
+        // Sync freshest live total_team_members into the user list
+        if (res.summary?.total_team_members !== undefined) {
+          setUsersList((prev) =>
+            prev.map((item) =>
+              item.id === u.id
+                ? {
+                    ...item,
+                    team_total_members: res.summary.total_team_members,
+                    team_total_investment: res.summary.total_team_investment,
+                  }
+                : item
+            )
+          );
+        }
+      } else if (Array.isArray(res)) {
+        setUserTeamData({
+          user: u,
+          summary: {
+            total_team_members: res.length,
+            total_team_investment: 0,
+            total_direct_income: 0,
+            total_referral_roi_income: 0,
+          },
+          levels: [
+            {
+              level: 1,
+              total_refers: res.length,
+              total_investment: 0,
+              direct_income: 0,
+              roi_income: 0,
+              members: res,
+            },
+          ],
+        });
+      } else {
+        setUserTeamData({
+          user: u,
+          summary: {
+            total_team_members: 0,
+            total_team_investment: 0,
+            total_direct_income: 0,
+            total_referral_roi_income: 0,
+          },
+          levels: [],
+        });
+      }
     } catch (err) {
-      setUserTeamList([]);
+      console.warn('Failed to load user team data:', err);
+      setUserTeamData(null);
     } finally {
       setUserTeamLoading(false);
     }
@@ -1320,79 +1371,84 @@ export default function AdminScreen({ onNavigate }) {
               <Text style={{ color: colors.textMuted }}>No user accounts found matching filters.</Text>
             </View>
           ) : (
-            filteredUsers.map((u) => (
-              <View key={u.id} style={styles.userCard}>
-                <View style={styles.userCardTop}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <Text style={styles.userName}>{u.first_name ? `${u.first_name} ${u.last_name}` : (u.username || u.email)}</Text>
-                      <View
-                        style={[
-                          styles.roleBadge,
-                          String(u.role || '').toUpperCase() === 'ADMIN'
-                            ? styles.roleBadgeAdmin
-                            : styles.roleBadgeUser,
-                        ]}
-                      >
-                        <Text style={styles.roleBadgeText}>{(u.role || 'USER').toUpperCase()}</Text>
+            filteredUsers.map((u) => {
+              const teamMembersCount = u.team_total_members !== undefined ? u.team_total_members : (u.direct_team_count || 0);
+              const totalInvestedAmount = u.total_invested !== undefined ? u.total_invested : (u.total_deposited || 0);
+
+              return (
+                <View key={u.id} style={styles.userCard}>
+                  <View style={styles.userCardTop}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Text style={styles.userName}>{u.first_name ? `${u.first_name} ${u.last_name}` : (u.username || u.email)}</Text>
+                        <View
+                          style={[
+                            styles.roleBadge,
+                            String(u.role || '').toUpperCase() === 'ADMIN'
+                              ? styles.roleBadgeAdmin
+                              : styles.roleBadgeUser,
+                          ]}
+                        >
+                          <Text style={styles.roleBadgeText}>{(u.role || 'USER').toUpperCase()}</Text>
+                        </View>
                       </View>
+                      <Text style={styles.userEmail}>{u.email}</Text>
+                      {(u.is_commission_bypassed || u.bypass_plan_and_level_requirements || String(u.role || '').toUpperCase() === 'ADMIN') && (
+                        <View style={styles.unlimitedBadge}>
+                          <Feather name="zap" size={10} color={colors.goldSoft} style={{ marginRight: 3 }} />
+                          <Text style={styles.unlimitedBadgeText}>UNLIMITED EARNER (NO PLAN REQ)</Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={styles.userEmail}>{u.email}</Text>
-                    {(u.is_commission_bypassed || u.bypass_plan_and_level_requirements || String(u.role || '').toUpperCase() === 'ADMIN') && (
-                      <View style={styles.unlimitedBadge}>
-                        <Feather name="zap" size={10} color={colors.goldSoft} style={{ marginRight: 3 }} />
-                        <Text style={styles.unlimitedBadgeText}>UNLIMITED EARNER (NO PLAN REQ)</Text>
-                      </View>
-                    )}
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.userBalance}>${Number(u.wallet_balance || 0).toFixed(2)} USDT</Text>
+                      <Text style={{ fontSize: 10, color: colors.textDim }}>Level {u.active_level || 1} • {u.kyc_status || 'UNVERIFIED'}</Text>
+                    </View>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.userBalance}>${Number(u.wallet_balance || 0).toFixed(2)} USDT</Text>
-                    <Text style={{ fontSize: 10, color: colors.textDim }}>Level {u.active_level || 1} • {u.kyc_status || 'UNVERIFIED'}</Text>
+
+                  {/* 5-Level Financial Breakdown Strip */}
+                  <View style={styles.userStatsMiniGrid}>
+                    <View style={styles.userStatMiniItem}>
+                      <Text style={styles.userStatMiniLabel}>INVESTED</Text>
+                      <Text style={styles.userStatMiniVal}>${Number(totalInvestedAmount).toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.userStatMiniItem}>
+                      <Text style={styles.userStatMiniLabel}>TOTAL ROI</Text>
+                      <Text style={[styles.userStatMiniVal, { color: colors.goldSoft }]}>${Number(u.total_roi_earned || 0).toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.userStatMiniItem}>
+                      <Text style={styles.userStatMiniLabel}>DIRECT INC</Text>
+                      <Text style={[styles.userStatMiniVal, { color: colors.accentGreenSoft }]}>${Number(u.total_direct_income || 0).toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.userStatMiniItem}>
+                      <Text style={styles.userStatMiniLabel}>TEAM</Text>
+                      <Text style={styles.userStatMiniVal}>{teamMembersCount} members</Text>
+                    </View>
+                  </View>
+
+                  {/* Action Buttons: Prominent Manage & Team (Matching Web Frontend) */}
+                  <View style={styles.userCardActionRow}>
+                    <TouchableOpacity
+                      style={[styles.userActionBtn, styles.userActionBtnManage]}
+                      onPress={() => handleOpenManageUserModal(u)}
+                      activeOpacity={0.8}
+                    >
+                      <Feather name="settings" size={12} color="#030507" style={{ marginRight: 4 }} />
+                      <Text style={styles.userActionBtnManageText}>Manage</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.userActionBtn}
+                      onPress={() => handleOpenUserTeamModal(u)}
+                      activeOpacity={0.8}
+                    >
+                      <Feather name="git-branch" size={12} color={colors.accentGreenSoft} style={{ marginRight: 4 }} />
+                      <Text style={styles.userActionBtnText}>Team ({teamMembersCount})</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-
-                {/* 5-Level Financial Breakdown Strip */}
-                <View style={styles.userStatsMiniGrid}>
-                  <View style={styles.userStatMiniItem}>
-                    <Text style={styles.userStatMiniLabel}>INVESTED</Text>
-                    <Text style={styles.userStatMiniVal}>${Number(u.total_deposited || 0).toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.userStatMiniItem}>
-                    <Text style={styles.userStatMiniLabel}>TOTAL ROI</Text>
-                    <Text style={[styles.userStatMiniVal, { color: colors.goldSoft }]}>${Number(u.total_roi_earned || 0).toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.userStatMiniItem}>
-                    <Text style={styles.userStatMiniLabel}>DIRECT INC</Text>
-                    <Text style={[styles.userStatMiniVal, { color: colors.accentGreenSoft }]}>${Number(u.total_direct_income || 0).toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.userStatMiniItem}>
-                    <Text style={styles.userStatMiniLabel}>TEAM</Text>
-                    <Text style={styles.userStatMiniVal}>{u.direct_team_count || 0} directs</Text>
-                  </View>
-                </View>
-
-                {/* Action Buttons: Prominent Manage & Team (Matching Web Frontend) */}
-                <View style={styles.userCardActionRow}>
-                  <TouchableOpacity
-                    style={[styles.userActionBtn, styles.userActionBtnManage]}
-                    onPress={() => handleOpenManageUserModal(u)}
-                    activeOpacity={0.8}
-                  >
-                    <Feather name="settings" size={12} color="#030507" style={{ marginRight: 4 }} />
-                    <Text style={styles.userActionBtnManageText}>Manage</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.userActionBtn}
-                    onPress={() => handleOpenUserTeamModal(u)}
-                    activeOpacity={0.8}
-                  >
-                    <Feather name="git-branch" size={12} color={colors.accentGreenSoft} style={{ marginRight: 4 }} />
-                    <Text style={styles.userActionBtnText}>Team ({u.direct_team_count || 0})</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       )}
@@ -1647,7 +1703,10 @@ export default function AdminScreen({ onNavigate }) {
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontSize: 10, color: colors.textDim, fontWeight: '700' }}>TOTAL INVESTED</Text>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textMain, marginTop: 2 }}>
-                    ${Number(selectedUser?.total_deposited || selectedUser?.total_invested || 0).toFixed(2)}
+                    ${Number(selectedUser?.total_invested !== undefined ? selectedUser.total_invested : (selectedUser?.total_deposited || 0)).toFixed(2)}
+                  </Text>
+                  <Text style={{ fontSize: 10, color: colors.accentGreenSoft, fontWeight: '600', marginTop: 2 }}>
+                    Team: {selectedUser?.team_total_members !== undefined ? selectedUser.team_total_members : (selectedUser?.direct_team_count || 0)} members
                   </Text>
                 </View>
               </View>
@@ -1863,7 +1922,7 @@ export default function AdminScreen({ onNavigate }) {
               >
                 <Feather name="git-branch" size={13} color={colors.goldSoft} style={{ marginRight: 6 }} />
                 <Text style={[styles.btnSecondaryText, { color: colors.goldSoft }]}>
-                  View 5-Level Downline Team Network
+                  View 5-Level Downline Team Network ({selectedUser?.team_total_members !== undefined ? selectedUser.team_total_members : (selectedUser?.direct_team_count || 0)})
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -2022,44 +2081,207 @@ export default function AdminScreen({ onNavigate }) {
         </View>
       </Modal>
 
-      {/* MODAL: User Downline Team */}
+      {/* MODAL: User Downline Team Network (5 Levels) */}
       <Modal visible={userTeamModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <Text style={[styles.modalTitle, { marginBottom: 0 }]}>
-                Downline Team ({selectedUser?.email})
-              </Text>
-              <TouchableOpacity onPress={() => setUserTeamModalVisible(false)}>
-                <Text style={{ color: colors.textMuted, fontSize: 20, fontWeight: '700' }}>✕</Text>
+          <View style={[styles.modalContent, { maxHeight: '90%', padding: 16 }]}>
+            {/* Modal Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={[styles.modalTitle, { marginBottom: 2 }]}>
+                  Team Network: {userTeamData?.user?.full_name || selectedUser?.full_name || selectedUser?.email}
+                </Text>
+                <Text style={{ color: colors.textDim, fontSize: 10.5 }}>
+                  {userTeamData?.user?.email || selectedUser?.email} • Ref: {userTeamData?.user?.referral_code || selectedUser?.referral_code || 'N/A'} • Direct: Lvl {userTeamData?.user?.active_level ?? selectedUser?.active_level ?? 0} • ROI: Lvl {userTeamData?.user?.active_roi_level ?? selectedUser?.active_roi_level ?? 0}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setUserTeamModalVisible(false)}
+                style={{ padding: 4 }}
+              >
+                <Feather name="x" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             {userTeamLoading ? (
-              <ActivityIndicator color={colors.goldSoft} style={{ marginVertical: 30 }} />
-            ) : userTeamList.length === 0 ? (
-              <Text style={{ color: colors.textMuted, textAlign: 'center', marginVertical: 20 }}>
-                No downline members registered under this account.
-              </Text>
+              <View style={{ paddingVertical: 40, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator color={colors.goldSoft} size="large" />
+                <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 12 }}>
+                  Loading 5-level downline hierarchy...
+                </Text>
+              </View>
+            ) : !userTeamData ? (
+              <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                <Text style={{ color: colors.accentDanger, fontSize: 13, marginBottom: 8 }}>
+                  Failed to load team data.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.modalBtnCancel, { width: 120 }]}
+                  onPress={() => handleOpenUserTeamModal(selectedUser)}
+                >
+                  <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Retry</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
-              <ScrollView style={{ maxHeight: 300 }}>
-                {userTeamList.map((m) => (
-                  <View key={m.id} style={styles.miniQueueItem}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 12 }}>
-                        {m.email}
-                      </Text>
-                      <Text style={{ color: colors.textDim, fontSize: 10 }}>
-                        Level {m.level || 1} • Vol: ${Number(m.investment_sum || 0).toFixed(2)} USDT
-                      </Text>
-                    </View>
-                    <View style={[styles.statusBadge, { borderColor: m.is_active ? colors.accentGreenSoft : colors.textDim }]}>
-                      <Text style={[styles.statusText, { color: m.is_active ? colors.accentGreenSoft : colors.textDim }]}>
-                        {m.is_active ? 'ACTIVE' : 'INACTIVE'}
-                      </Text>
-                    </View>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                {/* 4 Summary Stat Cards */}
+                <View style={styles.teamSummaryGrid}>
+                  <View style={styles.teamSummaryCard}>
+                    <Text style={styles.teamSummaryLabel}>TOTAL REFERS (5 LVL)</Text>
+                    <Text style={styles.teamSummaryValue}>
+                      {userTeamData.summary?.total_team_members || 0}
+                    </Text>
                   </View>
-                ))}
+                  <View style={styles.teamSummaryCard}>
+                    <Text style={styles.teamSummaryLabel}>TEAM INVESTMENT</Text>
+                    <Text style={[styles.teamSummaryValue, { color: colors.goldSoft }]}>
+                      ${Number(userTeamData.summary?.total_team_investment || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.teamSummaryCard}>
+                    <Text style={styles.teamSummaryLabel}>DIRECT INCOME</Text>
+                    <Text style={[styles.teamSummaryValue, { color: colors.accentGreenSoft }]}>
+                      ${Number(userTeamData.summary?.total_direct_income || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.teamSummaryCard}>
+                    <Text style={styles.teamSummaryLabel}>REFERRAL ROI</Text>
+                    <Text style={styles.teamSummaryValue}>
+                      ${Number(userTeamData.summary?.total_referral_roi_income || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Level Filter Tabs (All, Level 1..5) */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      style={[
+                        styles.filterPill,
+                        userTeamSelectedLevel === 'all' && styles.filterPillActive,
+                      ]}
+                      onPress={() => setUserTeamSelectedLevel('all')}
+                    >
+                      <Text style={[
+                        styles.filterPillText,
+                        userTeamSelectedLevel === 'all' && styles.filterPillTextActive,
+                      ]}>
+                        All Levels ({userTeamData.summary?.total_team_members || 0})
+                      </Text>
+                    </TouchableOpacity>
+                    {(userTeamData.levels || []).map((lvl) => (
+                      <TouchableOpacity
+                        key={lvl.level}
+                        style={[
+                          styles.filterPill,
+                          userTeamSelectedLevel === lvl.level && styles.filterPillActive,
+                        ]}
+                        onPress={() => setUserTeamSelectedLevel(lvl.level)}
+                      >
+                        <Text style={[
+                          styles.filterPillText,
+                          userTeamSelectedLevel === lvl.level && styles.filterPillTextActive,
+                        ]}>
+                          Level {lvl.level} ({lvl.total_refers || 0})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Level Breakdown & Member List */}
+                {(() => {
+                  const filteredLevels = (userTeamData.levels || []).filter((lvl) =>
+                    userTeamSelectedLevel === 'all' ? true : lvl.level === userTeamSelectedLevel
+                  );
+
+                  const totalMembersAcross = userTeamData.summary?.total_team_members || 0;
+                  if (totalMembersAcross === 0 && filteredLevels.every((l) => (l.total_refers || 0) === 0)) {
+                    return (
+                      <View style={[styles.emptyCard, { paddingVertical: 28 }]}>
+                        <Feather name="users" size={32} color={colors.textDim} style={{ marginBottom: 8 }} />
+                        <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>
+                          No Downline Members Yet
+                        </Text>
+                        <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: 'center', lineHeight: 16 }}>
+                          This user currently has no team members registered under any of the 5 referral levels.
+                        </Text>
+                      </View>
+                    );
+                  }
+
+                  return filteredLevels.map((lvl) => {
+                    const members = lvl.members || [];
+                    return (
+                      <View key={lvl.level} style={styles.teamLevelCard}>
+                        {/* Level Header Strip */}
+                        <View style={styles.teamLevelHeader}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <View style={styles.levelNumberBadge}>
+                              <Text style={styles.levelNumberBadgeText}>LVL {lvl.level}</Text>
+                            </View>
+                            <Text style={styles.teamLevelTitle}>
+                              {lvl.total_refers || 0} {lvl.total_refers === 1 ? 'member' : 'members'}
+                            </Text>
+                          </View>
+                          <Text style={styles.teamLevelInv}>
+                            Vol: ${Number(lvl.total_investment || 0).toFixed(2)} USDT
+                          </Text>
+                        </View>
+
+                        {/* Level Financial Row */}
+                        <View style={styles.teamLevelFinanceRow}>
+                          <Text style={styles.teamLevelFinanceItem}>
+                            Direct Earned: <Text style={{ color: colors.accentGreenSoft, fontWeight: '700' }}>${Number(lvl.direct_income || 0).toFixed(2)}</Text>
+                          </Text>
+                          <Text style={styles.teamLevelFinanceItem}>
+                            ROI Earned: <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>${Number(lvl.roi_income || 0).toFixed(2)}</Text>
+                          </Text>
+                        </View>
+
+                        {/* Members in this level */}
+                        {members.length === 0 ? (
+                          <Text style={{ color: colors.textDim, fontSize: 11, fontStyle: 'italic', paddingVertical: 6 }}>
+                            No downlines in Level {lvl.level}.
+                          </Text>
+                        ) : (
+                          members.map((m) => (
+                            <View key={m.id} style={styles.teamMemberItem}>
+                              <View style={styles.teamMemberAvatar}>
+                                <Text style={styles.teamMemberAvatarText}>
+                                  {(m.full_name || m.email || 'U')[0].toUpperCase()}
+                                </Text>
+                              </View>
+                              <View style={{ flex: 1, marginRight: 6 }}>
+                                <Text style={styles.teamMemberName} numberOfLines={1}>
+                                  {m.full_name || m.email}
+                                </Text>
+                                <Text style={styles.teamMemberEmail} numberOfLines={1}>
+                                  {m.email}
+                                </Text>
+                                <Text style={styles.teamMemberJoined}>
+                                  Joined: {m.created_at ? new Date(m.created_at).toLocaleDateString() : 'N/A'}
+                                </Text>
+                              </View>
+                              <View style={{ alignItems: 'flex-end' }}>
+                                <View style={styles.memberRankBadge}>
+                                  <Text style={styles.memberRankBadgeText}>
+                                    Level {m.active_level || 0}
+                                  </Text>
+                                </View>
+                                {m.active_roi_level > 0 && (
+                                  <Text style={{ fontSize: 9, color: colors.goldSoft, marginTop: 2 }}>
+                                    ROI Lvl {m.active_roi_level}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+                          ))
+                        )}
+                      </View>
+                    );
+                  });
+                })()}
               </ScrollView>
             )}
 
@@ -2067,7 +2289,7 @@ export default function AdminScreen({ onNavigate }) {
               style={[styles.modalBtnCancel, { marginTop: 12 }]}
               onPress={() => setUserTeamModalVisible(false)}
             >
-              <Text style={{ color: colors.textMuted, textAlign: 'center' }}>Close</Text>
+              <Text style={{ color: colors.textMuted, textAlign: 'center', fontWeight: '600' }}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -2833,6 +3055,137 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
+  },
+  teamSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  teamSummaryCard: {
+    width: '48.5%',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  teamSummaryLabel: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.4,
+    textAlign: 'center',
+  },
+  teamSummaryValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textMain,
+    marginTop: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  teamLevelCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  teamLevelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  levelNumberBadge: {
+    backgroundColor: 'rgba(198, 153, 61, 0.15)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorderGold,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  levelNumberBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.goldSoft,
+  },
+  teamLevelTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMain,
+  },
+  teamLevelInv: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.goldSoft,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  teamLevelFinanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  teamLevelFinanceItem: {
+    fontSize: 10.5,
+    color: colors.textDim,
+  },
+  teamMemberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 6,
+    padding: 8,
+    marginTop: 6,
+  },
+  teamMemberAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(198, 153, 61, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  teamMemberAvatarText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.goldSoft,
+  },
+  teamMemberName: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.textMain,
+  },
+  teamMemberEmail: {
+    fontSize: 10,
+    color: colors.textDim,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  teamMemberJoined: {
+    fontSize: 9.5,
+    color: colors.textDim,
+    marginTop: 1,
+  },
+  memberRankBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+  },
+  memberRankBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.accentGreenSoft,
   },
   statusTogglePill: {
     flex: 1,

@@ -17,91 +17,30 @@ import { apiCall } from '../config/api';
 import colors from '../theme/colors';
 
 export default function WalletScreen({ onNavigate }) {
-  const { isDemoMode } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [walletStats, setWalletStats] = useState({
-    wallet_balance: 1450.0,
-    total_deposited: 1000.0,
-    total_withdrawn: 50.0,
-    lifetime_earnings: 205.0,
+    wallet_balance: 0.0,
+    total_deposited: 0.0,
+    total_withdrawn: 0.0,
+    lifetime_earnings: 0.0,
   });
 
-  const [deposits, setDeposits] = useState([
-    {
-      id: 'dep-1',
-      plan_name: 'Package 1',
-      amount: 120.0,
-      network: 'BEP20',
-      txn_hash: '0x892a7f82b1c9842a...4b08',
-      status: 'APPROVED',
-      created_at: '2026-08-01',
-    },
-  ]);
-
-  const [withdrawals, setWithdrawals] = useState([
-    {
-      id: 'wdr-1',
-      withdrawal_type: 'PROFIT',
-      amount: 50.0,
-      fee: 1.0,
-      net_amount: 49.0,
-      network: 'BEP20',
-      status: 'COMPLETED',
-      created_at: '2026-08-15',
-    },
-  ]);
-
-  const [ledger, setLedger] = useState([
-    {
-      id: 'tx-1',
-      transaction_type: 'CREDIT',
-      category: 'DEPOSIT',
-      amount: 120.0,
-      balance_after: 120.0,
-      created_at: '2026-08-01',
-      description: 'Approved deposit #dep-001 for Package 1',
-    },
-    {
-      id: 'tx-2',
-      transaction_type: 'CREDIT',
-      category: 'DIRECT_INCOME',
-      amount: 40.0,
-      balance_after: 160.0,
-      created_at: '2026-08-05',
-      description: 'Level-1 direct commission from l2_emma@finovo.com',
-    },
-    {
-      id: 'tx-3',
-      transaction_type: 'CREDIT',
-      category: 'ROI',
-      amount: 125.0,
-      balance_after: 285.0,
-      created_at: '2026-08-10',
-      description: 'Weekly ROI credited from Package 1',
-    },
-    {
-      id: 'tx-4',
-      transaction_type: 'DEBIT',
-      category: 'WITHDRAWAL',
-      amount: 50.0,
-      balance_after: 235.0,
-      created_at: '2026-08-15',
-      description: 'Payout processed to 0x71C7...8976F (BEP20)',
-    },
-  ]);
+  const [deposits, setDeposits] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [ledger, setLedger] = useState([]);
 
   // Withdrawal Modal State
   const [wdrModalVisible, setWdrModalVisible] = useState(false);
   const [wdrType, setWdrType] = useState('PROFIT'); // 'PROFIT' | 'CAPITAL'
-  const [wdrAmount, setWdrAmount] = useState('100.00');
+  const [wdrAmount, setWdrAmount] = useState('');
   const [wdrNetwork, setWdrNetwork] = useState('BEP20');
-  const [wdrAddress, setWdrAddress] = useState('0x71C7656EC7ab88b098defB751B7401B5f6d8976F');
+  const [wdrAddress, setWdrAddress] = useState('');
 
   // Deposit Modal State
   const [depModalVisible, setDepModalVisible] = useState(false);
-  const [depAmount, setDepAmount] = useState('500.00');
+  const [depAmount, setDepAmount] = useState('');
   const [depNetwork, setDepNetwork] = useState('BEP20');
   const [depTxHash, setDepTxHash] = useState('');
   const [depSender, setDepSender] = useState('');
@@ -114,7 +53,6 @@ export default function WalletScreen({ onNavigate }) {
   };
 
   const loadWalletData = async () => {
-    if (isDemoMode) return;
     try {
       const data = await apiCall('/dashboard/').catch(() => null);
       if (data) {
@@ -134,16 +72,16 @@ export default function WalletScreen({ onNavigate }) {
       } else {
         const deps = await apiCall('/deposits/').catch(() => []);
         const depList = Array.isArray(deps) ? deps : (deps?.results || []);
-        if (depList.length > 0) setDeposits(depList);
+        setDeposits(depList);
       }
 
       const wdrs = await apiCall('/withdrawals/').catch(() => []);
       const wdrList = Array.isArray(wdrs) ? wdrs : (wdrs?.results || []);
-      if (wdrList.length > 0) setWithdrawals(wdrList);
+      setWithdrawals(wdrList);
 
       const txs = await apiCall('/wallet/transactions/').catch(() => []);
       const txList = Array.isArray(txs) ? txs : (txs?.results || []);
-      if (txList.length > 0) setLedger(txList);
+      setLedger(txList);
     } catch (err) {
       console.warn('Wallet data fetch error:', err.message);
     }
@@ -181,27 +119,12 @@ export default function WalletScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode) {
-        await apiCall('/withdrawals/', 'POST', {
-          withdrawal_type: wdrType,
-          amount: amt,
-          network: wdrNetwork,
-          wallet_address: wdrAddress,
-        });
-      } else {
-        const newWdr = {
-          id: `wdr-${Date.now()}`,
-          withdrawal_type: wdrType,
-          amount: amt,
-          fee: fee,
-          net_amount: netReceived,
-          network: wdrNetwork,
-          status: 'PENDING',
-          created_at: 'Just now',
-        };
-        setWithdrawals([newWdr, ...withdrawals]);
-        setWalletStats((prev) => ({ ...prev, wallet_balance: prev.wallet_balance - amt }));
-      }
+      await apiCall('/withdrawals/', 'POST', {
+        withdrawal_type: wdrType,
+        amount: amt,
+        network: wdrNetwork,
+        wallet_address: wdrAddress,
+      });
 
       setWdrModalVisible(false);
       Alert.alert(
@@ -229,25 +152,12 @@ export default function WalletScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode) {
-        await apiCall('/deposits/', 'POST', {
-          amount: amt,
-          network: depNetwork,
-          txn_hash: depTxHash,
-          sender_wallet_address: depSender || '0xSenderWallet',
-        });
-      } else {
-        const newDep = {
-          id: `dep-${Date.now()}`,
-          plan_name: 'Custom Deposit',
-          amount: amt,
-          network: depNetwork,
-          txn_hash: depTxHash,
-          status: 'PENDING',
-          created_at: 'Just now',
-        };
-        setDeposits([newDep, ...deposits]);
-      }
+      await apiCall('/deposits/', 'POST', {
+        amount: amt,
+        network: depNetwork,
+        txn_hash: depTxHash,
+        sender_wallet_address: depSender || '',
+      });
 
       setDepModalVisible(false);
       Alert.alert(
@@ -297,13 +207,6 @@ export default function WalletScreen({ onNavigate }) {
             <Text style={styles.statLabel}>Wallet Balance</Text>
             <Text style={styles.statValue}>${Number(walletStats.wallet_balance).toFixed(2)}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.cardActionBtn}
-            onPress={() => onNavigate && onNavigate('investments')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.cardActionBtnText}>+ New Plan</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.statCard}>
@@ -318,13 +221,6 @@ export default function WalletScreen({ onNavigate }) {
             <Text style={styles.statLabel}>Total Withdrawn</Text>
             <Text style={styles.statValue}>${Number(walletStats.total_withdrawn).toFixed(2)}</Text>
           </View>
-          <TouchableOpacity
-            style={[styles.cardActionBtn, { backgroundColor: 'rgba(255,255,255,0.06)' }]}
-            onPress={() => setWdrModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.cardActionBtnText, { color: colors.textMain }]}>Withdraw</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.statCard}>
@@ -364,13 +260,6 @@ export default function WalletScreen({ onNavigate }) {
             <Text style={styles.eyebrow}>HISTORY</Text>
             <Text style={styles.cardTitle}>Deposit History</Text>
           </View>
-          <TouchableOpacity
-            style={styles.btnSmPrimary}
-            onPress={() => setDepModalVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.btnSmPrimaryText}>+ Deposit</Text>
-          </TouchableOpacity>
         </View>
 
         {deposits.length === 0 ? (
@@ -408,13 +297,6 @@ export default function WalletScreen({ onNavigate }) {
             <Text style={styles.eyebrow}>SETTLEMENTS</Text>
             <Text style={styles.cardTitle}>Withdrawals History</Text>
           </View>
-          <TouchableOpacity
-            style={styles.btnSmSecondary}
-            onPress={() => setWdrModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.btnSmSecondaryText}>Withdraw</Text>
-          </TouchableOpacity>
         </View>
 
         {withdrawals.length === 0 ? (

@@ -81,28 +81,15 @@ const DEFAULT_TIERS = [
 ];
 
 export default function InvestmentsScreen({ onNavigate }) {
-  const { user, isDemoMode } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const [plans, setPlans] = useState(DEFAULT_TIERS);
-
-  const [investments, setInvestments] = useState([
-    {
-      id: 'inv-1',
-      plan_name: 'Package 1',
-      cost: 120.0,
-      amount: 120.0,
-      trading_capital: 100.0,
-      max_return: 350.0,
-      total_credited: 125.0,
-      status: 'ACTIVE',
-      created_at: '2026-08-01',
-    },
-  ]);
+  const [investments, setInvestments] = useState([]);
 
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [investAmount, setInvestAmount] = useState('120');
+  const [investAmount, setInvestAmount] = useState('');
   const [depositNetwork, setDepositNetwork] = useState('BEP20');
   const [txHash, setTxHash] = useState('');
   const [senderAddress, setSenderAddress] = useState('');
@@ -117,7 +104,6 @@ export default function InvestmentsScreen({ onNavigate }) {
   });
 
   const loadPlansAndInvestments = async () => {
-    if (isDemoMode) return;
     try {
       const fetchedPlans = await apiCall('/investments/plans/').catch(() => []);
       const planList = Array.isArray(fetchedPlans) ? fetchedPlans : (fetchedPlans?.results || []);
@@ -129,9 +115,7 @@ export default function InvestmentsScreen({ onNavigate }) {
 
       const fetchedInvestments = await apiCall('/investments/').catch(() => []);
       const invList = Array.isArray(fetchedInvestments) ? fetchedInvestments : (fetchedInvestments?.results || []);
-      if (invList.length > 0) {
-        setInvestments(invList);
-      }
+      setInvestments(invList);
 
       const walletData = await apiCall('/dashboard/deposit-wallets/').catch(() => null);
       if (walletData) {
@@ -179,34 +163,17 @@ export default function InvestmentsScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode) {
-        await apiCall('/investments/', 'POST', {
-          plan: selectedPlan.id,
-          cost: cost,
-          amount: cost,
-          network: depositNetwork,
-          deposit_network: depositNetwork,
-          txn_hash: txHash,
-          deposit_txn_hash: txHash,
-          sender_wallet_address: senderAddress || '0xUserMobileSender',
-          deposit_sender_address: senderAddress || '0xUserMobileSender',
-        });
-      } else {
-        const tradingCap = Number(selectedPlan.trading_capital || cost);
-        const maxRet = Number(selectedPlan.max_total_return || (tradingCap * (selectedPlan.max_return_factor || 3)));
-        const newInv = {
-          id: `inv-${Date.now()}`,
-          plan_name: selectedPlan.name,
-          cost: cost,
-          amount: cost,
-          trading_capital: tradingCap,
-          max_return: maxRet,
-          total_credited: 0,
-          status: 'PENDING',
-          created_at: 'Just now',
-        };
-        setInvestments([newInv, ...investments]);
-      }
+      await apiCall('/investments/', 'POST', {
+        plan: selectedPlan.id,
+        cost: cost,
+        amount: cost,
+        network: depositNetwork,
+        deposit_network: depositNetwork,
+        txn_hash: txHash,
+        deposit_txn_hash: txHash,
+        sender_wallet_address: senderAddress || '',
+        deposit_sender_address: senderAddress || '',
+      });
 
       setModalVisible(false);
       Alert.alert(

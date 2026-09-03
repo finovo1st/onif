@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Image,
+  Linking,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
@@ -14,17 +16,18 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import InvestmentsScreen from './src/screens/InvestmentsScreen';
 import WalletScreen from './src/screens/WalletScreen';
 import ReferralsScreen from './src/screens/ReferralsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import KYCScreen from './src/screens/KYCScreen';
 import SupportScreen from './src/screens/SupportScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import colors from './src/theme/colors';
 
-function MainApp() {
-  const { token, user, logout, isAdmin, adminMode, toggleAdminMode } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'investments' | 'wallet' | 'referrals' | 'kyc' | 'support' | 'admin'
+function MainApp({ initialDeepLink }) {
+  const { token, user, isAdmin, adminMode } = useContext(AuthContext);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'investments' | 'wallet' | 'referrals' | 'profile' | 'kyc' | 'support' | 'admin'
 
   if (!token || !user) {
-    return <AuthScreen />;
+    return <AuthScreen initialMode={initialDeepLink?.mode} initialRefCode={initialDeepLink?.refCode} />;
   }
 
   const navigateTo = (tabName) => {
@@ -45,6 +48,8 @@ function MainApp() {
         return <WalletScreen onNavigate={navigateTo} />;
       case 'referrals':
         return <ReferralsScreen onNavigate={navigateTo} />;
+      case 'profile':
+        return <ProfileScreen onNavigate={navigateTo} />;
       case 'kyc':
         return <KYCScreen onNavigate={navigateTo} />;
       case 'support':
@@ -56,120 +61,23 @@ function MainApp() {
     }
   };
 
-  const isKycApproved = user?.kyc_status === 'APPROVED';
-  const kycText = isKycApproved
-    ? 'KYC Verified'
-    : user?.kyc_status === 'IN_REVIEW'
-    ? 'KYC In Review'
-    : 'KYC Pending';
-  const kycBg = isKycApproved
-    ? colors.badgeApprovedBg
-    : user?.kyc_status === 'IN_REVIEW'
-    ? colors.badgePendingBg
-    : colors.badgeRejectedBg;
-  const kycBorder = isKycApproved
-    ? colors.badgeApprovedBorder
-    : user?.kyc_status === 'IN_REVIEW'
-    ? colors.badgePendingBorder
-    : colors.badgeRejectedBorder;
-  const kycColor = isKycApproved
-    ? colors.accentGreenSoft
-    : user?.kyc_status === 'IN_REVIEW'
-    ? colors.accentWarning
-    : colors.accentDanger;
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.bgDark} />
 
-      {/* Admin Mode Switch Banner (Matches Web Portal Banner) */}
-      {isAdmin && (
+      {/* Global Clean Topbar Header (Obsidian Glass with Gold Accents) */}
+      <View style={styles.topbar}>
         <TouchableOpacity
-          style={[styles.adminBanner, adminMode ? styles.adminBannerActive : styles.adminBannerInactive]}
-          onPress={() => {
-            toggleAdminMode();
-            if (!adminMode) setActiveTab('admin');
-            else setActiveTab('dashboard');
-          }}
+          style={styles.brandCol}
+          onPress={() => setActiveTab('dashboard')}
           activeOpacity={0.8}
         >
-          <Feather
-            name={adminMode ? 'shield' : 'user'}
-            size={12}
-            color={adminMode ? '#030507' : colors.goldSoft}
-            style={{ marginRight: 6 }}
+          <Image
+            source={require('./src/assets/logo-title.png')}
+            style={styles.brandLogoImg}
+            resizeMode="contain"
           />
-          <Text
-            style={[
-              styles.adminBannerText,
-              adminMode ? styles.adminBannerTextActive : styles.adminBannerTextInactive,
-            ]}
-          >
-            {adminMode
-              ? '⚡ ADMIN CONSOLE ACTIVE • Tap to switch to Investor View'
-              : '⚡ SUPERUSER DETECTED • Tap to switch to Admin Console'}
-          </Text>
         </TouchableOpacity>
-      )}
-
-      {/* Global Topbar Header (Obsidian Glass with Gold Accents) */}
-      <View style={styles.topbar}>
-        <View style={styles.brandCol}>
-          <View style={styles.brandLogoCircle}>
-            <Text style={styles.brandLogoText}>F</Text>
-          </View>
-          <View>
-            <Text style={styles.brandTitle}>FINOVO</Text>
-            <View style={styles.userSubRow}>
-              <Text style={styles.userRole}>Level {user?.active_level || 1}</Text>
-              <TouchableOpacity
-                style={[styles.kycBadge, { backgroundColor: kycBg, borderColor: kycBorder }]}
-                onPress={() => setActiveTab('kyc')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.kycBadgeText, { color: kycColor }]}>{kycText}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.topbarActions}>
-          {isAdmin && (
-            <TouchableOpacity
-              style={[styles.topAdminBtn, activeTab === 'admin' && styles.topAdminBtnActive]}
-              onPress={() => setActiveTab('admin')}
-              activeOpacity={0.8}
-            >
-              <Feather name="shield" size={12} color={activeTab === 'admin' ? '#030507' : colors.goldSoft} />
-              <Text
-                style={[
-                  styles.topAdminBtnText,
-                  activeTab === 'admin' && styles.topAdminBtnTextActive,
-                ]}
-              >
-                Admin
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.quickInvestBtn}
-            onPress={() => setActiveTab('investments')}
-            activeOpacity={0.8}
-          >
-            <Feather name="plus-circle" size={13} color="#030507" style={{ marginRight: 4 }} />
-            <Text style={styles.quickInvestText}>Invest</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={logout}
-            activeOpacity={0.7}
-            title="Logout"
-          >
-            <Feather name="log-out" size={15} color={colors.textMuted} />
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Screen Body */}
@@ -177,7 +85,7 @@ function MainApp() {
 
       {/* Institutional Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
-        {/* 1. Dashboard */}
+        {/* 1. Overview / Dashboard */}
         <TouchableOpacity
           style={styles.navTab}
           onPress={() => setActiveTab('dashboard')}
@@ -243,7 +151,7 @@ function MainApp() {
           </Text>
         </TouchableOpacity>
 
-        {/* 4. Network */}
+        {/* 4. Network / Referrals */}
         <TouchableOpacity
           style={styles.navTab}
           onPress={() => setActiveTab('referrals')}
@@ -265,18 +173,20 @@ function MainApp() {
           </Text>
         </TouchableOpacity>
 
-        {/* 5. Support / Helpdesk */}
+        {/* 5. My Profile */}
         <TouchableOpacity
           style={styles.navTab}
-          onPress={() => setActiveTab(activeTab === 'kyc' ? 'kyc' : 'support')}
+          onPress={() => setActiveTab('profile')}
           activeOpacity={0.7}
         >
-          {(activeTab === 'support' || activeTab === 'kyc') && <View style={styles.activeIndicator} />}
+          {(activeTab === 'profile' || activeTab === 'kyc' || activeTab === 'support' || activeTab === 'admin') && (
+            <View style={styles.activeIndicator} />
+          )}
           <Feather
-            name="headphones"
+            name="user"
             size={18}
             color={
-              activeTab === 'support' || activeTab === 'kyc'
+              activeTab === 'profile' || activeTab === 'kyc' || activeTab === 'support' || activeTab === 'admin'
                 ? colors.goldSoft
                 : colors.textMuted
             }
@@ -284,45 +194,55 @@ function MainApp() {
           <Text
             style={[
               styles.navLabel,
-              (activeTab === 'support' || activeTab === 'kyc') && styles.navLabelActive,
+              (activeTab === 'profile' || activeTab === 'kyc' || activeTab === 'support' || activeTab === 'admin') &&
+                styles.navLabelActive,
             ]}
           >
-            Support
+            My Profile
           </Text>
         </TouchableOpacity>
-
-        {/* 6. Admin Tab (Only when superuser/staff) */}
-        {isAdmin && (
-          <TouchableOpacity
-            style={styles.navTab}
-            onPress={() => setActiveTab('admin')}
-            activeOpacity={0.7}
-          >
-            {activeTab === 'admin' && <View style={styles.activeIndicator} />}
-            <Feather
-              name="shield"
-              size={18}
-              color={activeTab === 'admin' ? colors.goldSoft : colors.textMuted}
-            />
-            <Text
-              style={[
-                styles.navLabel,
-                activeTab === 'admin' && styles.navLabelActive,
-              ]}
-            >
-              Admin
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
     </SafeAreaView>
   );
 }
 
 export default function App() {
+  const [deepLink, setDeepLink] = useState(null);
+
+  useEffect(() => {
+    const handleUrl = (url) => {
+      if (!url) return;
+      try {
+        let mode = null;
+        let refCode = null;
+        if (url.includes('register') || url.includes('#register')) {
+          mode = 'register';
+        }
+        const regex = /[?&]ref=([^&#]*)/;
+        const match = regex.exec(url);
+        if (match) {
+          refCode = match[1];
+        }
+
+        if (mode || refCode) {
+          setDeepLink({ mode, refCode });
+        }
+      } catch (e) {}
+    };
+
+    Linking.getInitialURL().then(handleUrl);
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleUrl(event.url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <AuthProvider>
-      <MainApp />
+      <MainApp initialDeepLink={deepLink} />
     </AuthProvider>
   );
 }
@@ -332,139 +252,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bgDark,
   },
-  adminBanner: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
+  topbar: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  adminBannerActive: {
-    backgroundColor: colors.gold,
-  },
-  adminBannerInactive: {
-    backgroundColor: 'rgba(198, 153, 61, 0.15)',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.bgCardBorderGold,
-  },
-  adminBannerText: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  adminBannerTextActive: {
-    color: '#030507',
-  },
-  adminBannerTextInactive: {
-    color: colors.goldSoft,
-  },
-  topbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     backgroundColor: '#070A0E',
     borderBottomWidth: 1,
     borderBottomColor: colors.bgCardBorder,
   },
   brandCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandLogoCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: 'rgba(198, 153, 61, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.bgCardBorderGold,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandLogoText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.goldSoft,
-  },
-  brandTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.textMain,
-    letterSpacing: 1.5,
-  },
-  userSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  userRole: {
-    fontSize: 10,
-    color: colors.textDim,
-    fontWeight: '600',
-  },
-  kycBadge: {
-    borderWidth: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 4,
-  },
-  kycBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  topbarActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  topAdminBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(198, 153, 61, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.bgCardBorderGold,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  topAdminBtnActive: {
-    backgroundColor: colors.gold,
-  },
-  topAdminBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.goldSoft,
-  },
-  topAdminBtnTextActive: {
-    color: '#030507',
-  },
-  quickInvestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.gold,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  quickInvestText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#030507',
-  },
-  logoutBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: colors.bgCardBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+  brandLogoImg: {
+    width: 210,
+    height: 48,
   },
   content: {
     flex: 1,
@@ -506,3 +309,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

@@ -4,6 +4,9 @@ import { Platform } from 'react-native';
 export const DEFAULT_API_HOST = 'http://34.180.50.240';
 export const API_BASE = `${DEFAULT_API_HOST}/api/v1`;
 
+// Frontend App Domain for Referral Links
+export const APP_DOMAIN = 'http://34.180.50.240'; // Update this to your deployed frontend URL
+
 let authToken = null;
 
 export const setAuthToken = (token) => {
@@ -74,7 +77,7 @@ export const apiCall = async (endpoint, method = 'GET', body = null, isFormData 
     if (response.status === 204) return null;
     return await response.json();
   } catch (err) {
-    console.error(`[Mobile API Error] ${method} ${url}:`, err.message);
+    console.warn(`[Mobile API Error] ${method} ${url}:`, err.message);
     throw err;
   }
 };

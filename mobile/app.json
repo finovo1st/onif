@@ -3,9 +3,12 @@
     "name": "FINOVO",
     "slug": "finovo-mobile",
     "version": "1.0.0",
+    "icon": "./assets/logo.png",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
       "backgroundColor": "#030507"
     },
     "ios": {
@@ -13,9 +16,14 @@
     },
     "android": {
       "backgroundColor": "#030507",
-      "package": "com.anonymous.finovomobile"
+      "package": "com.anonymous.finovomobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#030507"
+      }
     },
     "web": {
+      "favicon": "./assets/logo.png",
       "backgroundColor": "#030507"
     }
   }

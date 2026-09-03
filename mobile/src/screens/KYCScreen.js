@@ -16,30 +16,29 @@ import { apiCall } from '../config/api';
 import colors from '../theme/colors';
 
 export default function KYCScreen({ onNavigate }) {
-  const { user, updateKYCState, isDemoMode } = useContext(AuthContext);
+  const { user, updateKYCState } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Form State
+  // Form State - Clean Live Defaults
   const [docType, setDocType] = useState('PASSPORT'); // 'PASSPORT' | 'NATIONAL_ID' | 'DRIVERS_LICENSE' | 'RESIDENCE_PERMIT'
   const [docNumber, setDocNumber] = useState('');
-  const [firstName, setFirstName] = useState(user?.first_name || 'Alice');
-  const [lastName, setLastName] = useState(user?.last_name || 'Smith');
-  const [country, setCountry] = useState('United Kingdom');
-  const [dob, setDob] = useState('1992-05-14');
+  const [firstName, setFirstName] = useState(user?.first_name || '');
+  const [lastName, setLastName] = useState(user?.last_name || '');
+  const [country, setCountry] = useState(user?.kyc_country || user?.country || '');
+  const [dob, setDob] = useState(user?.date_of_birth || '');
   const [frontDocName, setFrontDocName] = useState('');
   const [backDocName, setBackDocName] = useState('');
 
   const [kycProfile, setKycProfile] = useState({
     kyc_status: user?.kyc_status || 'UNVERIFIED', // 'APPROVED' | 'IN_REVIEW' | 'UNVERIFIED' | 'REJECTED'
     kyc_document_type: user?.kyc_document_type || 'PASSPORT',
-    kyc_document_number: user?.kyc_document_number || 'P9842104A',
-    kyc_country: user?.kyc_country || 'United Kingdom',
+    kyc_document_number: user?.kyc_document_number || '',
+    kyc_country: user?.kyc_country || user?.country || '',
     kyc_rejection_reason: '',
   });
 
   const loadKYCStatus = async () => {
-    if (isDemoMode) return;
     try {
       const profile = await apiCall('/auth/profile/').catch(() => null);
       if (profile) {
@@ -47,7 +46,7 @@ export default function KYCScreen({ onNavigate }) {
           kyc_status: profile.kyc_status || 'UNVERIFIED',
           kyc_document_type: profile.kyc_document_type || 'PASSPORT',
           kyc_document_number: profile.kyc_document_number || '',
-          kyc_country: profile.kyc_country || 'United Kingdom',
+          kyc_country: profile.kyc_country || profile.country || '',
           kyc_rejection_reason: profile.kyc_rejection_reason || '',
         });
         updateKYCState(profile);
@@ -85,16 +84,14 @@ export default function KYCScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode) {
-        await apiCall('/auth/kyc/', 'POST', {
-          kyc_document_type: docType,
-          kyc_document_number: docNumber,
-          kyc_country: country,
-          first_name: firstName,
-          last_name: lastName,
-          date_of_birth: dob,
-        });
-      }
+      await apiCall('/auth/kyc/', 'POST', {
+        kyc_document_type: docType,
+        kyc_document_number: docNumber,
+        kyc_country: country,
+        first_name: firstName,
+        last_name: lastName,
+        date_of_birth: dob,
+      });
 
       setKycProfile({
         kyc_status: 'IN_REVIEW',
@@ -292,7 +289,7 @@ export default function KYCScreen({ onNavigate }) {
               style={styles.input}
               value={docNumber}
               onChangeText={setDocNumber}
-              placeholder="e.g. P9842104A or 1234-5678-9012"
+              placeholder="Enter document number"
               placeholderTextColor={colors.textDim}
             />
 
@@ -303,7 +300,7 @@ export default function KYCScreen({ onNavigate }) {
                   style={styles.input}
                   value={firstName}
                   onChangeText={setFirstName}
-                  placeholder="Alice"
+                  placeholder="First name"
                   placeholderTextColor={colors.textDim}
                 />
               </View>
@@ -313,7 +310,7 @@ export default function KYCScreen({ onNavigate }) {
                   style={styles.input}
                   value={lastName}
                   onChangeText={setLastName}
-                  placeholder="Smith"
+                  placeholder="Last name"
                   placeholderTextColor={colors.textDim}
                 />
               </View>
@@ -326,7 +323,7 @@ export default function KYCScreen({ onNavigate }) {
                   style={styles.input}
                   value={country}
                   onChangeText={setCountry}
-                  placeholder="United Kingdom"
+                  placeholder="Issuing country"
                   placeholderTextColor={colors.textDim}
                 />
               </View>

@@ -32,9 +32,8 @@ let state = {
   },
 };
 
-// Initialize Application on Page Load
-document.addEventListener('DOMContentLoaded', () => {
-  // Parse referral code from search params or hash
+// Handle URL Routing and Referral Codes
+function handleRouting() {
   const urlParams = new URLSearchParams(window.location.search);
   let refCode = urlParams.get('ref');
   if (!refCode && window.location.hash.includes('ref=')) {
@@ -54,6 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (window.location.hash.includes('login')) {
     switchAuthTab('login');
   }
+}
+
+// Listen for hash changes so the view updates without a hard refresh
+window.addEventListener('hashchange', handleRouting);
+
+// Initialize Application on Page Load
+document.addEventListener('DOMContentLoaded', () => {
+  handleRouting();
 
   if (!state.token) {
     showAuthOverlay();
@@ -413,7 +420,7 @@ function renderAllViews() {
 
   // Referral Link
   const refCode = state.user.referral_code || '';
-  document.getElementById('dash-ref-link').value = `https://finovo.app/register?ref=${refCode}`;
+  document.getElementById('dash-ref-link').value = `${window.location.origin}/app.html#register?ref=${refCode}`;
   document.getElementById('dash-downline-count').innerText = `${state.team.length} Members`;
   document.getElementById('dash-unlocked-levels').innerText = `Level ${state.user.active_level || 0}`;
 

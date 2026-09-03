@@ -8,13 +8,15 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import colors from '../theme/colors';
 
-export default function AuthScreen() {
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'verify-otp' | 'forgot' | 'reset'
+export default function AuthScreen({ initialMode, initialRefCode }) {
+  const [authMode, setAuthMode] = useState(initialMode || 'login'); // 'login' | 'register' | 'verify-otp' | 'forgot' | 'reset'
   const {
     login,
     register,
@@ -23,13 +25,17 @@ export default function AuthScreen() {
     forgotPassword,
     resendForgotOTP,
     resetPassword,
-    enableDemoMode,
     loading,
   } = useContext(AuthContext);
 
-  // Form State
-  const [email, setEmail] = useState('l1_alice@finovo.com');
-  const [password, setPassword] = useState('Password123!');
+  useEffect(() => {
+    if (initialMode) setAuthMode(initialMode);
+    if (initialRefCode) setRefCode(initialRefCode);
+  }, [initialMode, initialRefCode]);
+
+  // Form State - Clean Live Empty Defaults
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -39,7 +45,9 @@ export default function AuthScreen() {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [password2, setPassword2] = useState('');
-  const [refCode, setRefCode] = useState('');
+  const [refCode, setRefCode] = useState(initialRefCode || '');
+  const [agreedToTnc, setAgreedToTnc] = useState(false);
+  const [tncModalVisible, setTncModalVisible] = useState(false);
 
   // OTP Verification Fields
   const [otpCode, setOtpCode] = useState('');
@@ -80,11 +88,7 @@ export default function AuthScreen() {
     } catch (err) {
       Alert.alert(
         'Sign In Failed',
-        err.message || 'Unable to sign in. Please verify your credentials.',
-        [
-          { text: 'Try Again' },
-          { text: 'Use Demo Mode', onPress: () => enableDemoMode(email) },
-        ]
+        err.message || 'Unable to sign in. Please verify your credentials.'
       );
     }
   };
@@ -96,6 +100,13 @@ export default function AuthScreen() {
     }
     if (password !== password2) {
       Alert.alert('Password Error', 'Passwords do not match.');
+      return;
+    }
+    if (!agreedToTnc) {
+      Alert.alert(
+        'Terms & Conditions Required',
+        'Please review and agree to the Terms & Conditions and risk disclosure before creating an account.'
+      );
       return;
     }
     try {
@@ -189,10 +200,11 @@ export default function AuthScreen() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {/* Brand Header */}
       <View style={styles.headerBox}>
-        <View style={styles.logoBadge}>
-          <Text style={styles.logoText}>F</Text>
-        </View>
-        <Text style={styles.brandTitle}>FINOVO</Text>
+        <Image
+          source={require('../assets/logo.png')}
+          style={styles.brandLogo}
+          resizeMode="contain"
+        />
         <Text style={styles.brandSubtitle}>Institutional Crypto Investment &amp; Referral Portal</Text>
 
         <View style={styles.trustRow}>
@@ -287,14 +299,6 @@ export default function AuthScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.btnSecondary}
-              onPress={() => enableDemoMode('l1_alice@finovo.com', true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.btnSecondaryText}>⚡ Explore Full Demo Mode (Investor &amp; Admin)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={{ marginTop: 16, alignItems: 'center' }}
               onPress={() => setAuthMode('register')}
             >
@@ -315,7 +319,7 @@ export default function AuthScreen() {
                   style={styles.input}
                   value={firstName}
                   onChangeText={setFirstName}
-                  placeholder="Alice"
+                  placeholder="First name"
                   placeholderTextColor={colors.textDim}
                 />
               </View>
@@ -325,7 +329,7 @@ export default function AuthScreen() {
                   style={styles.input}
                   value={lastName}
                   onChangeText={setLastName}
-                  placeholder="Smith"
+                  placeholder="Last name"
                   placeholderTextColor={colors.textDim}
                 />
               </View>
@@ -336,7 +340,7 @@ export default function AuthScreen() {
               style={styles.input}
               value={username}
               onChangeText={setUsername}
-              placeholder="alicesmith"
+              placeholder="Choose a username"
               placeholderTextColor={colors.textDim}
               autoCapitalize="none"
             />
@@ -386,10 +390,33 @@ export default function AuthScreen() {
               style={styles.input}
               value={refCode}
               onChangeText={setRefCode}
-              placeholder="e.g. SPONSOR123"
+              placeholder="Enter sponsor code if any"
               placeholderTextColor={colors.textDim}
               autoCapitalize="characters"
             />
+
+            {/* Terms & Conditions Checkbox */}
+            <View style={styles.tncRow}>
+              <TouchableOpacity
+                style={[styles.checkboxBox, agreedToTnc && styles.checkboxBoxChecked]}
+                onPress={() => setAgreedToTnc(!agreedToTnc)}
+                activeOpacity={0.7}
+              >
+                {agreedToTnc && <Feather name="check" size={13} color="#030507" />}
+              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tncText}>
+                  I confirm that I am 18+ and have read, understood, and agree to the{' '}
+                  <Text
+                    style={styles.tncLink}
+                    onPress={() => setTncModalVisible(true)}
+                  >
+                    Terms & Conditions
+                  </Text>{' '}
+                  and investment risk disclosure.
+                </Text>
+              </View>
+            </View>
 
             <TouchableOpacity
               style={styles.btnPrimary}
@@ -458,7 +485,7 @@ export default function AuthScreen() {
               {loading ? (
                 <ActivityIndicator color="#030507" />
               ) : (
-                <Text style={styles.btnPrimaryText}>Verify Email &amp; Activate Account</Text>
+                <Text style={styles.btnPrimaryText}>Verify Email & Activate Account</Text>
               )}
             </TouchableOpacity>
 
@@ -591,7 +618,7 @@ export default function AuthScreen() {
               {loading ? (
                 <ActivityIndicator color="#030507" />
               ) : (
-                <Text style={styles.btnPrimaryText}>Update &amp; Save Password</Text>
+                <Text style={styles.btnPrimaryText}>Update & Save Password</Text>
               )}
             </TouchableOpacity>
 
@@ -617,6 +644,162 @@ export default function AuthScreen() {
           </View>
         )}
       </View>
+
+      {/* TERMS & CONDITIONS MODAL */}
+      <Modal
+        visible={tncModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setTncModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Feather name="file-text" size={18} color={colors.goldSoft} />
+                <Text style={styles.modalTitle}>Terms & Conditions</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setTncModalVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather name="x" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Terms Content */}
+            <ScrollView style={styles.modalScrollBody} showsVerticalScrollIndicator={true}>
+              <Text style={styles.tncSectionNum}>1. Introduction</Text>
+              <Text style={styles.tncBodyText}>
+                These Terms & Conditions (“Terms”) govern your access to and use of the FINOVO website, application, dashboard, trading-related services, and associated features (“Platform”). By registering for or using FINOVO, you confirm that you have read, understood, and agreed to these Terms.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>2. Systematic Model</Text>
+              <Text style={styles.tncBodyText}>
+                Finovo is an AI based automatic systematic generation plan based company.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>3. Global Market Investments</Text>
+              <Text style={styles.tncBodyText}>
+                Finovo invests in global markets and tokens.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>4. Regulatory Compliance</Text>
+              <Text style={styles.tncBodyText}>
+                Users must satisfy all applicable legal and regulatory requirements in UAE.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>5. Compliance & Sanctions Access</Text>
+              <Text style={styles.tncBodyText}>
+                FINOVO may restrict or refuse access where providing the service would violate applicable laws, regulations, sanctions, or internal compliance requirements.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>6. User Accounts & Confidentiality</Text>
+              <Text style={styles.tncBodyText}>
+                Users are responsible for providing accurate, complete, and up-to-date information during registration and KYC verification. Each user must maintain the confidentiality of their login credentials and is responsible for activity conducted through their account. FINOVO may suspend, restrict, or terminate an account where there is suspected fraud, misuse, false information, security concerns, or violation of these Terms.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>7. KYC & Compliance</Text>
+              <Text style={styles.tncBodyText}>
+                FINOVO may require identity verification and supporting documents before allowing deposits, withdrawals, or other services. Additional verification may be requested at any time where required for compliance, security, or fraud prevention.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>8. Deposits</Text>
+              <Text style={styles.tncBodyText}>
+                Deposits must be made only through payment methods and wallet addresses officially displayed by FINOVO. Users are responsible for verifying transaction details before confirming a deposit. FINOVO is not responsible for losses caused by sending funds to an incorrect or unofficial address.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>9. Withdrawals</Text>
+              <Text style={styles.tncBodyText}>
+                Withdrawal requests are subject to account verification, compliance checks, available balance, applicable fees, and the terms of the selected service. FINOVO may temporarily delay a withdrawal where additional verification or security review is required. Minimum withdrawal amounts and transaction charges, if applicable, will be displayed on the Platform and may be updated from time to time.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>10. Investment Performance & Risk Disclosure</Text>
+              <Text style={styles.tncBodyText}>
+                Where the Platform displays investment performance or profit distributions, such figures are subject to actual market conditions and the applicable FINOVO program terms. No statement on the Platform should be interpreted as a promise of fixed, guaranteed, or risk-free returns.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>11. Fees</Text>
+              <Text style={styles.tncBodyText}>
+                Applicable management fees, transaction charges, withdrawal fees, network fees, or other service charges will be disclosed through the Platform. FINOVO reserves the right to modify applicable fees prospectively by providing appropriate notice.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>12. Referral & Team Programs</Text>
+              <Text style={styles.tncBodyText}>
+                Where FINOVO offers referral or team-based rewards, eligibility, calculation methodology, levels, limits, and payment conditions will be governed by the applicable program rules. FINOVO may reject rewards generated through fraudulent, artificial, duplicate, self-referral, or otherwise prohibited activity.
+              </Text>
+
+              <Text style={styles.tncSectionNum}>13. Prohibited Activities</Text>
+              <Text style={styles.tncBodyText}>
+                Users must not:{'\n'}
+                • Provide false or misleading information.{'\n'}
+                • Use another person's account.{'\n'}
+                • Attempt to manipulate Platform records or trading information.{'\n'}
+                • Conduct fraudulent transactions.{'\n'}
+                • Use the Platform for unlawful activities.{'\n'}
+                • Attempt unauthorized access to FINOVO systems.
+              </Text>
+
+              {/* User Declaration Box */}
+              <View style={styles.tncDeclarationBox}>
+                <Text style={styles.tncDeclarationTitle}>14. User Acknowledgment & Declaration</Text>
+                <Text style={styles.tncDeclarationSub}>
+                  By proceeding with registration, investment, or use of our services, I hereby acknowledge and confirm that:
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>1. Age & Eligibility: </Text>
+                  I confirm that I am 18 years of age or older and legally eligible to use the services offered by the Company.
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>2. Terms & Conditions: </Text>
+                  I confirm that I have read, understood, and agreed to all applicable Terms & Conditions, policies, disclosures, and guidelines of the Company.
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>3. Investment Risk: </Text>
+                  I understand and acknowledge that all investments involve a certain level of risk, and that the value of an investment may fluctuate. I understand that returns are not guaranteed unless expressly stated otherwise by the Company.
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>4. Independent Decision: </Text>
+                  I confirm that I am making my investment or financial decision voluntarily and at my own discretion, after considering the associated risks and my own financial circumstances.
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>5. Risk Acceptance: </Text>
+                  I acknowledge that I have understood the nature and risks associated with the investment/service and accept the risks involved before proceeding.
+                </Text>
+                <Text style={styles.tncDeclarationItem}>
+                  <Text style={{ fontWeight: '700', color: colors.goldSoft }}>6. Accuracy of Information: </Text>
+                  I confirm that all information and documents provided by me to the Company are true, accurate, complete, and up to date.
+                </Text>
+                <Text style={[styles.tncDeclarationSub, { marginTop: 10, color: colors.goldSoft, fontWeight: '700' }]}>
+                  By selecting “I Agree / I Acknowledge”, I confirm that I have read, understood, and voluntarily accepted the above declaration and the Company's applicable Terms & Conditions.
+                </Text>
+              </View>
+            </ScrollView>
+
+            {/* Modal Actions */}
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setTncModalVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCloseBtnText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalAgreeBtn}
+                onPress={() => {
+                  setAgreedToTnc(true);
+                  setTncModalVisible(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalAgreeBtnText}>I Agree & Acknowledge</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -631,34 +814,17 @@ const styles = StyleSheet.create({
   },
   headerBox: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  logoBadge: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: 'rgba(198, 153, 61, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.bgCardBorderGold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.goldSoft,
-  },
-  brandTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.textMain,
-    letterSpacing: 2,
+  brandLogo: {
+    width: 240,
+    height: 80,
+    marginBottom: 6,
   },
   brandSubtitle: {
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 4,
+    marginTop: 2,
     textAlign: 'center',
   },
   trustRow: {
@@ -814,6 +980,144 @@ const styles = StyleSheet.create({
   resendBtnText: {
     fontSize: 12,
     color: colors.goldSoft,
+    fontWeight: '700',
+  },
+  tncRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 14,
+    marginBottom: 6,
+    gap: 10,
+  },
+  checkboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxBoxChecked: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  tncText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+  tncLink: {
+    color: colors.goldSoft,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(3, 5, 7, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 18,
+  },
+  modalContainer: {
+    width: '100%',
+    maxHeight: '82%',
+    backgroundColor: '#0c1017',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textMain,
+  },
+  modalScrollBody: {
+    padding: 18,
+  },
+  tncSectionNum: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textMain,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  tncBodyText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  tncDeclarationBox: {
+    backgroundColor: 'rgba(198, 153, 61, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(198, 153, 61, 0.25)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  tncDeclarationTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.goldSoft,
+    marginBottom: 6,
+  },
+  tncDeclarationSub: {
+    fontSize: 11.5,
+    color: colors.textMain,
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  tncDeclarationItem: {
+    fontSize: 11.5,
+    color: colors.textMuted,
+    lineHeight: 17,
+    marginBottom: 5,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  modalCloseBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalCloseBtnText: {
+    fontSize: 12.5,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  modalAgreeBtn: {
+    backgroundColor: colors.gold,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 6,
+  },
+  modalAgreeBtnText: {
+    fontSize: 12.5,
+    color: '#030507',
     fontWeight: '700',
   },
 });

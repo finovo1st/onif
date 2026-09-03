@@ -76,10 +76,23 @@ venv.bak/
 Thumbs.db
 desktop.ini
 
-# Node / JS (if added in future)
+# Node / JS
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.bak
 .agents
+
+# React Native / Expo / Mobile
+.expo/
+*.jks
+*.keystore
+!debug.keystore
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/DerivedData/
+.expo-shared/

@@ -17,7 +17,6 @@ import { apiCall } from '../config/api';
 import colors from '../theme/colors';
 
 export default function SupportScreen({ onNavigate }) {
-  const { isDemoMode } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -26,54 +25,7 @@ export default function SupportScreen({ onNavigate }) {
   const [category, setCategory] = useState('GENERAL'); // 'GENERAL' | 'DEPOSIT' | 'WITHDRAWAL' | 'REFERRAL'
   const [message, setMessage] = useState('');
 
-  const [tickets, setTickets] = useState([
-    {
-      id: 't-1',
-      subject: 'Deposit Confirmation Assistance',
-      category: 'DEPOSIT',
-      status: 'OPEN',
-      created_at: '2026-08-18',
-      messages: [
-        {
-          id: 'm-1',
-          sender_name: 'Alice Smith',
-          is_staff: false,
-          message: 'Hello, I submitted a deposit of $1000 USDT on BEP20 with hash 0x892a...4b08. Can you confirm activation?',
-          created_at: '2026-08-18 10:24',
-        },
-        {
-          id: 'm-2',
-          sender_name: 'Compliance Desk',
-          is_staff: true,
-          message: 'Hi Alice, our desk is currently verifying on bscscan. It will be credited within 10 minutes.',
-          created_at: '2026-08-18 10:32',
-        },
-      ],
-    },
-    {
-      id: 't-2',
-      subject: 'Referral Level 2 Inquiry',
-      category: 'REFERRAL',
-      status: 'RESOLVED',
-      created_at: '2026-08-10',
-      messages: [
-        {
-          id: 'm-3',
-          sender_name: 'Alice Smith',
-          is_staff: false,
-          message: 'How many active downline members are required to unlock Level 3 ROI?',
-          created_at: '2026-08-10 14:10',
-        },
-        {
-          id: 'm-4',
-          sender_name: 'Finovo Support',
-          is_staff: true,
-          message: 'Level 3 requires 6 active direct referrals with an active investment plan.',
-          created_at: '2026-08-10 14:22',
-        },
-      ],
-    },
-  ]);
+  const [tickets, setTickets] = useState([]);
 
   // Thread Modal State
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -81,11 +33,10 @@ export default function SupportScreen({ onNavigate }) {
   const [threadModalVisible, setThreadModalVisible] = useState(false);
 
   const loadTickets = async () => {
-    if (isDemoMode) return;
     try {
       const data = await apiCall('/support/tickets/').catch(() => []);
       const ticketList = Array.isArray(data) ? data : (data?.results || []);
-      if (ticketList.length > 0) setTickets(ticketList);
+      setTickets(ticketList);
     } catch (err) {
       console.warn('Support ticket load error:', err.message);
     }
@@ -109,31 +60,11 @@ export default function SupportScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode) {
-        await apiCall('/support/tickets/', 'POST', {
-          subject,
-          category,
-          message,
-        });
-      } else {
-        const newT = {
-          id: `t-${Date.now()}`,
-          subject,
-          category,
-          status: 'OPEN',
-          created_at: 'Just now',
-          messages: [
-            {
-              id: `m-${Date.now()}`,
-              sender_name: 'You',
-              is_staff: false,
-              message,
-              created_at: 'Just now',
-            },
-          ],
-        };
-        setTickets([newT, ...tickets]);
-      }
+      await apiCall('/support/tickets/', 'POST', {
+        subject,
+        category,
+        message,
+      });
 
       setSubject('');
       setMessage('');
@@ -151,7 +82,7 @@ export default function SupportScreen({ onNavigate }) {
     setReplyMessage('');
     setThreadModalVisible(true);
 
-    if (!isDemoMode && ticket.id) {
+    if (ticket.id) {
       try {
         const detail = await apiCall(`/support/tickets/${ticket.id}/`).catch(() => null);
         if (detail) setSelectedTicket(detail);
@@ -164,7 +95,7 @@ export default function SupportScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      if (!isDemoMode && selectedTicket.id) {
+      if (selectedTicket.id) {
         await apiCall(`/support/tickets/${selectedTicket.id}/reply/`, 'POST', {
           message: replyMessage,
         });

@@ -10,120 +10,53 @@ import {
   RefreshControl,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { apiCall } from '../config/api';
+import { apiCall, APP_DOMAIN } from '../config/api';
 import colors from '../theme/colors';
 
 export default function ReferralsScreen() {
-  const { user, isDemoMode } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [summary, setSummary] = useState({
-    direct_income: 80.0,
-    roi_income: 25.0,
-    active_level: 2,
-    referral_code: 'ALICE123',
-    referral_link: 'https://finovo.app/app.html#register?ref=ALICE123',
+    direct_income: 0.0,
+    roi_income: 0.0,
+    active_level: 0,
+    referral_code: '',
+    referral_link: '',
   });
 
-  const [team, setTeam] = useState([
-    {
-      id: 'm1',
-      email: 'l2_emma@finovo.com',
-      username: 'l2emma',
-      date_joined: '2026-08-02',
-      total_invested: 2000.0,
-      direct_comm_generated: 40.0,
-      roi_comm_generated: 15.0,
-    },
-    {
-      id: 'm2',
-      email: 'l2_frank@finovo.com',
-      username: 'l2frank',
-      date_joined: '2026-08-04',
-      total_invested: 1000.0,
-      direct_comm_generated: 20.0,
-      roi_comm_generated: 10.0,
-    },
-    {
-      id: 'm3',
-      email: 'l2_george@finovo.com',
-      username: 'georgew',
-      date_joined: '2026-08-10',
-      total_invested: 500.0,
-      direct_comm_generated: 10.0,
-      roi_comm_generated: 0.0,
-    },
-    {
-      id: 'm4',
-      email: 'l2_helen@finovo.com',
-      username: 'helenh',
-      date_joined: '2026-08-12',
-      total_invested: 500.0,
-      direct_comm_generated: 10.0,
-      roi_comm_generated: 0.0,
-    },
-  ]);
-
-  const [commissions, setCommissions] = useState([
-    {
-      id: 'c1',
-      commission_type: 'DIRECT',
-      level: 1,
-      amount: 40.0,
-      from_user_email: 'l2_emma@finovo.com',
-      status: 'PAID',
-      created_at: '2026-08-02',
-    },
-    {
-      id: 'c2',
-      commission_type: 'ROI',
-      level: 1,
-      amount: 25.0,
-      from_user_email: 'l2_emma@finovo.com',
-      status: 'PAID',
-      created_at: '2026-08-09',
-    },
-    {
-      id: 'c3',
-      commission_type: 'DIRECT',
-      level: 1,
-      amount: 20.0,
-      from_user_email: 'l2_frank@finovo.com',
-      status: 'PAID',
-      created_at: '2026-08-04',
-    },
-  ]);
-
+  const [team, setTeam] = useState([]);
+  const [commissions, setCommissions] = useState([]);
   const [selectedLevel, setSelectedLevel] = useState('all');
-
   const [levelStats, setLevelStats] = useState([]);
 
   const loadReferralData = async () => {
-    if (isDemoMode) return;
     try {
       const dashData = await apiCall('/dashboard/').catch(() => null);
+      const refCode = dashData?.referral_code || user?.referral_code || '';
+      const refLink = dashData?.referral_link || (refCode ? `${APP_DOMAIN}/app.html#register?ref=${refCode}` : '');
       if (dashData) {
         setSummary({
           direct_income: dashData.total_direct_income || dashData.direct_income || 0,
           roi_income: dashData.total_referral_income || dashData.roi_income || 0,
           active_level: dashData.active_level || user?.active_level || 0,
-          referral_code: dashData.referral_code || user?.referral_code || 'ALICE123',
-          referral_link: dashData.referral_link || `https://finovo.app/app.html#register?ref=${user?.referral_code || 'ALICE123'}`,
+          referral_code: refCode,
+          referral_link: refLink,
         });
       }
 
       const teamData = await apiCall('/referrals/team/').catch(() => []);
       const teamList = Array.isArray(teamData) ? teamData : (teamData?.results || []);
-      if (teamList.length > 0) setTeam(teamList);
+      setTeam(teamList);
 
       const commData = await apiCall('/referrals/commissions/').catch(() => []);
       const commList = Array.isArray(commData) ? commData : (commData?.results || []);
-      if (commList.length > 0) setCommissions(commList);
+      setCommissions(commList);
 
       const levelsData = await apiCall('/referrals/levels/').catch(() => []);
       const levelsList = Array.isArray(levelsData) ? levelsData : (levelsData?.results || []);
-      if (levelsList.length > 0) setLevelStats(levelsList);
+      setLevelStats(levelsList);
     } catch (err) {
       console.warn('Referrals data load error:', err.message);
     }

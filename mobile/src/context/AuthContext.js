@@ -7,37 +7,11 @@ export const AuthProvider = ({ children }) => {
   const [token, setTokenState] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [adminMode, setAdminMode] = useState(false); // When true, renders the Admin Console
-
-  // Mock demo user profile matching the full web user model
-  const demoUser = {
-    id: 'usr-demo-001',
-    email: 'l1_alice@finovo.com',
-    username: 'alicesmith',
-    first_name: 'Alice',
-    last_name: 'Smith',
-    referral_code: 'ALICE123',
-    active_level: 2,
-    active_roi_level: 2,
-    kyc_status: 'APPROVED', // 'APPROVED', 'IN_REVIEW', 'UNVERIFIED', 'REJECTED'
-    kyc_document_type: 'PASSPORT',
-    kyc_document_number: 'P9842104A',
-    kyc_country: 'United Kingdom',
-    is_email_verified: true,
-    is_staff: true, // Demo user has admin rights to test all admin pages
-    is_superuser: true,
-  };
 
   const login = async (email, password) => {
     setLoading(true);
     try {
-      if (isDemoMode) {
-        setUser({ ...demoUser, email });
-        setTokenState('demo-token-123');
-        return { success: true };
-      }
-
       const res = await apiCall('/auth/login/', 'POST', { email, password });
       if (res && res.access) {
         setAuthToken(res.access);
@@ -59,9 +33,6 @@ export const AuthProvider = ({ children }) => {
   const register = async (data) => {
     setLoading(true);
     try {
-      if (isDemoMode) {
-        return { success: true };
-      }
       // 1. Register
       const res = await apiCall('/auth/register/', 'POST', data);
 
@@ -90,9 +61,6 @@ export const AuthProvider = ({ children }) => {
   const verifyEmail = async (otp) => {
     setLoading(true);
     try {
-      if (isDemoMode) {
-        return { success: true };
-      }
       const res = await apiCall('/auth/verify-email/', 'POST', { otp });
       await fetchProfile();
       return res || { success: true };
@@ -105,7 +73,6 @@ export const AuthProvider = ({ children }) => {
 
   const resendOTP = async (email) => {
     try {
-      if (isDemoMode) return { success: true };
       return await apiCall('/auth/resend-otp/', 'POST', { email });
     } catch (err) {
       throw err;
@@ -115,9 +82,6 @@ export const AuthProvider = ({ children }) => {
   const forgotPassword = async (emailOrUsername) => {
     setLoading(true);
     try {
-      if (isDemoMode) {
-        return { success: true };
-      }
       const res = await apiCall('/auth/forgot-password/', 'POST', { email: emailOrUsername });
       return res || { success: true };
     } catch (err) {
@@ -129,7 +93,6 @@ export const AuthProvider = ({ children }) => {
 
   const resendForgotOTP = async (emailOrUsername) => {
     try {
-      if (isDemoMode) return { success: true };
       return await apiCall('/auth/forgot-password/', 'POST', { email: emailOrUsername });
     } catch (err) {
       throw err;
@@ -139,9 +102,6 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (emailOrUsername, otp, newPassword) => {
     setLoading(true);
     try {
-      if (isDemoMode) {
-        return { success: true };
-      }
       const res = await apiCall('/auth/reset-password/', 'POST', {
         email: emailOrUsername,
         otp,
@@ -179,17 +139,14 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     setTokenState(null);
     setUser(null);
-    setIsDemoMode(false);
     setAdminMode(false);
   };
 
-  const enableDemoMode = (email = 'l1_alice@finovo.com', asAdmin = true) => {
-    setIsDemoMode(true);
-    setUser({ ...demoUser, email, is_staff: asAdmin, is_superuser: asAdmin });
-    setTokenState('demo-token-123');
-  };
-
-  const isAdmin = Boolean(user?.is_staff || user?.is_superuser || user?.role === 'admin');
+  const isAdmin = Boolean(
+    user?.is_staff ||
+    user?.is_superuser ||
+    (user?.role && String(user.role).toUpperCase() === 'ADMIN')
+  );
 
   const toggleAdminMode = () => {
     setAdminMode((prev) => !prev);
@@ -201,7 +158,6 @@ export const AuthProvider = ({ children }) => {
         token,
         user,
         loading,
-        isDemoMode,
         adminMode,
         isAdmin,
         login,
@@ -212,7 +168,6 @@ export const AuthProvider = ({ children }) => {
         resendForgotOTP,
         resetPassword,
         logout,
-        enableDemoMode,
         fetchProfile,
         updateKYCState,
         toggleAdminMode,
@@ -223,4 +178,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
 

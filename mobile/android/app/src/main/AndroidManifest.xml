@@ -30,9 +30,9 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="https" android:host="finovo1st.com" />
-        <data android:scheme="http" android:host="finovo1st.com" />
-        <data android:scheme="https" android:host="www.finovo1st.com" />
+        <data android:scheme="https" android:host="finovo1.com" />
+        <data android:scheme="http" android:host="finovo1.com" />
+        <data android:scheme="https" android:host="www.finovo1.com" />
       </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>

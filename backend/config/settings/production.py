@@ -6,7 +6,7 @@ DEBUG = False
 
 # Host header validation
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()] if allowed_hosts_env else ['finovo1st.com', 'www.finovo1st.com', 'localhost', '127.0.0.1', 'backend']
+ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()] if allowed_hosts_env else ['finovo1.com', 'www.finovo1.com', 'localhost', '127.0.0.1', 'backend']
 
 
 # CSRF Trusted Origins (Mandatory for Django 4+ under HTTPS)

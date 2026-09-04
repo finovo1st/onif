@@ -1,11 +1,11 @@
 import { Platform } from 'react-native';
 
 // Server API Host
-export const DEFAULT_API_HOST = 'https://finovo1st.com';
+export const DEFAULT_API_HOST = 'https://finovo1.com';
 export const API_BASE = `${DEFAULT_API_HOST}/api/v1`;
 
 // Frontend App Domain for Referral Links
-export const APP_DOMAIN = 'https://finovo1st.com';
+export const APP_DOMAIN = 'https://finovo1.com';
 
 
 let authToken = null;

@@ -709,51 +709,55 @@ export default function AdminScreen({ onNavigate }) {
         <View>
           {/* Main 5 Metric Stat Cards (Matching Frontend Grid-4) */}
           <View style={styles.metricGrid}>
-            {/* 1. Company Wallet */}
-            <TouchableOpacity
-              style={[styles.statCard, { borderColor: colors.bgCardBorderGold }]}
-              onPress={() => setActiveTab('funds')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.statLabel}>COMPANY WALLET</Text>
-              <Text style={[styles.statValue, { color: colors.goldSoft }]}>
-                ${Number(fundsSummary.net_funds || metrics.vault_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-              <Text style={styles.statSub}>Corporate Treasury • View ledger →</Text>
-            </TouchableOpacity>
+            <View style={styles.metricRow}>
+              {/* 1. Company Wallet */}
+              <TouchableOpacity
+                style={[styles.statCard, { borderColor: colors.bgCardBorderGold }]}
+                onPress={() => setActiveTab('funds')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statLabel} numberOfLines={1}>COMPANY WALLET</Text>
+                <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                  ${Number(fundsSummary.net_funds || metrics.vault_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+                <Text style={styles.statSub} numberOfLines={1}>Corporate Treasury • View ledger →</Text>
+              </TouchableOpacity>
 
-            {/* 2. Platform Registered Users */}
-            <TouchableOpacity
-              style={styles.statCard}
-              onPress={() => setActiveTab('users')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.statLabel}>REGISTERED USERS</Text>
-              <Text style={styles.statValue}>{metrics.total_users_count}</Text>
-              <Text style={styles.statSub}>{metrics.verified_users_count} verified • {metrics.active_users_count} active</Text>
-            </TouchableOpacity>
-
-            {/* 3. Active Investment Capital */}
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>ACTIVE INVESTMENT CAPITAL</Text>
-              <Text style={[styles.statValue, { color: colors.goldSoft }]}>
-                ${Number(metrics.active_investments_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-              <Text style={styles.statSub}>{metrics.active_investments_count} active plans</Text>
+              {/* 2. Platform Registered Users */}
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => setActiveTab('users')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statLabel} numberOfLines={1}>REGISTERED USERS</Text>
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{metrics.total_users_count}</Text>
+                <Text style={styles.statSub} numberOfLines={1}>{metrics.verified_users_count} verified • {metrics.active_users_count} active</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* 4. Pending Deposit Approvals */}
-            <TouchableOpacity
-              style={[styles.statCard, { borderColor: 'rgba(250, 204, 21, 0.4)' }]}
-              onPress={() => setActiveTab('deposits')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.statLabel}>PENDING DEPOSITS</Text>
-              <Text style={[styles.statValue, { color: colors.accentWarning }]}>
-                ${Number(metrics.pending_deposits_amount).toFixed(2)}
-              </Text>
-              <Text style={styles.statSub}>{metrics.pending_deposits_count} awaiting proof review →</Text>
-            </TouchableOpacity>
+            <View style={styles.metricRow}>
+              {/* 3. Active Investment Capital */}
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel} numberOfLines={1}>ACTIVE INVESTMENT CAPITAL</Text>
+                <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                  ${Number(metrics.active_investments_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+                <Text style={styles.statSub} numberOfLines={1}>{metrics.active_investments_count} active plans</Text>
+              </View>
+
+              {/* 4. Pending Deposit Approvals */}
+              <TouchableOpacity
+                style={[styles.statCard, { borderColor: 'rgba(250, 204, 21, 0.4)' }]}
+                onPress={() => setActiveTab('deposits')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.statLabel} numberOfLines={1}>PENDING DEPOSITS</Text>
+                <Text style={[styles.statValue, { color: colors.accentWarning }]} numberOfLines={1} adjustsFontSizeToFit>
+                  ${Number(metrics.pending_deposits_amount).toFixed(2)}
+                </Text>
+                <Text style={styles.statSub} numberOfLines={1}>{metrics.pending_deposits_count} awaiting proof review →</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 5. Pending Withdrawals */}
             <TouchableOpacity
@@ -762,12 +766,12 @@ export default function AdminScreen({ onNavigate }) {
               activeOpacity={0.8}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={styles.statLabel}>QUEUED PAYOUTS</Text>
-                  <Text style={[styles.statValue, { color: colors.accentDanger }]}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={styles.statLabel} numberOfLines={1}>QUEUED PAYOUTS</Text>
+                  <Text style={[styles.statValue, { color: colors.accentDanger }]} numberOfLines={1} adjustsFontSizeToFit>
                     ${Number(metrics.pending_withdrawals_amount).toFixed(2)} USDT
                   </Text>
-                  <Text style={styles.statSub}>{metrics.pending_withdrawals_count} payouts queued in processing</Text>
+                  <Text style={styles.statSub} numberOfLines={1}>{metrics.pending_withdrawals_count} payouts queued in processing</Text>
                 </View>
                 <Feather name="arrow-right-circle" size={22} color={colors.accentDanger} />
               </View>
@@ -1131,15 +1135,17 @@ export default function AdminScreen({ onNavigate }) {
                   <View style={styles.divider} />
 
                   <View style={styles.dossierGrid}>
-                    <View style={styles.dossierItem}>
-                      <Text style={styles.dossierLabel}>PLAN</Text>
-                      <Text style={styles.dossierVal}>{dep.plan_name || 'Standard Tier'}</Text>
-                    </View>
-                    <View style={styles.dossierItem}>
-                      <Text style={styles.dossierLabel}>AMOUNT</Text>
-                      <Text style={[styles.dossierVal, { color: colors.goldSoft }]}>
-                        ${Number(dep.amount).toFixed(2)} USDT ({dep.deposit_network || dep.network || 'BEP20'})
-                      </Text>
+                    <View style={styles.dossierRow}>
+                      <View style={styles.dossierItem}>
+                        <Text style={styles.dossierLabel}>PLAN</Text>
+                        <Text style={styles.dossierVal}>{dep.plan_name || 'Standard Tier'}</Text>
+                      </View>
+                      <View style={styles.dossierItem}>
+                        <Text style={styles.dossierLabel}>AMOUNT</Text>
+                        <Text style={[styles.dossierVal, { color: colors.goldSoft }]}>
+                          ${Number(dep.amount).toFixed(2)} USDT ({dep.deposit_network || dep.network || 'BEP20'})
+                        </Text>
+                      </View>
                     </View>
                     <View style={styles.dossierItemFull}>
                       <Text style={styles.dossierLabel}>TX HASH / PROOF</Text>
@@ -1279,15 +1285,17 @@ export default function AdminScreen({ onNavigate }) {
                   <View style={styles.divider} />
 
                   <View style={styles.dossierGrid}>
-                    <View style={styles.dossierItem}>
-                      <Text style={styles.dossierLabel}>TYPE</Text>
-                      <Text style={styles.dossierVal}>{wdr.withdrawal_type || 'PROFIT'}</Text>
-                    </View>
-                    <View style={styles.dossierItem}>
-                      <Text style={styles.dossierLabel}>NET PAYOUT</Text>
-                      <Text style={[styles.dossierVal, { color: colors.goldSoft }]}>
-                        ${Number(wdr.net_amount || wdr.amount).toFixed(2)} USDT (Fee: ${Number(wdr.fee || 0).toFixed(2)})
-                      </Text>
+                    <View style={styles.dossierRow}>
+                      <View style={styles.dossierItem}>
+                        <Text style={styles.dossierLabel}>TYPE</Text>
+                        <Text style={styles.dossierVal}>{wdr.withdrawal_type || 'PROFIT'}</Text>
+                      </View>
+                      <View style={styles.dossierItem}>
+                        <Text style={styles.dossierLabel}>NET PAYOUT</Text>
+                        <Text style={[styles.dossierVal, { color: colors.goldSoft }]}>
+                          ${Number(wdr.net_amount || wdr.amount).toFixed(2)} USDT (Fee: ${Number(wdr.fee || 0).toFixed(2)})
+                        </Text>
+                      </View>
                     </View>
                     <View style={styles.dossierItemFull}>
                       <Text style={styles.dossierLabel}>DESTINATION ({wdr.network || 'BEP20'})</Text>
@@ -2126,29 +2134,33 @@ export default function AdminScreen({ onNavigate }) {
               <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
                 {/* 4 Summary Stat Cards */}
                 <View style={styles.teamSummaryGrid}>
-                  <View style={styles.teamSummaryCard}>
-                    <Text style={styles.teamSummaryLabel}>TOTAL REFERS (5 LVL)</Text>
-                    <Text style={styles.teamSummaryValue}>
-                      {userTeamData.summary?.total_team_members || 0}
-                    </Text>
+                  <View style={styles.teamSummaryRow}>
+                    <View style={styles.teamSummaryCard}>
+                      <Text style={styles.teamSummaryLabel} numberOfLines={1}>TOTAL REFERS (5 LVL)</Text>
+                      <Text style={styles.teamSummaryValue} numberOfLines={1} adjustsFontSizeToFit>
+                        {userTeamData.summary?.total_team_members || 0}
+                      </Text>
+                    </View>
+                    <View style={styles.teamSummaryCard}>
+                      <Text style={styles.teamSummaryLabel} numberOfLines={1}>TEAM INVESTMENT</Text>
+                      <Text style={[styles.teamSummaryValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                        ${Number(userTeamData.summary?.total_team_investment || 0).toFixed(2)}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.teamSummaryCard}>
-                    <Text style={styles.teamSummaryLabel}>TEAM INVESTMENT</Text>
-                    <Text style={[styles.teamSummaryValue, { color: colors.goldSoft }]}>
-                      ${Number(userTeamData.summary?.total_team_investment || 0).toFixed(2)}
-                    </Text>
-                  </View>
-                  <View style={styles.teamSummaryCard}>
-                    <Text style={styles.teamSummaryLabel}>DIRECT INCOME</Text>
-                    <Text style={[styles.teamSummaryValue, { color: colors.accentGreenSoft }]}>
-                      ${Number(userTeamData.summary?.total_direct_income || 0).toFixed(2)}
-                    </Text>
-                  </View>
-                  <View style={styles.teamSummaryCard}>
-                    <Text style={styles.teamSummaryLabel}>REFERRAL ROI</Text>
-                    <Text style={styles.teamSummaryValue}>
-                      ${Number(userTeamData.summary?.total_referral_roi_income || 0).toFixed(2)}
-                    </Text>
+                  <View style={styles.teamSummaryRow}>
+                    <View style={styles.teamSummaryCard}>
+                      <Text style={styles.teamSummaryLabel} numberOfLines={1}>DIRECT INCOME</Text>
+                      <Text style={[styles.teamSummaryValue, { color: colors.accentGreenSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                        ${Number(userTeamData.summary?.total_direct_income || 0).toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={styles.teamSummaryCard}>
+                      <Text style={styles.teamSummaryLabel} numberOfLines={1}>REFERRAL ROI</Text>
+                      <Text style={styles.teamSummaryValue} numberOfLines={1} adjustsFontSizeToFit>
+                        ${Number(userTeamData.summary?.total_referral_roi_income || 0).toFixed(2)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -2561,24 +2573,27 @@ const styles = StyleSheet.create({
     color: '#030507',
   },
   metricGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 14,
   },
+  metricRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   statCard: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: colors.bgCard,
     borderRadius: 12,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
+    minHeight: 74,
   },
   statCardFull: {
     width: '100%',
     backgroundColor: colors.bgCard,
     borderRadius: 12,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
   },
@@ -2890,12 +2905,14 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   dossierGrid: {
+    gap: 8,
+  },
+  dossierRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
   dossierItem: {
-    width: '48%',
+    flex: 1,
   },
   dossierItemFull: {
     width: '100%',
@@ -3057,13 +3074,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   teamSummaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 12,
   },
+  teamSummaryRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   teamSummaryCard: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderWidth: 1,
     borderColor: colors.bgCardBorder,

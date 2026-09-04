@@ -202,31 +202,31 @@ export default function WalletScreen({ onNavigate }) {
 
       {/* 4-KPI Grid (Matching Web Portal) */}
       <View style={styles.metricGrid}>
-        <View style={styles.statCard}>
-          <View>
-            <Text style={styles.statLabel}>Wallet Balance</Text>
-            <Text style={styles.statValue}>${Number(walletStats.wallet_balance).toFixed(2)}</Text>
+        <View style={styles.metricRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel} numberOfLines={1}>Wallet Balance</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+              ${Number(walletStats.wallet_balance).toFixed(2)}
+            </Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel} numberOfLines={1}>Total Invested</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+              ${Number(walletStats.total_deposited).toFixed(2)}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.statCard}>
-          <View>
-            <Text style={styles.statLabel}>Total Invested</Text>
-            <Text style={styles.statValue}>${Number(walletStats.total_deposited).toFixed(2)}</Text>
+        <View style={styles.metricRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel} numberOfLines={1}>Total Withdrawn</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+              ${Number(walletStats.total_withdrawn).toFixed(2)}
+            </Text>
           </View>
-        </View>
-
-        <View style={styles.statCard}>
-          <View>
-            <Text style={styles.statLabel}>Total Withdrawn</Text>
-            <Text style={styles.statValue}>${Number(walletStats.total_withdrawn).toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.statCard}>
-          <View>
-            <Text style={styles.statLabel}>Lifetime Earnings</Text>
-            <Text style={[styles.statValue, { color: colors.goldSoft }]}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel} numberOfLines={1}>Lifetime Earnings</Text>
+            <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
               +${Number(walletStats.lifetime_earnings).toFixed(2)}
             </Text>
           </View>
@@ -678,28 +678,32 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   metricGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 16,
   },
+  metricRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   statCard: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: colors.bgCard,
     borderRadius: 12,
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    minHeight: 68,
   },
   statLabel: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '600',
     color: colors.textMuted,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.textMain,
     letterSpacing: -0.3,

@@ -265,23 +265,46 @@ export default function KYCScreen({ onNavigate }) {
 
             <Text style={styles.label}>Government Document Type *</Text>
             <View style={styles.docTypeToggleGrid}>
-              {[
-                { id: 'PASSPORT', label: 'Passport' },
-                { id: 'NATIONAL_ID', label: 'National ID' },
-                { id: 'DRIVERS_LICENSE', label: "Driver's License" },
-                { id: 'RESIDENCE_PERMIT', label: 'Residence ID' },
-              ].map((item) => (
+              <View style={styles.docTypeRow}>
                 <TouchableOpacity
-                  key={item.id}
-                  style={[styles.docTypeBtn, docType === item.id && styles.docTypeBtnActive]}
-                  onPress={() => setDocType(item.id)}
+                  style={[styles.docTypeBtn, docType === 'PASSPORT' && styles.docTypeBtnActive]}
+                  onPress={() => setDocType('PASSPORT')}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.docTypeBtnText, docType === item.id && styles.docTypeBtnTextActive]}>
-                    {item.label}
+                  <Text style={[styles.docTypeBtnText, docType === 'PASSPORT' && styles.docTypeBtnTextActive]}>
+                    Passport
                   </Text>
                 </TouchableOpacity>
-              ))}
+                <TouchableOpacity
+                  style={[styles.docTypeBtn, docType === 'NATIONAL_ID' && styles.docTypeBtnActive]}
+                  onPress={() => setDocType('NATIONAL_ID')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.docTypeBtnText, docType === 'NATIONAL_ID' && styles.docTypeBtnTextActive]}>
+                    National ID
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.docTypeRow}>
+                <TouchableOpacity
+                  style={[styles.docTypeBtn, docType === 'DRIVERS_LICENSE' && styles.docTypeBtnActive]}
+                  onPress={() => setDocType('DRIVERS_LICENSE')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.docTypeBtnText, docType === 'DRIVERS_LICENSE' && styles.docTypeBtnTextActive]}>
+                    Driver's License
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.docTypeBtn, docType === 'RESIDENCE_PERMIT' && styles.docTypeBtnActive]}
+                  onPress={() => setDocType('RESIDENCE_PERMIT')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.docTypeBtnText, docType === 'RESIDENCE_PERMIT' && styles.docTypeBtnTextActive]}>
+                    Residence ID
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <Text style={styles.label}>Document Identification Number (ID / Passport No.) *</Text>
@@ -649,13 +672,15 @@ const styles = StyleSheet.create({
     color: colors.textMain,
   },
   docTypeToggleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 10,
   },
+  docTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   docTypeBtn: {
-    width: '48.5%',
+    flex: 1,
     paddingVertical: 9,
     alignItems: 'center',
     borderRadius: 6,

@@ -135,75 +135,81 @@ export default function DashboardScreen({ onNavigate }) {
 
       {/* 5-Metric Cards Grid (Matching Web Portal Stat Cards) */}
       <View style={styles.metricGrid}>
-        {/* 1. Wallet Balance */}
-        <View style={styles.statCard}>
-          <View style={{ flex: 1, paddingRight: 6 }}>
-            <Text style={styles.statLabel}>WALLET BALANCE</Text>
-            <Text style={styles.statValue} numberOfLines={1}>
-              ${Number(stats.wallet_balance).toFixed(2)}
-            </Text>
-            <Text style={styles.statSub}>Available Liquidity</Text>
+        {/* Row 1: Wallet Balance & Active Investments */}
+        <View style={styles.metricRow}>
+          {/* 1. Wallet Balance */}
+          <View style={styles.statCard}>
+            <View style={styles.statTextCol}>
+              <Text style={styles.statLabel} numberOfLines={1}>WALLET BALANCE</Text>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                ${Number(stats.wallet_balance).toFixed(2)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>Available Liquidity</Text>
+            </View>
+            <View style={styles.statIconBadge}>
+              <Feather name="credit-card" size={16} color={colors.goldSoft} />
+            </View>
           </View>
-          <View style={styles.statIconBadge}>
-            <Feather name="credit-card" size={17} color={colors.goldSoft} />
+
+          {/* 2. Active Investments */}
+          <View style={styles.statCard}>
+            <View style={styles.statTextCol}>
+              <Text style={styles.statLabel} numberOfLines={1}>ACTIVE INVESTMENTS</Text>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                ${Number(stats.active_investments_amount).toFixed(2)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>
+                {activeItems.filter((i) => i.status === 'ACTIVE').length} Active Plan(s)
+              </Text>
+            </View>
+            <View style={styles.statIconBadge}>
+              <Feather name="activity" size={16} color={colors.goldSoft} />
+            </View>
           </View>
         </View>
 
-        {/* 2. Active Investments */}
-        <View style={styles.statCard}>
-          <View style={{ flex: 1, paddingRight: 6 }}>
-            <Text style={styles.statLabel}>ACTIVE INVESTMENTS</Text>
-            <Text style={styles.statValue} numberOfLines={1}>
-              ${Number(stats.active_investments_amount).toFixed(2)}
-            </Text>
-            <Text style={styles.statSub}>
-              {activeItems.filter((i) => i.status === 'ACTIVE').length} Active Plan(s)
-            </Text>
+        {/* Row 2: Total ROI Earned & Direct Referral Income */}
+        <View style={styles.metricRow}>
+          {/* 3. Total ROI Earned */}
+          <View style={styles.statCard}>
+            <View style={styles.statTextCol}>
+              <Text style={styles.statLabel} numberOfLines={1}>TOTAL ROI EARNED</Text>
+              <Text style={[styles.statValue, { color: colors.accentGreenSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                +${Number(stats.total_roi_earned).toFixed(2)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>Weekly Passive Yield</Text>
+            </View>
+            <View style={styles.statIconBadge}>
+              <Feather name="dollar-sign" size={16} color={colors.accentGreenSoft} />
+            </View>
           </View>
-          <View style={styles.statIconBadge}>
-            <Feather name="activity" size={17} color={colors.goldSoft} />
-          </View>
-        </View>
 
-        {/* 3. Total ROI Earned */}
-        <View style={styles.statCard}>
-          <View style={{ flex: 1, paddingRight: 6 }}>
-            <Text style={styles.statLabel}>TOTAL ROI EARNED</Text>
-            <Text style={[styles.statValue, { color: colors.accentGreenSoft }]} numberOfLines={1}>
-              +${Number(stats.total_roi_earned).toFixed(2)}
-            </Text>
-            <Text style={styles.statSub}>Weekly Passive Yield</Text>
-          </View>
-          <View style={styles.statIconBadge}>
-            <Feather name="dollar-sign" size={17} color={colors.accentGreenSoft} />
-          </View>
-        </View>
-
-        {/* 4. Direct Referral Income */}
-        <View style={styles.statCard}>
-          <View style={{ flex: 1, paddingRight: 6 }}>
-            <Text style={styles.statLabel}>DIRECT REFERRAL INCOME</Text>
-            <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1}>
-              +${Number(stats.total_direct_income).toFixed(2)}
-            </Text>
-            <Text style={styles.statSub}>Direct Sponsor Bonus</Text>
-          </View>
-          <View style={styles.statIconBadge}>
-            <Feather name="users" size={17} color={colors.goldSoft} />
+          {/* 4. Direct Referral Income */}
+          <View style={styles.statCard}>
+            <View style={styles.statTextCol}>
+              <Text style={styles.statLabel} numberOfLines={1}>DIRECT REFERRAL INCOME</Text>
+              <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
+                +${Number(stats.total_direct_income).toFixed(2)}
+              </Text>
+              <Text style={styles.statSub} numberOfLines={1}>Direct Sponsor Bonus</Text>
+            </View>
+            <View style={styles.statIconBadge}>
+              <Feather name="users" size={16} color={colors.goldSoft} />
+            </View>
           </View>
         </View>
 
         {/* 5. Total Referral ROI Income (Full Width Card matching Web) */}
-        <View style={[styles.statCard, styles.statCardFull]}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.statLabel}>TOTAL REFERRAL ROI INCOME</Text>
-            <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1}>
+        <View style={styles.statCardFull}>
+          <View style={styles.statTextCol}>
+            <Text style={styles.statLabel} numberOfLines={1}>TOTAL REFERRAL ROI INCOME</Text>
+            <Text style={[styles.statValue, { color: colors.goldSoft }]} numberOfLines={1} adjustsFontSizeToFit>
               +${Number(stats.total_referral_income).toFixed(2)}
             </Text>
-            <Text style={styles.statSub}>5-Tier Network Referral ROI Returns</Text>
+            <Text style={styles.statSub} numberOfLines={1}>5-Tier Network Referral ROI Returns</Text>
           </View>
           <View style={styles.statIconBadge}>
-            <Feather name="award" size={18} color={colors.goldSoft} />
+            <Feather name="award" size={17} color={colors.goldSoft} />
           </View>
         </View>
       </View>
@@ -540,52 +546,72 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   metricGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 16,
   },
+  metricRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   statCard: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: colors.bgCard,
     borderRadius: 12,
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 74,
   },
   statCardFull: {
     width: '100%',
+    backgroundColor: colors.bgCard,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 74,
+  },
+  statTextCol: {
+    flex: 1,
+    paddingRight: 6,
+    justifyContent: 'center',
   },
   statLabel: {
     fontSize: 9.5,
     fontWeight: '700',
     color: colors.textMuted,
-    marginBottom: 3,
-    letterSpacing: 0.5,
+    marginBottom: 2,
+    letterSpacing: 0.4,
   },
   statValue: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textMain,
     letterSpacing: -0.3,
   },
   statSub: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: colors.textDim,
     marginTop: 2,
   },
   statIconBadge: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
     borderColor: colors.bgCardBorder,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   middleSection: {
     gap: 16,

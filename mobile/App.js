@@ -98,6 +98,7 @@ function MainApp({ initialDeepLink }) {
             color={activeTab === 'dashboard' ? colors.goldSoft : colors.textMuted}
           />
           <Text
+            numberOfLines={1}
             style={[
               styles.navLabel,
               activeTab === 'dashboard' && styles.navLabelActive,
@@ -120,6 +121,7 @@ function MainApp({ initialDeepLink }) {
             color={activeTab === 'investments' ? colors.goldSoft : colors.textMuted}
           />
           <Text
+            numberOfLines={1}
             style={[
               styles.navLabel,
               activeTab === 'investments' && styles.navLabelActive,
@@ -142,6 +144,7 @@ function MainApp({ initialDeepLink }) {
             color={activeTab === 'wallet' ? colors.goldSoft : colors.textMuted}
           />
           <Text
+            numberOfLines={1}
             style={[
               styles.navLabel,
               activeTab === 'wallet' && styles.navLabelActive,
@@ -164,6 +167,7 @@ function MainApp({ initialDeepLink }) {
             color={activeTab === 'referrals' ? colors.goldSoft : colors.textMuted}
           />
           <Text
+            numberOfLines={1}
             style={[
               styles.navLabel,
               activeTab === 'referrals' && styles.navLabelActive,
@@ -192,6 +196,7 @@ function MainApp({ initialDeepLink }) {
             }
           />
           <Text
+            numberOfLines={1}
             style={[
               styles.navLabel,
               (activeTab === 'profile' || activeTab === 'kyc' || activeTab === 'support' || activeTab === 'admin') &&
@@ -268,6 +273,7 @@ const styles = StyleSheet.create({
   brandLogoImg: {
     width: 210,
     height: 48,
+    maxWidth: '85%',
   },
   content: {
     flex: 1,

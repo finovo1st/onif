@@ -183,25 +183,68 @@ export default function SupportScreen({ onNavigate }) {
 
         <Text style={styles.label}>Inquiry Category *</Text>
         <View style={styles.categoryToggleGrid}>
-          {[
-            { id: 'KYC', label: 'KYC & Verification' },
-            { id: 'DEPOSIT', label: 'Deposit & Crypto' },
-            { id: 'WITHDRAWAL', label: 'Withdrawal Issue' },
-            { id: 'INVESTMENT', label: 'Investment Plan' },
-            { id: 'REFERRAL', label: 'Referral Commission' },
-            { id: 'GENERAL', label: 'Technical / Other' },
-          ].map((item) => (
+          <View style={styles.categoryToggleRow}>
             <TouchableOpacity
-              key={item.id}
-              style={[styles.catBtn, category === item.id && styles.catBtnActive]}
-              onPress={() => setCategory(item.id)}
+              style={[styles.catBtn, category === 'KYC' && styles.catBtnActive]}
+              onPress={() => setCategory('KYC')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.catBtnText, category === item.id && styles.catBtnTextActive]}>
-                {item.label}
+              <Text style={[styles.catBtnText, category === 'KYC' && styles.catBtnTextActive]}>
+                KYC &amp; Verification
               </Text>
             </TouchableOpacity>
-          ))}
+            <TouchableOpacity
+              style={[styles.catBtn, category === 'DEPOSIT' && styles.catBtnActive]}
+              onPress={() => setCategory('DEPOSIT')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.catBtnText, category === 'DEPOSIT' && styles.catBtnTextActive]}>
+                Deposit &amp; Crypto
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.categoryToggleRow}>
+            <TouchableOpacity
+              style={[styles.catBtn, category === 'WITHDRAWAL' && styles.catBtnActive]}
+              onPress={() => setCategory('WITHDRAWAL')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.catBtnText, category === 'WITHDRAWAL' && styles.catBtnTextActive]}>
+                Withdrawal Issue
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.catBtn, category === 'INVESTMENT' && styles.catBtnActive]}
+              onPress={() => setCategory('INVESTMENT')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.catBtnText, category === 'INVESTMENT' && styles.catBtnTextActive]}>
+                Investment Plan
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.categoryToggleRow}>
+            <TouchableOpacity
+              style={[styles.catBtn, category === 'REFERRAL' && styles.catBtnActive]}
+              onPress={() => setCategory('REFERRAL')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.catBtnText, category === 'REFERRAL' && styles.catBtnTextActive]}>
+                Referral Commission
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.catBtn, category === 'GENERAL' && styles.catBtnActive]}
+              onPress={() => setCategory('GENERAL')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.catBtnText, category === 'GENERAL' && styles.catBtnTextActive]}>
+                Technical / Other
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.label}>Detailed Inquiry Message *</Text>
@@ -462,13 +505,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   categoryToggleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 8,
   },
+  categoryToggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   catBtn: {
-    width: '48.5%',
+    flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
     borderRadius: 6,

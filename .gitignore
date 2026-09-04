@@ -96,3 +96,4 @@ mobile/ios/Pods/
 mobile/ios/build/
 mobile/ios/DerivedData/
 .expo-shared/
+scratch/generate_android_icons.py

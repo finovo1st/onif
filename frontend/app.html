@@ -2194,7 +2194,14 @@
                 </div>
 
               </div>
-              <div style="display: flex; justify-content: flex-end;">
+              <div style="display: flex; justify-content: flex-end; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="handleAdminResetCompanyWallets()" title="Reset BEP20 and TRC20 wallets &amp; QR back to system defaults">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                  </svg>
+                  Reset to Defaults
+                </button>
                 <button type="submit" class="btn btn-primary" id="adm-save-wallets-btn">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -2250,7 +2257,13 @@
               Adjust business constants dynamically without restarting services.
             </p>
             <div class="table-responsive">
-              <table class="custom-table" style="width: 100%;">
+              <table class="custom-table table-fixed" style="width: 100%;">
+                <colgroup>
+                  <col style="width: 28%;">
+                  <col style="width: 32%;">
+                  <col style="width: 30%;">
+                  <col style="width: 10%; min-width: 80px;">
+                </colgroup>
                 <thead>
                   <tr>
                     <th>Key</th>

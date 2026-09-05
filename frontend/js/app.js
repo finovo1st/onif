@@ -3040,8 +3040,14 @@ function renderAdminSettings(settings) {
   const bep20QrInput = document.getElementById('adm-wallet-bep20-qr');
   const trc20QrInput = document.getElementById('adm-wallet-trc20-qr');
 
-  if (bep20Input && bep20Setting) bep20Input.value = bep20Setting.value;
-  if (trc20Input && trc20Setting) trc20Input.value = trc20Setting.value;
+  if (bep20Input && bep20Setting) {
+    const bVal = bep20Setting.value || '';
+    bep20Input.value = (bVal.startsWith('data:image/') || bVal.startsWith('http')) ? '0x71C8bf7B67295F2797e883FffFa7617bFF524b08' : bVal;
+  }
+  if (trc20Input && trc20Setting) {
+    const tVal = trc20Setting.value || '';
+    trc20Input.value = (tVal.startsWith('data:image/') || tVal.startsWith('http')) ? 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9' : tVal;
+  }
   if (bep20QrInput && bep20QrSetting) bep20QrInput.value = bep20QrSetting.value;
   if (trc20QrInput && trc20QrSetting) trc20QrInput.value = trc20QrSetting.value;
 
@@ -3057,13 +3063,40 @@ function renderAdminSettings(settings) {
   }
 
   settings.forEach(s => {
+    const isQrKey = (s.key || '').endsWith('_QR');
+    const isImageVal = (s.value || '').startsWith('data:image/') || ((s.value || '').startsWith('http') && (s.value.includes('qr') || s.value.endsWith('.png') || s.value.endsWith('.jpg') || s.value.endsWith('.svg')));
+
+    let valDisplayHtml = '';
+    if (isQrKey || isImageVal) {
+      if (s.value && s.value.trim()) {
+        const approxKb = (s.value.length / 1024).toFixed(1);
+        valDisplayHtml = `
+          <div class="adm-qr-cell-preview">
+            <img src="${escapeHtml(s.value)}" alt="QR" class="adm-qr-cell-thumb" title="Click to view full QR image" onclick="openAdminSettingImagePreview('${escapeHtml(s.key)}')">
+            <span style="font-size:11.5px; color:var(--gold); font-weight:600;">Custom QR (${approxKb} KB)</span>
+          </div>
+        `;
+      } else {
+        valDisplayHtml = `<span style="font-size:12px; color:var(--mute); font-style:italic;">Auto-generated</span>`;
+      }
+    } else {
+      const valStr = String(s.value ?? '');
+      const isLong = valStr.length > 36;
+      const shortVal = isLong ? `${valStr.substring(0, 34)}…` : valStr;
+      valDisplayHtml = `
+        <div class="adm-setting-val-cell" title="${escapeHtml(valStr)}">
+          ${escapeHtml(shortVal)}
+        </div>
+      `;
+    }
+
     tbody.innerHTML += `
       <tr>
-        <td style="font-family:var(--font-mono); font-weight:600; color:var(--gold); font-size:12px;">${s.key}</td>
-        <td style="font-family:var(--font-mono); font-weight:700; color:var(--gold);">${s.value}</td>
-        <td style="font-size:12px; color:var(--mute);">${s.description || '—'}</td>
-        <td style="text-align:right;">
-          <button class="btn btn-sm btn-secondary" onclick="openEditSettingModal('${s.key}', '${s.value}', '${(s.description || '').replace(/'/g, "\\'")}')">Edit</button>
+        <td style="font-family:var(--font-mono); font-weight:600; color:var(--gold); font-size:12px; word-break:break-word;">${escapeHtml(s.key)}</td>
+        <td style="vertical-align:middle;">${valDisplayHtml}</td>
+        <td style="font-size:12px; color:var(--mute); word-break:break-word;">${escapeHtml(s.description || '—')}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <button class="btn btn-sm btn-secondary" onclick="openEditSettingModalByKey('${escapeHtml(s.key)}')">Edit</button>
         </td>
       </tr>
     `;
@@ -3561,6 +3594,18 @@ async function handleAdminSendReply(e) {
 }
 
 // Edit Platform Setting
+function openEditSettingModalByKey(key) {
+  const s = (state.admin.settings || []).find(item => item.key === key);
+  if (!s) return;
+  openEditSettingModal(s.key, s.value, s.description);
+}
+
+function openAdminSettingImagePreview(key) {
+  const s = (state.admin.settings || []).find(item => item.key === key);
+  if (!s || !s.value) return;
+  openLightbox(s.value);
+}
+
 function openEditSettingModal(key, value, description) {
   document.getElementById('adm-setting-key').value = key;
   document.getElementById('adm-setting-key-disp').value = key;
@@ -3811,6 +3856,28 @@ async function handleAdminSaveCompanyWallets(e) {
     return;
   }
 
+  // Address vs QR Code image validation
+  if (trc20.startsWith('data:image/') || trc20.startsWith('http://') || trc20.startsWith('https://')) {
+    showToast('The TRC20 address field must be a crypto wallet address (starts with "T"), not a QR code image. Use "Upload Custom QR" below for images.', true);
+    return;
+  }
+
+  if (bep20.startsWith('data:image/') || bep20.startsWith('http://') || bep20.startsWith('https://')) {
+    showToast('The BEP20 address field must be a crypto wallet address (starts with "0x"), not a QR code image. Use "Upload Custom QR" below for images.', true);
+    return;
+  }
+
+  // Format checks
+  if (!trc20.startsWith('T') || trc20.length < 30 || trc20.length > 42) {
+    showToast('Invalid TRON (TRC20) address format. TRON addresses start with "T" and are ~34 characters (e.g. TYDzsYUE288J1EX9732B8kG89kEGY82kL9).', true);
+    return;
+  }
+
+  if (!bep20.startsWith('0x') || bep20.length < 38 || bep20.length > 44) {
+    showToast('Invalid BSC (BEP20) address format. BSC addresses start with "0x" and are 42 characters (e.g. 0x71C8bf7B67295F2797e883FffFa7617bFF524b08).', true);
+    return;
+  }
+
   if (btn) {
     btn.disabled = true;
     btn.innerText = 'Saving Wallets & QR Codes…';
@@ -3840,6 +3907,50 @@ async function handleAdminSaveCompanyWallets(e) {
       btn.disabled = false;
       btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Save Company Deposit Wallets &amp; QR Codes`;
     }
+  }
+}
+
+// Reset Company Deposit Wallets & QR Codes back to default
+async function handleAdminResetCompanyWallets() {
+  if (!confirm('Reset company deposit wallets & QR codes back to system defaults?\n\nThis will restore the default BEP20 and TRC20 addresses and clear any custom QR codes.')) {
+    return;
+  }
+
+  const defaultBep20 = '0x71C8bf7B67295F2797e883FffFa7617bFF524b08';
+  const defaultTrc20 = 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9';
+
+  const bepInput = document.getElementById('adm-wallet-bep20');
+  const trcInput = document.getElementById('adm-wallet-trc20');
+  const bepQrInput = document.getElementById('adm-wallet-bep20-qr');
+  const trcQrInput = document.getElementById('adm-wallet-trc20-qr');
+
+  if (bepInput) bepInput.value = defaultBep20;
+  if (trcInput) trcInput.value = defaultTrc20;
+  if (bepQrInput) bepQrInput.value = '';
+  if (trcQrInput) trcQrInput.value = '';
+
+  updateAdminQRPreview('BEP20');
+  updateAdminQRPreview('TRC20');
+
+  try {
+    await Promise.all([
+      apiCall('/admin-panel/settings/COMPANY_WALLET_BEP20/', 'PATCH', { value: defaultBep20 }),
+      apiCall('/admin-panel/settings/COMPANY_WALLET_TRC20/', 'PATCH', { value: defaultTrc20 }),
+      apiCall('/admin-panel/settings/COMPANY_WALLET_BEP20_QR/', 'PATCH', { value: '' }),
+      apiCall('/admin-panel/settings/COMPANY_WALLET_TRC20_QR/', 'PATCH', { value: '' }),
+    ]);
+
+    state.depositWallets = {
+      BEP20: defaultBep20,
+      TRC20: defaultTrc20,
+      BEP20_QR: '',
+      TRC20_QR: '',
+    };
+
+    showToast('Company wallets and QR codes restored to defaults.');
+    await loadAdminSettings();
+  } catch (err) {
+    showToast(err.message || 'Failed to reset company wallets.', true);
   }
 }
 

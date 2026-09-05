@@ -671,7 +671,10 @@ body {
 /* ─── 11. Custom Data Tables ─────────────────────────────────────── */
 .table-responsive {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .custom-table {
@@ -679,6 +682,10 @@ body {
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
+}
+
+.custom-table.table-fixed {
+  table-layout: fixed;
 }
 
 .custom-table th {
@@ -698,6 +705,8 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--text);
   font-size: 13px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .custom-table tr:hover td {
@@ -709,6 +718,45 @@ body {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.adm-setting-val-cell {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.adm-qr-cell-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(198, 153, 61, 0.25);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  max-width: 100%;
+}
+
+.adm-qr-cell-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.adm-qr-cell-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 14px rgba(198, 153, 61, 0.35);
 }
 
 /* ─── 12. Badges & Stat Pills ───────────────────────────────────── */
@@ -1847,6 +1895,8 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 .admin-subpage {
   display: none;
   animation: adminFadeIn 0.28s ease-out;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-subpage.active {

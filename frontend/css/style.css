@@ -1115,16 +1115,19 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 .auth-screen {
   position: fixed;
   inset: 0;
-  background: transparent;
+  background: var(--bg);
   z-index: 150;
   display: block;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 .shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .brand-panel {
@@ -1242,19 +1245,57 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 
 .mobile-logo {
   display: none;
-  margin-bottom: 36px;
+  margin-bottom: 24px;
+}
+
+/* Segmented Mobile & Desktop Auth Switcher */
+.auth-segmented-switch {
+  display: flex;
+  background: rgba(10, 14, 19, 0.7);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 8px);
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.auth-switch-btn {
+  flex: 1;
+  padding: 9px 16px;
+  border: none;
+  background: transparent;
+  color: var(--mute);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.auth-switch-btn:hover {
+  color: var(--text);
+}
+
+.auth-switch-btn.active {
+  background: linear-gradient(135deg, rgba(198, 153, 61, 0.2) 0%, rgba(198, 153, 61, 0.08) 100%);
+  color: var(--gold);
+  font-weight: 600;
+  border: 1px solid rgba(198, 153, 61, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .form-head {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .form-head h2,
 #auth-form-title {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 28px;
-  margin-bottom: 8px;
+  font-size: 26px;
+  margin-bottom: 6px;
   letter-spacing: -0.015em;
   color: var(--gold);
   text-shadow: 0 0 20px rgba(198, 153, 61, 0.25);
@@ -1262,7 +1303,7 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 
 .form-head p {
   color: var(--mute);
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .form-head p a {
@@ -1278,19 +1319,37 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 }
 
 .field {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .field label {
   display: block;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--text);
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 
 .field .input-row {
   position: relative;
+  width: 100%;
+}
+
+.auth-name-row {
+  display: flex;
+  gap: 10px;
+}
+
+.auth-name-row input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 580px) {
+  .auth-name-row {
+    flex-direction: column;
+    gap: 10px;
+  }
 }
 
 .field input {
@@ -1317,10 +1376,10 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 
 .toggle-pw {
   position: absolute;
-  right: 12px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: transparent;
   border: none;
   color: var(--mute);
   font-size: 11px;
@@ -1328,18 +1387,37 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   cursor: pointer;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  padding: 8px 10px;
+  min-height: 42px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border-radius: 4px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.toggle-pw:hover {
-  color: var(--text);
+.toggle-pw:hover, .toggle-pw:active {
+  color: var(--gold);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.form-panel form .btn {
+  width: 100%;
+  justify-content: center;
+  height: 46px;
+  font-size: 15px;
+  border-radius: var(--radius-sm, 8px);
 }
 
 .row-between {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 26px;
-  font-size: 13.5px;
+  margin-bottom: 22px;
+  font-size: 13px;
 }
 
 .remember {
@@ -1700,25 +1778,285 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 
 
 @media (max-width: 880px) {
-  .shell { grid-template-columns: 1fr; }
-  .brand-panel { display: none; }
-  .mobile-logo { display: block; }
-  .form-panel { padding: 40px 24px; }
+  .shell {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  .brand-panel {
+    display: none !important;
+  }
+  .mobile-logo {
+    display: block !important;
+    margin: 0 auto 16px auto !important;
+    height: 56px !important;
+  }
+  .form-panel {
+    padding: 20px 16px max(80px, env(safe-area-inset-bottom, 32px)) 16px !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100% !important;
+    background: var(--bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow-x: hidden;
+  }
+  .form-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input, select, textarea, .form-control {
+    font-size: 16px !important;
+  }
+  .auth-segmented-switch {
+    min-height: 44px;
+    margin-bottom: 20px;
+  }
+  .auth-switch-btn {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
-/* ─── 18. Responsive Collapse ────────────────────────────────────── */
+/* ─── 18. Mobile Performance & Responsive Architecture ──────────────── */
 @media (max-width: 768px) {
+  /* 1. Touch & Smooth Scrolling Base */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  /* 2. Prevent iOS Safari text zoom on focus */
+  input, select, textarea, .form-control {
+    font-size: 16px !important;
+  }
+
+  /* 3. Toast Notifications on Mobile (Top-anchored so not hidden by on-screen keyboard) */
+  #toast-container {
+    position: fixed !important;
+    top: 16px !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: auto !important;
+    z-index: 1000 !important;
+  }
+
+  /* 4. Disable Heavy GPU Overdraw Overlays (Noise filter & 80px blurred orbs) */
+  .noise-overlay {
+    display: none !important;
+  }
+  .ambient-bg {
+    display: none !important;
+  }
+  .ambient-bg .orb {
+    animation: none !important;
+    filter: none !important;
+  }
+
+  /* 5. Replace Expensive Multi-Pass Backdrop Filter Blurs with Crisp Obsidian Surfaces */
+  .card,
+  .plan-card,
+  .luxury-pkg-card,
+  .topbar,
+  .modal,
+  .modal-backdrop,
+  .btn-secondary,
+  .admin-header-panel,
+  .nav-dropdown-menu,
+  .shell,
+  .form-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(14, 19, 25, 0.95) !important;
+  }
+
+  /* 6. Fluid Responsive Topbar with Touch-Swipe Horizontal Tabs */
+  .topbar {
+    height: auto !important;
+    min-height: 52px;
+    padding: 8px 12px 6px 12px !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .topbar-brand {
+    order: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar-brand img {
+    height: 32px !important;
+    width: auto;
+  }
+
+  .topbar-actions {
+    order: 2;
+    margin-left: auto;
+    gap: 6px;
+  }
+
+  .topbar-actions .topbar-user {
+    margin-left: 2px !important;
+    padding-left: 6px !important;
+    gap: 6px !important;
+  }
+
+  .user-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+
+  .user-info-text .user-name {
+    font-size: 11.5px !important;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-badge {
+    display: none !important; /* Save valuable mobile header real estate */
+  }
+
+  /* Touch-scrollable sub-header navigation tabs */
+  .top-nav {
+    order: 3;
+    width: 100% !important;
+    height: auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    display: flex !important;
+    gap: 4px !important;
+    padding: 6px 0 2px 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    margin-top: 2px !important;
+    white-space: nowrap;
+  }
+
+  .top-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .nav-item {
+    flex-shrink: 0 !important;
+    height: 32px !important;
+    padding: 0 11px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+    border-radius: 6px !important;
+  }
+
+  .nav-item.active::after {
+    left: 6px;
+    right: 6px;
+    height: 2px;
+  }
+
+  /* 7. Content Body & Layout Clean-up */
+  .main-wrapper {
+    margin-left: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .content-body {
+    padding: 16px 12px 32px 12px !important;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* 8. Responsive Grids on Mobile */
+  .grid-4,
+  .grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .stat-card {
+    padding: 16px !important;
+  }
+
+  .stat-value {
+    font-size: 22px !important;
+  }
+
+  /* 9. Table & Horizontal Scroll Safety */
+  .table-responsive {
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    margin-bottom: 16px;
+  }
+
+  .custom-table {
+    min-width: 580px;
+  }
+
+  /* 10. Package Cards Mobile Spacing */
+  .luxury-pkg-card {
+    padding: 18px 14px 14px 14px !important;
+  }
+
+  .pkg-invest-box {
+    padding: 12px 10px !important;
+  }
+
+  .pkg-invest-val {
+    font-size: 22px !important;
+  }
+
+  .pkg-stats-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .pkg-trust-row {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  /* 11. Modals on Mobile */
+  .modal-backdrop {
+    padding: 12px 8px !important;
+  }
+
+  .modal {
+    padding: 16px 12px !important;
+    max-height: 92vh !important;
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+
+  .modal-body {
+    padding: 12px 4px !important;
+  }
+
+  /* Legacy sidebar fallback */
   .sidebar {
     transform: translateX(-100%);
   }
   .sidebar.open {
     transform: translateX(0);
-  }
-  .main-wrapper {
-    margin-left: 0;
-  }
-  .content-body {
-    padding: 20px;
   }
 }
 

@@ -52,6 +52,8 @@ function handleRouting() {
     switchAuthTab('forgot');
   } else if (window.location.hash.includes('login')) {
     switchAuthTab('login');
+  } else if (!state.token) {
+    switchAuthTab('login');
   }
 }
 
@@ -197,6 +199,7 @@ function initAuthCanvas() {
     for (let i = 0; i < count; i++) candles.push(nextCandle());
   }
   function draw() {
+    if (window.innerWidth <= 880) return;
     const w = canvas.width / dpr, h = canvas.height / dpr;
     ctx.clearRect(0, 0, w, h);
     const values = candles.flatMap(c => [c.high, c.low]);
@@ -1283,8 +1286,14 @@ function switchNav(viewName) {
 function switchAuthTab(tab) {
   const loginTab = document.getElementById('tab-login-btn');
   const regTab = document.getElementById('tab-register-btn');
-  if (loginTab) loginTab.className = `auth-tab ${tab === 'login' ? 'active' : ''}`;
-  if (regTab) regTab.className = `auth-tab ${tab === 'register' ? 'active' : ''}`;
+  const segmentedSwitch = document.querySelector('.auth-segmented-switch');
+
+  if (segmentedSwitch) {
+    segmentedSwitch.style.display = (tab === 'login' || tab === 'register') ? 'flex' : 'none';
+  }
+
+  if (loginTab) loginTab.className = `auth-switch-btn ${tab === 'login' ? 'active' : ''}`;
+  if (regTab) regTab.className = `auth-switch-btn ${tab === 'register' ? 'active' : ''}`;
 
   document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
@@ -1293,6 +1302,13 @@ function switchAuthTab(tab) {
   if (forgotForm) forgotForm.style.display = tab === 'forgot' ? 'block' : 'none';
   const resetForm = document.getElementById('form-reset-password');
   if (resetForm) resetForm.style.display = tab === 'reset' ? 'block' : 'none';
+
+  clearLoginError();
+  clearRegisterError();
+
+  const authScreen = document.getElementById('auth-screen');
+  if (authScreen) authScreen.scrollTop = 0;
+  window.scrollTo(0, 0);
 
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
@@ -1320,10 +1336,17 @@ let _otpCountdownTimer = null;
 
 function showOTPStep(email) {
   _otpEmail = email;
+  const segmentedSwitch = document.querySelector('.auth-segmented-switch');
+  if (segmentedSwitch) segmentedSwitch.style.display = 'none';
+
   document.getElementById('form-login').style.display = 'none';
   document.getElementById('form-register').style.display = 'none';
   document.getElementById('form-verify-otp').style.display = 'block';
   document.getElementById('otp-email-display').innerText = email;
+
+  const authScreen = document.getElementById('auth-screen');
+  if (authScreen) authScreen.scrollTop = 0;
+  window.scrollTo(0, 0);
 
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
@@ -1350,11 +1373,25 @@ function initOTPDigitBehaviour() {
   const ids = ['otp-d1', 'otp-d2', 'otp-d3', 'otp-d4', 'otp-d5', 'otp-d6'];
   ids.forEach((id, idx) => {
     const el = document.getElementById(id);
-    if (!el) return;
+    if (!el || el._hasOtpListener) return;
+    el._hasOtpListener = true;
 
     el.addEventListener('input', () => {
-      // Only allow digits
-      el.value = el.value.replace(/[^0-9]/g, '').slice(-1);
+      const raw = el.value.replace(/[^0-9]/g, '');
+      if (raw.length > 1) {
+        // Multi-character input (SMS OTP autofill / paste)
+        ids.forEach((did, di) => {
+          const d = document.getElementById(did);
+          if (d) {
+            d.value = raw[di] || '';
+            d.classList.toggle('otp-filled', !!d.value);
+          }
+        });
+        const lastFilled = Math.min(raw.length, ids.length) - 1;
+        if (lastFilled >= 0) document.getElementById(ids[lastFilled])?.focus();
+        return;
+      }
+      el.value = raw.slice(-1);
       el.classList.toggle('otp-filled', el.value !== '');
       if (el.value && idx < ids.length - 1) {
         document.getElementById(ids[idx + 1])?.focus();
@@ -1415,6 +1452,36 @@ function setOTPDigitState(state) {
 function clearLoginError() {
   const el = document.getElementById('login-error-msg');
   if (el) el.style.display = 'none';
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  if (emailInput) emailInput.style.borderColor = '';
+  if (passInput) passInput.style.borderColor = '';
+}
+
+function clearRegisterError() {
+  const el = document.getElementById('reg-error-msg');
+  if (el) el.style.display = 'none';
+  ['reg-firstname', 'reg-lastname', 'reg-username', 'reg-email', 'reg-password', 'reg-password2'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.style.borderColor = '';
+  });
+}
+
+function showRegisterError(msg, fieldIds = []) {
+  const el = document.getElementById('reg-error-msg');
+  const txt = document.getElementById('reg-error-text');
+  if (el && txt) {
+    txt.innerText = msg;
+    el.style.display = 'flex';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  fieldIds.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.style.borderColor = 'var(--accent-danger, #ef4444)';
+      setTimeout(() => { if (input) input.style.borderColor = ''; }, 4000);
+    }
+  });
 }
 
 async function handleLogin(e) {
@@ -1425,8 +1492,23 @@ async function handleLogin(e) {
   const password = passwordInput ? passwordInput.value : '';
   const errorAlert = document.getElementById('login-error-msg');
   const errorText = document.getElementById('login-error-text');
+  const submitBtn = e.target ? e.target.querySelector('button[type="submit"]') : null;
 
   if (errorAlert) errorAlert.style.display = 'none';
+
+  if (!email || !password) {
+    if (errorAlert && errorText) {
+      errorText.innerText = 'Please enter both your email/username and password.';
+      errorAlert.style.display = 'flex';
+    }
+    showToast('Please enter both your email/username and password.', true);
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Signing in…';
+  }
 
   try {
     const data = await apiCall('/auth/login/', 'POST', { email, password });
@@ -1451,37 +1533,72 @@ async function handleLogin(e) {
     if (errorAlert && errorText) {
       errorText.innerText = msg;
       errorAlert.style.display = 'flex';
+      errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     if (emailInput) {
       emailInput.style.borderColor = 'var(--accent-danger, #ef4444)';
-      setTimeout(() => { emailInput.style.borderColor = ''; }, 4000);
+      setTimeout(() => { if (emailInput) emailInput.style.borderColor = ''; }, 4000);
     }
     if (passwordInput) {
       passwordInput.style.borderColor = 'var(--accent-danger, #ef4444)';
-      setTimeout(() => { passwordInput.style.borderColor = ''; }, 4000);
+      setTimeout(() => { if (passwordInput) passwordInput.style.borderColor = ''; }, 4000);
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Sign In';
     }
   }
 }
 
 async function handleRegister(e) {
   e.preventDefault();
-  const first_name = document.getElementById('reg-firstname').value;
-  const last_name = document.getElementById('reg-lastname').value;
-  const username = document.getElementById('reg-username').value;
-  const email = document.getElementById('reg-email').value;
-  const password = document.getElementById('reg-password').value;
-  const password2 = document.getElementById('reg-password2').value;
-  const referral_code = document.getElementById('reg-refcode').value;
+  clearRegisterError();
+
+  const first_name = (document.getElementById('reg-firstname')?.value || '').trim();
+  const last_name = (document.getElementById('reg-lastname')?.value || '').trim();
+  const username = (document.getElementById('reg-username')?.value || '').trim();
+  const email = (document.getElementById('reg-email')?.value || '').trim();
+  const password = document.getElementById('reg-password')?.value || '';
+  const password2 = document.getElementById('reg-password2')?.value || '';
+  const referral_code = (document.getElementById('reg-refcode')?.value || '').trim();
   const tncCheckbox = document.getElementById('reg-tnc');
 
-  if (tncCheckbox && !tncCheckbox.checked) {
-    showToast('Please read and agree to the Terms & Conditions before creating an account.', true);
+  if (!first_name || !last_name) {
+    const missing = !first_name ? ['reg-firstname'] : ['reg-lastname'];
+    showRegisterError('Please enter both your first and last name.', missing);
+    showToast('Please enter both your first and last name.', true);
+    return;
+  }
+
+  if (!username) {
+    showRegisterError('Please choose a username.', ['reg-username']);
+    showToast('Please choose a username.', true);
+    return;
+  }
+
+  if (!email || !email.includes('@')) {
+    showRegisterError('Please enter a valid email address.', ['reg-email']);
+    showToast('Please enter a valid email address.', true);
+    return;
+  }
+
+  if (password.length < 8) {
+    showRegisterError('Password must be at least 8 characters long.', ['reg-password']);
+    showToast('Password must be at least 8 characters long.', true);
     return;
   }
 
   if (password !== password2) {
+    showRegisterError('Passwords do not match. Please verify both passwords.', ['reg-password', 'reg-password2']);
     showToast('Passwords do not match.', true);
+    return;
+  }
+
+  if (tncCheckbox && !tncCheckbox.checked) {
+    showRegisterError('Please accept the Terms & Conditions and risk declaration before continuing.');
+    showToast('Please read and agree to the Terms & Conditions before creating an account.', true);
     return;
   }
 
@@ -1505,6 +1622,7 @@ async function handleRegister(e) {
     showToast('Account created! Check your email for the verification code.');
     showOTPStep(email);
   } catch (err) {
+    showRegisterError(err.message || 'Registration failed. Please review your details.');
     showToast(err.message, true);
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Create Account'; }

@@ -1115,19 +1115,15 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 .auth-screen {
   position: fixed;
   inset: 0;
-  background: var(--bg);
   z-index: 150;
   display: block;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
 }
 
 .shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  min-height: 100dvh;
 }
 
 .brand-panel {
@@ -1248,44 +1244,6 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   margin-bottom: 24px;
 }
 
-/* Segmented Mobile & Desktop Auth Switcher */
-.auth-segmented-switch {
-  display: flex;
-  background: rgba(10, 14, 19, 0.7);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 8px);
-  padding: 4px;
-  margin-bottom: 24px;
-  gap: 4px;
-}
-
-.auth-switch-btn {
-  flex: 1;
-  padding: 9px 16px;
-  border: none;
-  background: transparent;
-  color: var(--mute);
-  font-family: var(--font-body);
-  font-size: 13.5px;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.auth-switch-btn:hover {
-  color: var(--text);
-}
-
-.auth-switch-btn.active {
-  background: linear-gradient(135deg, rgba(198, 153, 61, 0.2) 0%, rgba(198, 153, 61, 0.08) 100%);
-  color: var(--gold);
-  font-weight: 600;
-  border: 1px solid rgba(198, 153, 61, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
 .form-head {
   margin-bottom: 24px;
 }
@@ -1335,23 +1293,6 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   width: 100%;
 }
 
-.auth-name-row {
-  display: flex;
-  gap: 10px;
-}
-
-.auth-name-row input {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-@media (max-width: 580px) {
-  .auth-name-row {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
 .field input {
   width: 100%;
   background: var(--field);
@@ -1387,29 +1328,16 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   cursor: pointer;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 8px 10px;
-  min-height: 42px;
-  min-width: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  border-radius: 4px;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  padding: 4px 6px;
 }
 
-.toggle-pw:hover, .toggle-pw:active {
+.toggle-pw:hover {
   color: var(--gold);
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .form-panel form .btn {
   width: 100%;
   justify-content: center;
-  height: 46px;
-  font-size: 15px;
-  border-radius: var(--radius-sm, 8px);
 }
 
 .row-between {
@@ -1780,46 +1708,24 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 @media (max-width: 880px) {
   .shell {
     grid-template-columns: 1fr;
-    min-height: 100vh;
-    min-height: 100dvh;
-    width: 100%;
-    overflow-x: hidden;
   }
+
   .brand-panel {
     display: none !important;
   }
+
   .mobile-logo {
     display: block !important;
-    margin: 0 auto 16px auto !important;
-    height: 56px !important;
+    margin: 0 auto 20px auto !important;
   }
+
   .form-panel {
-    padding: 20px 16px max(80px, env(safe-area-inset-bottom, 32px)) 16px !important;
-    min-height: 100vh;
-    min-height: 100dvh;
-    width: 100% !important;
-    background: var(--bg) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    overflow-x: hidden;
+    padding: 40px 24px !important;
   }
+
   .form-wrap {
     max-width: 100% !important;
     width: 100% !important;
-  }
-  /* Prevent iOS Safari auto-zoom on input focus */
-  input, select, textarea, .form-control {
-    font-size: 16px !important;
-  }
-  .auth-segmented-switch {
-    min-height: 44px;
-    margin-bottom: 20px;
-  }
-  .auth-switch-btn {
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 }
 
@@ -1867,9 +1773,7 @@ input[type="number"]:focus::-webkit-inner-spin-button {
   .modal-backdrop,
   .btn-secondary,
   .admin-header-panel,
-  .nav-dropdown-menu,
-  .shell,
-  .form-panel {
+  .nav-dropdown-menu {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: rgba(14, 19, 25, 0.95) !important;

@@ -1284,17 +1284,6 @@ function switchNav(viewName) {
 
 // Auth Handlers
 function switchAuthTab(tab) {
-  const loginTab = document.getElementById('tab-login-btn');
-  const regTab = document.getElementById('tab-register-btn');
-  const segmentedSwitch = document.querySelector('.auth-segmented-switch');
-
-  if (segmentedSwitch) {
-    segmentedSwitch.style.display = (tab === 'login' || tab === 'register') ? 'flex' : 'none';
-  }
-
-  if (loginTab) loginTab.className = `auth-switch-btn ${tab === 'login' ? 'active' : ''}`;
-  if (regTab) regTab.className = `auth-switch-btn ${tab === 'register' ? 'active' : ''}`;
-
   document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('form-verify-otp').style.display = 'none';
@@ -1304,11 +1293,6 @@ function switchAuthTab(tab) {
   if (resetForm) resetForm.style.display = tab === 'reset' ? 'block' : 'none';
 
   clearLoginError();
-  clearRegisterError();
-
-  const authScreen = document.getElementById('auth-screen');
-  if (authScreen) authScreen.scrollTop = 0;
-  window.scrollTo(0, 0);
 
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
@@ -1336,17 +1320,10 @@ let _otpCountdownTimer = null;
 
 function showOTPStep(email) {
   _otpEmail = email;
-  const segmentedSwitch = document.querySelector('.auth-segmented-switch');
-  if (segmentedSwitch) segmentedSwitch.style.display = 'none';
-
   document.getElementById('form-login').style.display = 'none';
   document.getElementById('form-register').style.display = 'none';
   document.getElementById('form-verify-otp').style.display = 'block';
   document.getElementById('otp-email-display').innerText = email;
-
-  const authScreen = document.getElementById('auth-screen');
-  if (authScreen) authScreen.scrollTop = 0;
-  window.scrollTo(0, 0);
 
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
@@ -1458,32 +1435,6 @@ function clearLoginError() {
   if (passInput) passInput.style.borderColor = '';
 }
 
-function clearRegisterError() {
-  const el = document.getElementById('reg-error-msg');
-  if (el) el.style.display = 'none';
-  ['reg-firstname', 'reg-lastname', 'reg-username', 'reg-email', 'reg-password', 'reg-password2'].forEach(id => {
-    const input = document.getElementById(id);
-    if (input) input.style.borderColor = '';
-  });
-}
-
-function showRegisterError(msg, fieldIds = []) {
-  const el = document.getElementById('reg-error-msg');
-  const txt = document.getElementById('reg-error-text');
-  if (el && txt) {
-    txt.innerText = msg;
-    el.style.display = 'flex';
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-  fieldIds.forEach(id => {
-    const input = document.getElementById(id);
-    if (input) {
-      input.style.borderColor = 'var(--accent-danger, #ef4444)';
-      setTimeout(() => { if (input) input.style.borderColor = ''; }, 4000);
-    }
-  });
-}
-
 async function handleLogin(e) {
   e.preventDefault();
   const emailInput = document.getElementById('login-email');
@@ -1554,50 +1505,21 @@ async function handleLogin(e) {
 
 async function handleRegister(e) {
   e.preventDefault();
-  clearRegisterError();
-
-  const first_name = (document.getElementById('reg-firstname')?.value || '').trim();
-  const last_name = (document.getElementById('reg-lastname')?.value || '').trim();
-  const username = (document.getElementById('reg-username')?.value || '').trim();
-  const email = (document.getElementById('reg-email')?.value || '').trim();
-  const password = document.getElementById('reg-password')?.value || '';
-  const password2 = document.getElementById('reg-password2')?.value || '';
-  const referral_code = (document.getElementById('reg-refcode')?.value || '').trim();
+  const first_name = document.getElementById('reg-firstname').value.trim();
+  const last_name = document.getElementById('reg-lastname').value.trim();
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const password2 = document.getElementById('reg-password2').value;
+  const referral_code = document.getElementById('reg-refcode').value.trim();
   const tncCheckbox = document.getElementById('reg-tnc');
 
-  if (!first_name || !last_name) {
-    const missing = !first_name ? ['reg-firstname'] : ['reg-lastname'];
-    showRegisterError('Please enter both your first and last name.', missing);
-    showToast('Please enter both your first and last name.', true);
-    return;
-  }
-
-  if (!username) {
-    showRegisterError('Please choose a username.', ['reg-username']);
-    showToast('Please choose a username.', true);
-    return;
-  }
-
-  if (!email || !email.includes('@')) {
-    showRegisterError('Please enter a valid email address.', ['reg-email']);
-    showToast('Please enter a valid email address.', true);
-    return;
-  }
-
-  if (password.length < 8) {
-    showRegisterError('Password must be at least 8 characters long.', ['reg-password']);
-    showToast('Password must be at least 8 characters long.', true);
-    return;
-  }
-
   if (password !== password2) {
-    showRegisterError('Passwords do not match. Please verify both passwords.', ['reg-password', 'reg-password2']);
     showToast('Passwords do not match.', true);
     return;
   }
 
   if (tncCheckbox && !tncCheckbox.checked) {
-    showRegisterError('Please accept the Terms & Conditions and risk declaration before continuing.');
     showToast('Please read and agree to the Terms & Conditions before creating an account.', true);
     return;
   }
@@ -1622,10 +1544,9 @@ async function handleRegister(e) {
     showToast('Account created! Check your email for the verification code.');
     showOTPStep(email);
   } catch (err) {
-    showRegisterError(err.message || 'Registration failed. Please review your details.');
     showToast(err.message, true);
   } finally {
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Create Account'; }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Register'; }
   }
 }
 

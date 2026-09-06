@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Download the official Finovo Android App. Access AI-based weekly ROI compounding, fast USDT deposits & withdrawals, and 5-level referral team tracking directly on Android.">
+  <title>Download Finovo Mobile App — Official Android APK</title>
+
+  <!-- Favicon / Brand Icon -->
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <link rel="apple-touch-icon" href="img/icon.png">
+
+  <!-- Preconnect for Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Landing Stylesheet (exact match with main site) -->
+  <link rel="stylesheet" href="css/landing.css">
+
+  <style>
+    /* ── Subpage Navigation Override ────────────────────────── */
+    .lp-nav {
+      background: rgba(3, 5, 7, 0.92) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+      border-bottom: 1px solid var(--line) !important;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* Mobile toggle and menu styles matching index.html */
+    .nav-mobile-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 6px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .nav-mobile-toggle span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--mute);
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+
+    .nav-mobile-menu {
+      display: none;
+      position: fixed;
+      top: 68px;
+      left: 0;
+      right: 0;
+      background: rgba(3, 5, 7, 0.97);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--line);
+      padding: 20px 24px;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 999;
+    }
+
+    .nav-mobile-menu.open {
+      display: flex;
+    }
+
+    .nav-mobile-menu a {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--mute);
+      transition: color 0.25s, background 0.25s;
+    }
+
+    .nav-mobile-menu a:hover {
+      color: var(--text);
+      background: var(--line);
+    }
+
+    .nav-mobile-menu .btn {
+      margin-top: 8px;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      .nav-mobile-toggle {
+        display: flex;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .nav-mobile-menu {
+        display: none !important;
+      }
+    }
+
+    /* ── Hero Download Section ──────────────────────────────── */
+    .dl-hero-section {
+      padding: 140px 5vw 80px;
+      position: relative;
+      overflow: hidden;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .dl-hero-section::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 950px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(198, 153, 61, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .dl-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .dl-grid {
+        grid-template-columns: 1fr;
+        gap: 50px;
+      }
+      .dl-hero-section {
+        padding: 110px 5vw 60px;
+      }
+    }
+
+    .badge-live-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(198, 153, 61, 0.12);
+      border: 1px solid rgba(198, 153, 61, 0.35);
+      color: var(--gold-soft);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 7px 16px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+      font-family: var(--font-mono);
+    }
+
+    .badge-live-dot {
+      width: 7px;
+      height: 7px;
+      background: #10B981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse-green 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    /* Metadata strip */
+    .app-meta-card {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      background: var(--glass-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin: 28px 0 32px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    @media (max-width: 640px) {
+      .app-meta-card {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 14px 12px;
+      }
+    }
+
+    .app-meta-col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .app-meta-col-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--mute);
+      font-family: var(--font-mono);
+    }
+
+    .app-meta-col-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--font-mono);
+    }
+
+    /* ── Direct QR Code Card ────────────────────────────────── */
+    .dl-qr-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dl-qr-card {
+      background: var(--glass-bg-2);
+      border: 1px solid rgba(198, 153, 61, 0.35);
+      border-radius: 22px;
+      padding: 36px 30px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(198, 153, 61, 0.08);
+      max-width: 400px;
+      width: 100%;
+      position: relative;
+    }
+
+    .dl-qr-box {
+      width: 210px;
+      height: 210px;
+      background: #FFFFFF;
+      padding: 10px;
+      border-radius: 16px;
+      margin: 22px auto;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dl-qr-img {
+      width: 190px;
+      height: 190px;
+      display: block;
+    }
+
+
+    @media (max-width: 768px) {
+      .dl-qr-container {
+        display: none !important;
+      }
+    }
+
+    /* ── Features Grid ──────────────────────────────────────── */
+    .dl-features-section {
+      padding: 90px 5vw;
+      border-top: 1px solid var(--line);
+      background: var(--bg-alt);
+    }
+
+    .dl-card-feat {
+      background: var(--glass-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 30px;
+      transition: all 0.3s var(--ease);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .dl-card-feat:hover {
+      border-color: rgba(198, 153, 61, 0.4);
+      background: var(--glass-bg-2);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 0 20px rgba(198, 153, 61, 0.1);
+    }
+
+    .dl-feat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(198, 153, 61, 0.12);
+      border: 1px solid rgba(198, 153, 61, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--gold);
+    }
+
+    /* ── Installation Guide Section ─────────────────────────── */
+    .dl-steps-section {
+      padding: 90px 5vw;
+      border-top: 1px solid var(--line);
+      background: var(--bg);
+    }
+
+    .dl-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .dl-steps-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+
+    .dl-step-item {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      padding: 26px;
+      background: var(--glass-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: border-color 0.3s;
+    }
+
+    .dl-step-item:hover {
+      border-color: rgba(198, 153, 61, 0.3);
+    }
+
+    .dl-step-number {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--emerald) 0%, var(--emerald-deep) 100%);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      box-shadow: 0 4px 12px var(--emerald-glow);
+    }
+
+    /* ── Alternative Web CTA ────────────────────────────────── */
+    .dl-cta-section {
+      padding: 80px 5vw;
+      border-top: 1px solid var(--line);
+      background: var(--bg-alt);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrapper">
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- STICKY TOP NAVIGATION                                -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <nav class="lp-nav" id="lp-nav" role="navigation" aria-label="Main navigation">
+      <a href="index.html" class="nav-brand" aria-label="Finovo Home">
+        <img src="img/logo-title.png" alt="FINOVO" class="nav-brand-title"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'">
+        <span class="nav-brand-fallback-text"
+          style="display:none; font-family:'IBM Plex Mono',monospace; font-size:1.3rem; font-weight:600; color:#C6993D; letter-spacing:0.06em;">FINOVO</span>
+      </a>
+
+      <!-- Desktop links -->
+      <ul class="nav-links" role="list">
+        <li><a href="index.html#how-it-works">How It Works</a></li>
+        <li><a href="index.html#plans">Investment Plans</a></li>
+        <li><a href="index.html#why">Why Finovo</a></li>
+        <li><a href="index.html#reviews">Testimonials</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+        <li><a href="download.html" style="color: var(--gold-soft); font-weight: 600;">Download App</a></li>
+      </ul>
+
+      <!-- Desktop CTAs -->
+      <div class="nav-actions">
+        <a href="app.html" class="btn btn-ghost" id="nav-signin" style="color: var(--gold); font-weight: 600;">Sign In</a>
+        <a href="app.html#register" class="btn btn-primary" id="nav-getstarted">Start Investing →</a>
+      </div>
+
+      <!-- Mobile toggle -->
+      <button class="nav-mobile-toggle" id="nav-mobile-toggle" aria-expanded="false" aria-controls="nav-mobile-menu"
+        aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+
+    <!-- Mobile dropdown menu -->
+    <div class="nav-mobile-menu" id="nav-mobile-menu" role="menu">
+      <a href="index.html#how-it-works" role="menuitem">How It Works</a>
+      <a href="index.html#plans" role="menuitem">Investment Plans</a>
+      <a href="index.html#why" role="menuitem">Why Finovo</a>
+      <a href="index.html#reviews" role="menuitem">Testimonials</a>
+      <a href="index.html#faq" role="menuitem">FAQ</a>
+      <a href="download.html" role="menuitem" style="color: var(--gold); font-weight: 600;">📱 Download Android APK</a>
+      <a href="app.html" class="btn btn-secondary" role="menuitem" style="color: var(--gold); font-weight: 600;">Sign In</a>
+      <a href="app.html#register" class="btn btn-primary" role="menuitem">Start Investing →</a>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- HERO DOWNLOAD SECTION                                -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="dl-hero-section">
+      <div class="container">
+        <div class="dl-grid">
+
+          <!-- Left Column: Copy & Actions -->
+          <div>
+            <div class="badge-live-pulse">
+              <span class="badge-live-dot"></span>
+              Official Finovo Android Client · APK Release
+            </div>
+
+            <h1 class="hero-title">
+              Institutional Wealth.<br>
+              <span class="accent">In Your Pocket.</span>
+            </h1>
+
+            <p class="hero-desc" style="max-width: 600px;">
+              Access Finovo's systematic AI income generation engine on your Android device. Receive real-time Saturday ROI payout alerts, manage deposits and withdrawals seamlessly, secure your portfolio with device biometrics, and track your 5-level referral tree anywhere.
+            </p>
+
+            <!-- Metadata Strip -->
+            <div class="app-meta-card">
+              <div class="app-meta-col">
+                <span class="app-meta-col-title">Version</span>
+                <span class="app-meta-col-val" id="app-version-val">v1.0.0</span>
+              </div>
+              <div class="app-meta-col">
+                <span class="app-meta-col-title">OS Platform</span>
+                <span class="app-meta-col-val">Android 8.0+</span>
+              </div>
+              <div class="app-meta-col">
+                <span class="app-meta-col-title">Integrity Check</span>
+                <span class="app-meta-col-val" style="color: #10B981;">Verified Safe ✓</span>
+              </div>
+            </div>
+
+            <!-- Download Button -->
+            <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+              <a href="https://finovo1.com" id="btn-download-apk" class="btn btn-primary btn-lg"
+                style="padding: 16px 32px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span id="btn-download-text">Download Android APK (v1.0.0)</span>
+              </a>
+
+              <a href="#install-guide" class="btn btn-secondary btn-lg" style="text-decoration: none;">
+                Install Guide ↓
+              </a>
+            </div>
+
+            <!-- Release Notes Snippet -->
+            <div style="margin-top: 28px; padding: 16px 20px; background: var(--glass-bg); border: 1px solid var(--line); border-radius: 12px; max-width: 600px; backdrop-filter: blur(14px);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--gold-soft); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-mono);">
+                  Latest Patch Release Notes
+                </span>
+                <span style="font-size: 11px; color: #10B981; font-weight: 600; font-family: var(--font-mono);">● Live Build</span>
+              </div>
+              <div id="app-release-notes" style="font-size: 13.5px; color: var(--mute); line-height: 1.55;">
+                Biometric login authentication, live USDT balance tracking, camera KYC document verification, instant deposit proof attachments, and enhanced referral genealogy visualization.
+              </div>
+            </div>
+
+            <!-- Trust Bar -->
+            <div class="hero-trust" style="margin-top: 24px;">
+              <div class="hero-trust-item">
+                <span class="check">✓</span>
+                Official Android Build
+              </div>
+              <div class="hero-trust-item">
+                <span class="check">✓</span>
+                Direct Hotfix Updates
+              </div>
+              <div class="hero-trust-item">
+                <span class="check">✓</span>
+                Biometric Security
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Direct Scan QR Card -->
+          <div class="dl-qr-container">
+            <div class="dl-qr-card">
+              <div class="section-eyebrow" style="margin-bottom: 8px;">Direct Mobile Setup</div>
+              <h3 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px;">
+                Scan with Phone Camera
+              </h3>
+              <p style="font-size: 13px; color: var(--mute); line-height: 1.5; margin-bottom: 0;">
+                Point your Android camera at this code to automatically download the official APK package directly to your device.
+              </p>
+
+              <div class="dl-qr-box" style="margin-bottom: 0;">
+                <img id="download-qr-code" class="dl-qr-img"
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=3&data=https%3A%2F%2Ffinovo1.com"
+                  alt="Finovo APK Download QR Code">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- APP CAPABILITIES GRID                                -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="dl-features-section">
+      <div class="container">
+        <div class="text-center" style="max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-eyebrow" style="justify-content: center; display: flex;">
+            Engineered For Mobile Performance
+          </div>
+          <h2 class="section-title">
+            Everything You Need to<br><em>Scale Capital On-the-Go</em>
+          </h2>
+          <p class="section-subtitle">
+            Experience institutional systematic yield management in a lightning-fast native Android application.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+          <!-- Feature 1 -->
+          <div class="dl-card-feat">
+            <div class="dl-feat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+            </div>
+            <h4 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">Weekly ROI Engine</h4>
+            <p style="font-size: 14px; color: var(--mute); line-height: 1.6;">
+              Automated dividend distributions executed every Saturday. Receive push alerts the moment returns credit directly to your treasury wallet balance.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="dl-card-feat">
+            <div class="dl-feat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <line x1="6" y1="12" x2="18" y2="12"></line>
+              </svg>
+            </div>
+            <h4 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">Instant Deposit Vault</h4>
+            <p style="font-size: 14px; color: var(--mute); line-height: 1.6;">
+              Instant deposit requests via your preferred network. Attach payment receipts directly using your device's native camera or gallery picker.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="dl-card-feat">
+            <div class="dl-feat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h4 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">5-Tier Team Tracker</h4>
+            <p style="font-size: 14px; color: var(--mute); line-height: 1.6;">
+              Inspect downline active packages, level-by-level direct referrals, and team turnover volume in real time with single-tap copyable sponsor deep links.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="dl-card-feat">
+            <div class="dl-feat-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h4 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px;">Biometric Authentication</h4>
+            <p style="font-size: 14px; color: var(--mute); line-height: 1.6;">
+              Hardware-encrypted biometric authentication (Fingerprint &amp; Face Unlock) ensures maximum security for your wallet balances and identity verification documents.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- 3-STEP ANDROID INSTALLATION GUIDE                    -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="dl-steps-section" id="install-guide">
+      <div class="container">
+        <div class="text-center" style="max-width: 620px; margin: 0 auto 50px;">
+          <div class="section-eyebrow" style="justify-content: center; display: flex;">
+            Quick Setup
+          </div>
+          <h2 class="section-title">
+            How to Install the<br><em>Finovo Android APK</em>
+          </h2>
+          <p class="section-subtitle">
+            Installing our verified official package takes under 60 seconds with no complex configuration.
+          </p>
+        </div>
+
+        <div class="dl-steps-grid">
+          <!-- Step 1 -->
+          <div class="dl-step-item">
+            <div class="dl-step-number">1</div>
+            <div>
+              <h5 style="font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Download Package</h5>
+              <p style="font-size: 13.5px; color: var(--mute); line-height: 1.6; margin: 0;">
+                Tap <strong>Download Android APK</strong> above. When prompted by Google Chrome or your browser with <em>"File might be harmful"</em>, tap <strong>Download anyway</strong> (standard Android notice for direct APK downloads).
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="dl-step-item">
+            <div class="dl-step-number">2</div>
+            <div>
+              <h5 style="font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Allow Installation</h5>
+              <p style="font-size: 13.5px; color: var(--mute); line-height: 1.6; margin: 0;">
+                Open the downloaded file from your notification tray or downloads folder. If Android prompts you with a security setting, tap <strong>Settings</strong> and toggle on <em>"Allow from this source"</em>.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="dl-step-item">
+            <div class="dl-step-number">3</div>
+            <div>
+              <h5 style="font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Launch &amp; Invest</h5>
+              <p style="font-size: 13.5px; color: var(--mute); line-height: 1.6; margin: 0;">
+                Tap <strong>Install</strong>, then open the Finovo app. Sign in with your existing account credentials or register a new investor portfolio immediately.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Android Notice Callout -->
+        <div style="margin-top: 36px; padding: 18px 24px; background: rgba(198, 153, 61, 0.08); border: 1px solid rgba(198, 153, 61, 0.25); border-radius: 12px; display: flex; align-items: center; gap: 14px; max-width: 860px; margin-left: auto; margin-right: auto;">
+          <div style="font-size: 24px; color: var(--gold-soft);">💡</div>
+          <div style="font-size: 13px; color: var(--text); line-height: 1.5;">
+            <strong>Direct Distribution Advantage:</strong> Finovo is distributed directly via official APK so investors receive immediate, zero-latency system updates, security patches, and instant hotfixes without intermediary app store delays.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- ALTERNATIVE WEB CTA SECTION                          -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="dl-cta-section">
+      <div class="container">
+        <div class="glass-2 cta-card reveal" style="text-align: center;">
+          <div class="section-eyebrow" style="justify-content: center; display: flex; margin-bottom: 14px;">
+            Cross-Platform Flexibility
+          </div>
+          <h2 class="cta-title">
+            Prefer Using Your <em>Desktop or Web Browser?</em>
+          </h2>
+          <p class="cta-desc">
+            The full Finovo member portal is available 24/7 in your browser with complete portfolio analytics, interactive referral genealogy trees, and instant transaction management.
+          </p>
+          <div class="cta-buttons">
+            <a href="app.html" class="btn btn-primary btn-lg" id="cta-web-terminal">
+              Launch Web Terminal →
+            </a>
+            <a href="app.html#register" class="btn btn-secondary btn-lg">
+              Create New Account
+            </a>
+          </div>
+          <p class="cta-note">One unified Finovo account syncs your wallet balances and active plans across all platforms.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- FOOTER                                                -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <footer role="contentinfo">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="footer-brand-header">
+              <div class="footer-crest-wrap">
+                <img src="img/logo.png" alt="Finovo Emblem" class="footer-crest">
+              </div>
+              <img src="img/logo-title.png" alt="FINOVO" class="footer-title"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'">
+              <span class="footer-fallback-text"
+                style="display:none; font-family:'Outfit',sans-serif; font-size:1.4rem; font-weight:700; color:#C6993D; letter-spacing:0.06em;">FINOVO</span>
+            </div>
+            <p class="footer-tagline">
+              AI-based automatic systematic income generation plan platform.
+              Global market investments with transparent weekly returns.
+            </p>
+          </div>
+
+          <div>
+            <div class="footer-col-title">Platform</div>
+            <ul class="footer-links" role="list">
+              <li><a href="index.html#how-it-works">How It Works</a></li>
+              <li><a href="index.html#plans">Investment Plans</a></li>
+              <li><a href="download.html" style="color: var(--gold); font-weight: 600;">Android App (APK)</a></li>
+              <li><a href="index.html#faq">FAQ</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="footer-col-title">Member Portal</div>
+            <ul class="footer-links" role="list">
+              <li><a href="app.html" style="color: var(--gold); font-weight: 600;">Sign In</a></li>
+              <li><a href="app.html#register" style="color: var(--gold); font-weight: 600;">Register</a></li>
+              <li><a href="app.html#kyc">KYC Verification</a></li>
+              <li><a href="app.html#support">Support Tickets</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="footer-col-title">Security &amp; Legal</div>
+            <ul class="footer-links" role="list">
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">AML &amp; KYC Compliance</a></li>
+              <li><a href="#">Risk Disclosure</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span class="footer-copy">© 2026 Finovo. All rights reserved.</span>
+          <div class="footer-legal">
+            <a href="#">Terms</a>
+            <a href="#">Privacy</a>
+            <a href="#">Cookies</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Landing Scripts (Scroll listeners, animations, session detection) -->
+  <script src="js/landing.js" defer></script>
+
+  <!-- Dynamic Live Version Fetching & Mobile Navigation Script -->
+  <script>
+    // Mobile navigation toggle
+    const toggle = document.getElementById('nav-mobile-toggle');
+    const menu = document.getElementById('nav-mobile-menu');
+    if (toggle && menu) {
+      toggle.addEventListener('click', () => {
+        const isOpen = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen);
+      });
+    }
+
+    // Dynamic Version Fetching from Backend API
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/v1/dashboard/app-version/').catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data.latest_version) {
+            document.getElementById('app-version-val').innerText = 'v' + data.latest_version;
+            document.getElementById('btn-download-text').innerText = 'Download Android APK (v' + data.latest_version + ')';
+          }
+          if (data.release_notes) {
+            document.getElementById('app-release-notes').innerText = data.release_notes;
+          }
+          if (data.download_url) {
+            const dlLink = document.getElementById('btn-download-apk');
+            dlLink.href = data.download_url;
+            dlLink.setAttribute('download', '');
+
+            // Update QR Code target URL
+            const qrImg = document.getElementById('download-qr-code');
+            if (qrImg) {
+              qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=2&data=' + encodeURIComponent(data.download_url);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load dynamic version details:', e);
+      }
+    });
+  </script>
+</body>
+
+</html>

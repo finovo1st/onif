@@ -21,6 +21,9 @@ import KYCScreen from './src/screens/KYCScreen';
 import SupportScreen from './src/screens/SupportScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import colors from './src/theme/colors';
+import { apiCall } from './src/config/api';
+import { APP_VERSION, compareSemVer } from './src/config/version';
+import AppUpdateModal from './src/components/AppUpdateModal';
 
 function MainApp({ initialDeepLink }) {
   const { token, user, isAdmin, adminMode } = useContext(AuthContext);
@@ -213,8 +216,36 @@ function MainApp({ initialDeepLink }) {
 
 export default function App() {
   const [deepLink, setDeepLink] = useState(null);
+  const [updateInfo, setUpdateInfo] = useState(null);
 
   useEffect(() => {
+    // Check for App Updates on Startup
+    const checkAppVersion = async () => {
+      try {
+        const res = await apiCall('/dashboard/app-version/').catch(() => null);
+        if (res && res.latest_version) {
+          const isOlderThanLatest = compareSemVer(APP_VERSION, res.latest_version) < 0;
+          const isOlderThanMin = compareSemVer(APP_VERSION, res.min_version) < 0;
+          const isForceUpdate = isOlderThanMin || !!res.force_update;
+
+          if (isOlderThanLatest || isForceUpdate) {
+            setUpdateInfo({
+              visible: true,
+              latestVersion: res.latest_version,
+              minVersion: res.min_version,
+              downloadUrl: res.download_url,
+              releaseNotes: res.release_notes,
+              isForceUpdate: isForceUpdate,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('App version check failed:', err.message);
+      }
+    };
+
+    checkAppVersion();
+
     const handleUrl = (url) => {
       if (!url) return;
       try {
@@ -248,6 +279,17 @@ export default function App() {
   return (
     <AuthProvider>
       <MainApp initialDeepLink={deepLink} />
+      {updateInfo && (
+        <AppUpdateModal
+          visible={updateInfo.visible}
+          currentVersion={APP_VERSION}
+          latestVersion={updateInfo.latestVersion}
+          releaseNotes={updateInfo.releaseNotes}
+          downloadUrl={updateInfo.downloadUrl}
+          isForceUpdate={updateInfo.isForceUpdate}
+          onDismiss={() => setUpdateInfo(prev => (prev ? { ...prev, visible: false } : null))}
+        />
+      )}
     </AuthProvider>
   );
 }

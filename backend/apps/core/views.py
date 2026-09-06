@@ -1,13 +1,37 @@
 from django.urls import path
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Count, Q
 
 from apps.wallet.models import Wallet
 from apps.investments.models import Investment
 from apps.referrals.models import ReferralCommission
 from apps.core.models import PlatformSettings
+
+
+class AppVersionView(APIView):
+    """
+    GET /api/v1/dashboard/app-version/
+    Public endpoint returning latest version, minimum required version,
+    download URL, force update flag, and release notes for client apps.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        latest_version = PlatformSettings.get('APP_LATEST_VERSION', '1.0.0')
+        min_version = PlatformSettings.get('APP_MIN_REQUIRED_VERSION', '1.0.0')
+        download_url = PlatformSettings.get('APP_DOWNLOAD_URL', 'https://finovo1.com')
+        release_notes = PlatformSettings.get('APP_RELEASE_NOTES', 'Regular stability enhancements and performance optimizations.')
+        force_update = PlatformSettings.get('APP_FORCE_UPDATE', 'false').lower() == 'true'
+
+        return Response({
+            'latest_version': latest_version,
+            'min_version': min_version,
+            'download_url': download_url,
+            'release_notes': release_notes,
+            'force_update': force_update,
+        })
 
 
 class DepositWalletsView(APIView):

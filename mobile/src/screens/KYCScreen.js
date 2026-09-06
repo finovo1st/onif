@@ -196,7 +196,7 @@ export default function KYCScreen({ onNavigate }) {
           </View>
         </View>
         <Text style={styles.screenSubtitle}>
-          To ensure AML compliance, identity safety, and platform protection, all investors must verify their government-issued identity before purchasing investment packages or activating crypto deposits.
+          To ensure AML compliance, identity safety, and platform protection, all investors must verify their government-issued identity before purchasing investment packages or activating fund deposits.
         </Text>
       </View>
 

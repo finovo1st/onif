@@ -9,8 +9,10 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
@@ -29,6 +31,8 @@ export default function KYCScreen({ onNavigate }) {
   const [dob, setDob] = useState(user?.date_of_birth || '');
   const [frontDocName, setFrontDocName] = useState('');
   const [backDocName, setBackDocName] = useState('');
+  const [frontDoc, setFrontDoc] = useState(null);
+  const [backDoc, setBackDoc] = useState(null);
 
   const [kycProfile, setKycProfile] = useState({
     kyc_status: user?.kyc_status || 'UNVERIFIED', // 'APPROVED' | 'IN_REVIEW' | 'UNVERIFIED' | 'REJECTED'
@@ -66,32 +70,78 @@ export default function KYCScreen({ onNavigate }) {
     setRefreshing(false);
   };
 
-  const handlePickFront = () => {
-    setFrontDocName(`id_front_${Date.now().toString().slice(-4)}.jpg`);
-    Alert.alert('Front Image Selected', 'Government ID front photo attached.');
+  const pickDocumentImage = async (side) => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Permission to access photo library is required to upload identity documents.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const fileName = asset.fileName || asset.uri.split('/').pop() || `id_${side}_${Date.now()}.jpg`;
+        const fileType = asset.mimeType || 'image/jpeg';
+        const docItem = {
+          uri: asset.uri,
+          name: fileName,
+          type: fileType,
+        };
+
+        if (side === 'front') {
+          setFrontDoc(docItem);
+          setFrontDocName(fileName);
+        } else {
+          setBackDoc(docItem);
+          setBackDocName(fileName);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Upload Error', 'Could not access image: ' + err.message);
+    }
   };
 
-  const handlePickBack = () => {
-    setBackDocName(`id_back_${Date.now().toString().slice(-4)}.jpg`);
-    Alert.alert('Back Image Selected', 'Government ID back photo attached.');
-  };
+  const handlePickFront = () => pickDocumentImage('front');
+  const handlePickBack = () => pickDocumentImage('back');
 
   const handleKYCSubmit = async () => {
     if (!docNumber || !firstName || !lastName || !country) {
       Alert.alert('Validation Error', 'Please fill in your document number, first name, last name, and issuing country.');
       return;
     }
+    if (!frontDoc || !backDoc) {
+      Alert.alert('Documents Missing', 'Please select both front and back photos of your identity document.');
+      return;
+    }
 
     setLoading(true);
     try {
-      await apiCall('/auth/kyc/', 'POST', {
-        kyc_document_type: docType,
-        kyc_document_number: docNumber,
-        kyc_country: country,
-        first_name: firstName,
-        last_name: lastName,
-        date_of_birth: dob,
+      const formData = new FormData();
+      formData.append('kyc_document_type', docType);
+      formData.append('kyc_document_number', docNumber);
+      formData.append('kyc_country', country);
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      if (dob) formData.append('date_of_birth', dob);
+
+      formData.append('kyc_document_front', {
+        uri: Platform.OS === 'android' ? frontDoc.uri : frontDoc.uri.replace('file://', ''),
+        name: frontDoc.name,
+        type: frontDoc.type,
       });
+      formData.append('kyc_document_back', {
+        uri: Platform.OS === 'android' ? backDoc.uri : backDoc.uri.replace('file://', ''),
+        name: backDoc.name,
+        type: backDoc.type,
+      });
+
+      await apiCall('/auth/kyc/', 'POST', formData, true);
 
       setKycProfile({
         kyc_status: 'IN_REVIEW',
@@ -366,26 +416,30 @@ export default function KYCScreen({ onNavigate }) {
             <Text style={styles.label}>Document Verification Photos *</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
               <TouchableOpacity
-                style={styles.docDropzone}
+                style={[styles.docDropzone, frontDoc && { borderColor: colors.accentGreenSoft, backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}
                 onPress={handlePickFront}
                 activeOpacity={0.7}
               >
-                <Feather name="upload-cloud" size={20} color={colors.goldSoft} />
-                <Text style={styles.dropzoneTitle}>Front Photo</Text>
+                <Feather name={frontDoc ? "check-circle" : "upload-cloud"} size={20} color={frontDoc ? colors.accentGreenSoft : colors.goldSoft} />
+                <Text style={[styles.dropzoneTitle, frontDoc && { color: colors.accentGreenSoft }]}>
+                  {frontDoc ? 'Front Attached' : 'Front Photo'}
+                </Text>
                 <Text style={styles.dropzoneSub} numberOfLines={1}>
-                  {frontDocName || 'Tap to upload'}
+                  {frontDocName || 'Tap to choose photo'}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.docDropzone}
+                style={[styles.docDropzone, backDoc && { borderColor: colors.accentGreenSoft, backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}
                 onPress={handlePickBack}
                 activeOpacity={0.7}
               >
-                <Feather name="upload-cloud" size={20} color={colors.goldSoft} />
-                <Text style={styles.dropzoneTitle}>Back Photo</Text>
+                <Feather name={backDoc ? "check-circle" : "upload-cloud"} size={20} color={backDoc ? colors.accentGreenSoft : colors.goldSoft} />
+                <Text style={[styles.dropzoneTitle, backDoc && { color: colors.accentGreenSoft }]}>
+                  {backDoc ? 'Back Attached' : 'Back Photo'}
+                </Text>
                 <Text style={styles.dropzoneSub} numberOfLines={1}>
-                  {backDocName || 'Tap to upload'}
+                  {backDocName || 'Tap to choose photo'}
                 </Text>
               </TouchableOpacity>
             </View>

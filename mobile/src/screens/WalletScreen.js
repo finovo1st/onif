@@ -10,8 +10,10 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
@@ -45,6 +47,7 @@ export default function WalletScreen({ onNavigate }) {
   const [depTxHash, setDepTxHash] = useState('');
   const [depSender, setDepSender] = useState('');
   const [depProofFile, setDepProofFile] = useState('');
+  const [depProof, setDepProof] = useState(null);
   const [lightboxVisible, setLightboxVisible] = useState(false);
 
   const companyWallets = {
@@ -139,27 +142,70 @@ export default function WalletScreen({ onNavigate }) {
     }
   };
 
+  const handlePickDepositProof = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Permission to access photo library is required to attach deposit receipts.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const fileName = asset.fileName || asset.uri.split('/').pop() || `receipt_${Date.now()}.jpg`;
+        const fileType = asset.mimeType || 'image/jpeg';
+        setDepProof({
+          uri: asset.uri,
+          name: fileName,
+          type: fileType,
+        });
+        setDepProofFile(fileName);
+      }
+    } catch (err) {
+      Alert.alert('Upload Error', 'Could not select image: ' + err.message);
+    }
+  };
+
   const handleDepositSubmit = async () => {
     const amt = Number(depAmount);
     if (!amt || amt <= 0) {
       Alert.alert('Invalid Amount', 'Please enter a valid deposit amount.');
       return;
     }
-    if (!depTxHash) {
-      Alert.alert('Missing TxID', 'Please enter your blockchain transaction hash (TxID).');
+    if (!depTxHash && !depProof) {
+      Alert.alert('Missing Deposit Proof', 'Please enter your blockchain transaction hash (TxID) or upload a payment screenshot.');
       return;
     }
 
     setLoading(true);
     try {
-      await apiCall('/deposits/', 'POST', {
-        amount: amt,
-        network: depNetwork,
-        txn_hash: depTxHash,
-        sender_wallet_address: depSender || '',
-      });
+      const formData = new FormData();
+      formData.append('amount', String(amt));
+      formData.append('network', depNetwork);
+      if (depTxHash) formData.append('txn_hash', depTxHash);
+      if (depSender) formData.append('sender_wallet_address', depSender);
+      if (depProof) {
+        formData.append('payment_proof', {
+          uri: Platform.OS === 'android' ? depProof.uri : depProof.uri.replace('file://', ''),
+          name: depProof.name,
+          type: depProof.type,
+        });
+      }
+
+      await apiCall('/deposits/', 'POST', formData, true);
 
       setDepModalVisible(false);
+      setDepAmount('');
+      setDepTxHash('');
+      setDepSender('');
+      setDepProof(null);
+      setDepProofFile('');
       Alert.alert(
         'Deposit Proof Submitted',
         `Your deposit proof of $${amt.toFixed(2)} USDT has been submitted for compliance verification.`
@@ -581,15 +627,12 @@ export default function WalletScreen({ onNavigate }) {
 
               <Text style={styles.label}>Upload Payment Screenshot (Optional)</Text>
               <TouchableOpacity
-                style={styles.uploadBox}
-                onPress={() => {
-                  setDepProofFile(`receipt_${Date.now().toString().slice(-4)}.png`);
-                  Alert.alert('Screenshot Attached', 'Payment receipt image attached.');
-                }}
+                style={[styles.uploadBox, depProof && { borderColor: colors.accentGreenSoft, backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}
+                onPress={handlePickDepositProof}
                 activeOpacity={0.7}
               >
-                <Feather name="upload-cloud" size={15} color={colors.goldSoft} style={{ marginRight: 6 }} />
-                <Text style={styles.uploadBoxText}>
+                <Feather name={depProof ? "check-circle" : "upload-cloud"} size={15} color={depProof ? colors.accentGreenSoft : colors.goldSoft} style={{ marginRight: 6 }} />
+                <Text style={[styles.uploadBoxText, depProof && { color: colors.accentGreenSoft, fontWeight: '600' }]}>
                   {depProofFile ? `Attached: ${depProofFile}` : 'Attach Receipt Screenshot'}
                 </Text>
               </TouchableOpacity>

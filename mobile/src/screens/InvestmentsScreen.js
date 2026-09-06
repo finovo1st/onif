@@ -10,8 +10,10 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
@@ -94,6 +96,7 @@ export default function InvestmentsScreen({ onNavigate }) {
   const [txHash, setTxHash] = useState('');
   const [senderAddress, setSenderAddress] = useState('');
   const [proofFileName, setProofFileName] = useState('');
+  const [proofFile, setProofFile] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [lightboxVisible, setLightboxVisible] = useState(false);
 
@@ -146,36 +149,78 @@ export default function InvestmentsScreen({ onNavigate }) {
     setTxHash('');
     setSenderAddress('');
     setProofFileName('');
+    setProofFile(null);
     setModalVisible(true);
   };
 
-  const handlePickProof = () => {
-    setProofFileName(`deposit_receipt_${Date.now().toString().slice(-4)}.jpg`);
-    Alert.alert('Screenshot Attached', 'Deposit payment proof screenshot has been selected.');
+  const handlePickProof = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Permission to access photo library is required to select payment receipts.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const fileName = asset.fileName || asset.uri.split('/').pop() || `deposit_receipt_${Date.now()}.jpg`;
+        const fileType = asset.mimeType || 'image/jpeg';
+        setProofFile({
+          uri: asset.uri,
+          name: fileName,
+          type: fileType,
+        });
+        setProofFileName(fileName);
+      }
+    } catch (err) {
+      Alert.alert('Upload Error', 'Could not select image: ' + err.message);
+    }
   };
 
   const handleConfirmInvestment = async () => {
     const cost = Number(selectedPlan?.cost || selectedPlan?.package_cost || investAmount || 120);
-    if (!txHash) {
-      Alert.alert('Missing TxID', 'Please enter your blockchain transaction hash (TxID) to submit deposit proof.');
+    if (!txHash && !proofFile) {
+      Alert.alert('Missing Deposit Proof', 'Please enter your blockchain transaction hash (TxID) or upload a payment screenshot.');
       return;
     }
 
     setLoading(true);
     try {
-      await apiCall('/investments/', 'POST', {
-        plan: selectedPlan.id,
-        cost: cost,
-        amount: cost,
-        network: depositNetwork,
-        deposit_network: depositNetwork,
-        txn_hash: txHash,
-        deposit_txn_hash: txHash,
-        sender_wallet_address: senderAddress || '',
-        deposit_sender_address: senderAddress || '',
-      });
+      const formData = new FormData();
+      formData.append('plan', selectedPlan.id);
+      formData.append('cost', String(cost));
+      formData.append('amount', String(cost));
+      formData.append('deposit_network', depositNetwork);
+      formData.append('network', depositNetwork);
+      if (txHash) {
+        formData.append('deposit_txn_hash', txHash);
+        formData.append('txn_hash', txHash);
+      }
+      if (senderAddress) {
+        formData.append('deposit_sender_address', senderAddress);
+        formData.append('sender_wallet_address', senderAddress);
+      }
+      if (proofFile) {
+        formData.append('deposit_proof', {
+          uri: Platform.OS === 'android' ? proofFile.uri : proofFile.uri.replace('file://', ''),
+          name: proofFile.name,
+          type: proofFile.type,
+        });
+      }
+
+      await apiCall('/investments/', 'POST', formData, true);
 
       setModalVisible(false);
+      setProofFile(null);
+      setProofFileName('');
+      setTxHash('');
+      setSenderAddress('');
       Alert.alert(
         'Investment Submitted',
         `Deposit proof for $${cost.toFixed(2)} USDT (${selectedPlan.name}) submitted successfully. Admin compliance desk will verify on-chain and activate your plan.`
@@ -525,13 +570,13 @@ export default function InvestmentsScreen({ onNavigate }) {
 
               <Text style={styles.label}>Upload Payment Screenshot (Optional)</Text>
               <TouchableOpacity
-                style={styles.uploadBox}
+                style={[styles.uploadBox, proofFile && { borderColor: colors.accentGreenSoft, backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}
                 onPress={handlePickProof}
                 activeOpacity={0.7}
               >
-                <Feather name="upload-cloud" size={16} color={colors.goldSoft} style={{ marginRight: 6 }} />
-                <Text style={styles.uploadBoxText}>
-                  {proofFileName ? `Attached: ${proofFileName}` : 'Select Screenshot (JPG, PNG, PDF)'}
+                <Feather name={proofFile ? "check-circle" : "upload-cloud"} size={16} color={proofFile ? colors.accentGreenSoft : colors.goldSoft} style={{ marginRight: 6 }} />
+                <Text style={[styles.uploadBoxText, proofFile && { color: colors.accentGreenSoft, fontWeight: '600' }]}>
+                  {proofFileName ? `Attached: ${proofFileName}` : 'Select Screenshot (JPG, PNG)'}
                 </Text>
               </TouchableOpacity>
             </ScrollView>

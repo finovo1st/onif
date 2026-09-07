@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Linking,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import colors from '../theme/colors';

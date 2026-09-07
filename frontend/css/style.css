@@ -289,7 +289,7 @@ body {
 /* ─── 5. Main Wrapper ─────────────────────────────────────────────── */
 .main-wrapper {
   flex: 1;
-  display: flex;
+  display: none;
   flex-direction: column;
   min-height: 100vh;
   position: relative;
@@ -1109,6 +1109,108 @@ input[type="number"]:focus::-webkit-inner-spin-button {
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0); opacity: 1; }
+}
+
+/* ─── Anti-Flicker & Session State Directives ─────────────────────── */
+html.auth-pending #auth-screen { display: block !important; }
+html.auth-pending .main-wrapper { display: none !important; }
+html.auth-pending #app-init-loader { display: none !important; }
+
+html.app-loading #app-init-loader { display: flex !important; }
+html.app-loading .main-wrapper { display: none !important; }
+html.app-loading #auth-screen { display: none !important; }
+
+html.app-ready #app-init-loader { display: none !important; }
+html.app-ready #auth-screen { display: none !important; }
+html.app-ready .main-wrapper { display: flex !important; }
+
+/* ─── 16b. App Initialization Loader Overlay ──────────────────────── */
+.app-init-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: radial-gradient(circle at 50% 40%, rgba(198, 153, 61, 0.08) 0%, rgba(3, 5, 7, 0.98) 75%), #030507;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.loader-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loader-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+.loader-brand-title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #F1F3F7;
+}
+
+.loader-spinner-ring {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-spinner-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(198, 153, 61, 0.15);
+  border-top-color: var(--gold, #C6993D);
+  border-right-color: var(--gold-soft, #DFBD69);
+  animation: initSpin 0.9s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  box-shadow: 0 0 16px rgba(198, 153, 61, 0.2);
+}
+
+@keyframes initSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loader-status-text {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text, #F1F3F7);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.loader-status-sub {
+  font-size: 11.5px;
+  color: var(--mute, #8A94A4);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.02em;
 }
 
 /* ─── 17. Auth Screen Layout & Ambient Glow ─────────────────────── */

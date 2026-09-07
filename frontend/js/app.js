@@ -156,6 +156,12 @@ function updateConnectionBadge(isConnected) {
 
 // Show/Hide Auth Screen
 function showAuthOverlay() {
+  document.documentElement.classList.remove('app-loading', 'app-ready');
+  document.documentElement.classList.add('auth-pending');
+
+  const loader = document.getElementById('app-init-loader');
+  if (loader) loader.style.display = 'none';
+
   const el = document.getElementById('auth-screen');
   if (el) el.style.display = 'block';
 
@@ -167,6 +173,12 @@ function showAuthOverlay() {
 }
 
 function hideAuthOverlay() {
+  document.documentElement.classList.remove('auth-pending', 'app-loading');
+  document.documentElement.classList.add('app-ready');
+
+  const loader = document.getElementById('app-init-loader');
+  if (loader) loader.style.display = 'none';
+
   const el = document.getElementById('auth-screen');
   if (el) el.style.display = 'none';
 
@@ -253,7 +265,6 @@ async function loadAllAPIData() {
   try {
     // 1. Fetch User Profile
     state.user = await apiCall('/auth/profile/');
-    hideAuthOverlay();
 
     // 2. Fetch Dashboard Overview & All Core Resources Parallelly
     const [overviewData, investmentsData, plansData, ledgerData, teamData, commData, depositsData, withdrawalsData, ticketsData, levelsData] = await Promise.all([
@@ -308,7 +319,10 @@ async function loadAllAPIData() {
     state.levelStats = Array.isArray(levelsData) ? levelsData : (levelsData.results || []);
 
     renderAllViews();
+    hideAuthOverlay();
   } catch (err) {
+    document.documentElement.classList.remove('app-loading');
+    document.documentElement.classList.add('auth-pending');
     showToast(err.message, true);
     showAuthOverlay();
   }
@@ -1468,6 +1482,13 @@ async function handleLogin(e) {
       localStorage.setItem('finovo_token', data.access);
       showToast('Signed in successfully!');
       if (passwordInput) passwordInput.value = '';
+
+      // Transition smoothly into loading state
+      document.documentElement.classList.remove('auth-pending');
+      document.documentElement.classList.add('app-loading');
+      const loader = document.getElementById('app-init-loader');
+      if (loader) loader.style.display = 'flex';
+
       await loadAllAPIData();
     }
   } catch (err) {
@@ -1578,7 +1599,13 @@ async function handleVerifyOTP(e) {
     setOTPDigitState('otp-success');
     showToast('Email verified! Welcome to FINOVO 🎉');
     // Short delay so user sees the success state, then load dashboard
-    setTimeout(() => loadAllAPIData(), 900);
+    setTimeout(() => {
+      document.documentElement.classList.remove('auth-pending');
+      document.documentElement.classList.add('app-loading');
+      const loader = document.getElementById('app-init-loader');
+      if (loader) loader.style.display = 'flex';
+      loadAllAPIData();
+    }, 900);
   } catch (err) {
     setOTPDigitState('otp-error');
     showToast(err.message || 'Invalid or expired OTP.', true);
@@ -1798,6 +1825,47 @@ function handleLogout() {
   if (window.location.hash && !window.location.hash.includes('ref')) {
     history.replaceState(null, '', window.location.pathname + window.location.search);
   }
+
+  // Clear displayed user details & stats to prevent stale dummy displays
+  const avatarEl = document.getElementById('sidebar-avatar');
+  if (avatarEl) avatarEl.innerText = '—';
+  const usernameEl = document.getElementById('sidebar-username');
+  if (usernameEl) usernameEl.innerText = '—';
+  const roleEl = document.getElementById('sidebar-userrole');
+  if (roleEl) roleEl.innerText = 'Level 0 Unlock';
+  const kycEl = document.getElementById('sidebar-kyc-badge');
+  if (kycEl) { kycEl.className = 'badge badge-unverified'; kycEl.innerText = 'KYC Unverified'; }
+
+  const dashBalance = document.getElementById('dash-wallet-balance');
+  if (dashBalance) dashBalance.innerText = '$0.00';
+  const dashInvest = document.getElementById('dash-active-invest');
+  if (dashInvest) dashInvest.innerText = '$0.00';
+  const dashRoi = document.getElementById('dash-total-roi');
+  if (dashRoi) dashRoi.innerText = '$0.00';
+  const dashDirect = document.getElementById('dash-direct-income');
+  if (dashDirect) dashDirect.innerText = '$0.00';
+  const dashLevelRoi = document.getElementById('dash-level-roi');
+  if (dashLevelRoi) dashLevelRoi.innerText = '$0.00';
+  const dashRef = document.getElementById('dash-ref-link');
+  if (dashRef) dashRef.value = '';
+  const dashDownlines = document.getElementById('dash-downline-count');
+  if (dashDownlines) dashDownlines.innerText = '0 Users';
+  const dashLevels = document.getElementById('dash-unlocked-levels');
+  if (dashLevels) dashLevels.innerText = 'Level 0';
+
+  const walletBalance = document.getElementById('wallet-pg-balance');
+  if (walletBalance) walletBalance.innerText = '$0.00';
+  const walletDeposited = document.getElementById('wallet-pg-deposited');
+  if (walletDeposited) walletDeposited.innerText = '$0.00';
+  const walletWithdrawn = document.getElementById('wallet-pg-withdrawn');
+  if (walletWithdrawn) walletWithdrawn.innerText = '$0.00';
+  const walletEarnings = document.getElementById('wallet-pg-earnings');
+  if (walletEarnings) walletEarnings.innerText = '$0.00';
+
+  const refDirect = document.getElementById('ref-summary-direct');
+  if (refDirect) refDirect.innerText = '$0.00';
+  const refRoi = document.getElementById('ref-summary-roi');
+  if (refRoi) refRoi.innerText = '$0.00';
 
   showAuthOverlay();
   switchAuthTab('login');

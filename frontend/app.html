@@ -15,7 +15,22 @@
   <link rel="icon" type="image/png" href="img/icon.png">
   <link rel="apple-touch-icon" href="img/icon.png">
   <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=7">
+  <!-- Instant Auth State Detection to Prevent Flash of Dummy/Unauthenticated Content -->
+  <script>
+    (function() {
+      try {
+        var token = localStorage.getItem('finovo_token');
+        if (token) {
+          document.documentElement.classList.add('app-loading');
+        } else {
+          document.documentElement.classList.add('auth-pending');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('auth-pending');
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -26,6 +41,23 @@
     <div class="orb orb-3"></div>
   </div>
   <div class="noise-overlay"></div>
+
+  <!-- Initializing Application Loader Overlay -->
+  <div id="app-init-loader" class="app-init-loader">
+    <div class="loader-content">
+      <div class="loader-brand">
+        <img src="img/logo.png" alt="FINOVO" class="loader-logo">
+        <span class="loader-brand-title brand-text-dyn">FINOVO</span>
+      </div>
+      <div class="loader-spinner-ring">
+        <div class="loader-spinner-circle"></div>
+      </div>
+      <div class="loader-status">
+        <span class="loader-status-text">Loading Institutional Portal</span>
+        <span class="loader-status-sub">Securing session data…</span>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================== -->
   <!-- BRAND CONFIGURATION                            -->
@@ -309,7 +341,7 @@
   </div>
 
   <!-- Main Layout -->
-  <div class="main-wrapper">
+  <div class="main-wrapper" style="display: none;">
     <!-- Topbar Header (Horizontal Navigation) -->
     <header class="topbar glass-header">
       <div class="topbar-brand">
@@ -495,14 +527,14 @@
         </div>
 
         <div class="topbar-user" style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line);">
-          <div class="user-avatar" id="sidebar-avatar">U</div>
+          <div class="user-avatar" id="sidebar-avatar">—</div>
           <div class="user-info-text">
-            <div class="user-name" id="sidebar-username">Alice Smith</div>
+            <div class="user-name" id="sidebar-username">—</div>
             <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
-              <span class="user-role" id="sidebar-userrole">Level 2 Unlock</span>
+              <span class="user-role" id="sidebar-userrole">Level 0 Unlock</span>
               <span id="sidebar-kyc-badge" class="badge badge-unverified"
                 style="font-size: 9.5px; padding: 2px 6px; cursor: pointer;" onclick="switchNav('kyc')">KYC
-                Pending</span>
+                Unverified</span>
             </div>
           </div>
         </div>
@@ -541,7 +573,7 @@
           <div class="card stat-card">
             <div>
               <div class="stat-title">Wallet Balance</div>
-              <div class="stat-value" id="dash-wallet-balance">$1,450.00</div>
+              <div class="stat-value" id="dash-wallet-balance">$0.00</div>
             </div>
             <div class="stat-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
@@ -553,7 +585,7 @@
           <div class="card stat-card">
             <div>
               <div class="stat-title">Active Investments</div>
-              <div class="stat-value" id="dash-active-invest">$1,000.00</div>
+              <div class="stat-value" id="dash-active-invest">$0.00</div>
             </div>
             <div class="stat-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
@@ -565,7 +597,7 @@
           <div class="card stat-card">
             <div>
               <div class="stat-title">Total ROI Earned</div>
-              <div class="stat-value" id="dash-total-roi" style="color: var(--gold);">$125.00</div>
+              <div class="stat-value" id="dash-total-roi" style="color: var(--gold);">$0.00</div>
             </div>
             <div class="stat-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
@@ -577,7 +609,7 @@
           <div class="card stat-card">
             <div>
               <div class="stat-title">Direct Referral Income</div>
-              <div class="stat-value" id="dash-direct-income" style="color: var(--gold);">$80.00</div>
+              <div class="stat-value" id="dash-direct-income" style="color: var(--gold);">$0.00</div>
             </div>
             <div class="stat-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
@@ -634,15 +666,15 @@
             </p>
             <div class="ref-box">
               <input type="text" id="dash-ref-link" class="ref-code-input" readonly
-                value="https://finovo1.com/app.html#register?ref=ALICE123">
+                value="" placeholder="Generating your referral link…">
               <button class="btn btn-sm btn-primary" onclick="copyReferralLink()">Copy Link</button>
             </div>
             <div
               style="margin-top: 20px; display: flex; justify-content: space-between; font-size: 13px; font-family: var(--font-mono);">
               <span style="color: var(--mute);">Direct Downlines: <b id="dash-downline-count"
-                  style="color: var(--text);">4 Users</b></span>
+                  style="color: var(--text);">0 Users</b></span>
               <span style="color: var(--mute);">Unlocked Levels: <b id="dash-unlocked-levels"
-                  style="color: var(--gold);">Level 2</b></span>
+                  style="color: var(--gold);">Level 0</b></span>
             </div>
           </div>
         </div>
@@ -780,27 +812,27 @@
           <div class="card stat-card">
             <div>
               <div class="stat-title">Wallet Balance</div>
-              <div class="stat-value" id="wallet-pg-balance">$1,450.00</div>
+              <div class="stat-value" id="wallet-pg-balance">$0.00</div>
             </div>
             <button class="btn btn-sm btn-primary" onclick="switchNav('investments')">+ New Plan</button>
           </div>
           <div class="card stat-card">
             <div>
               <div class="stat-title">Total Invested</div>
-              <div class="stat-value" id="wallet-pg-deposited">$1,000.00</div>
+              <div class="stat-value" id="wallet-pg-deposited">$0.00</div>
             </div>
           </div>
           <div class="card stat-card">
             <div>
               <div class="stat-title">Total Withdrawn</div>
-              <div class="stat-value" id="wallet-pg-withdrawn">$50.00</div>
+              <div class="stat-value" id="wallet-pg-withdrawn">$0.00</div>
             </div>
             <button class="btn btn-sm btn-secondary" onclick="openModal('modal-withdraw')">Withdraw</button>
           </div>
           <div class="card stat-card">
             <div>
               <div class="stat-title">Lifetime Earnings</div>
-              <div class="stat-value" id="wallet-pg-earnings" style="color: var(--gold);">$205.00</div>
+              <div class="stat-value" id="wallet-pg-earnings" style="color: var(--gold);">$0.00</div>
             </div>
           </div>
         </div>
@@ -946,7 +978,7 @@
                   </div>
                 </div>
                 <b id="ref-summary-direct"
-                  style="color: var(--gold); font-size: 18px; font-family: var(--font-mono);">$80.00</b>
+                  style="color: var(--gold); font-size: 18px; font-family: var(--font-mono);">$0.00</b>
               </div>
               <div
                 style="display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);">
@@ -956,7 +988,7 @@
                     weekly</div>
                 </div>
                 <b id="ref-summary-roi"
-                  style="color: var(--gold); font-size: 18px; font-family: var(--font-mono);">$25.00</b>
+                  style="color: var(--gold); font-size: 18px; font-family: var(--font-mono);">$0.00</b>
               </div>
               <div
                 style="font-size: 11px; color: var(--mute); padding: 10px 12px; background: rgba(250,204,21,0.06); border: 1px solid rgba(250,204,21,0.15); border-radius: var(--radius-sm); line-height: 1.6;">

@@ -1571,14 +1571,78 @@ async function handleRegister(e) {
   }
 }
 
+function openTermsFromCheckbox(e) {
+  // Prevent the checkbox from toggling directly — user must read and accept via modal
+  e.preventDefault();
+  const chk = document.getElementById('reg-tnc');
+  if (chk) chk.checked = false; // ensure it stays unchecked until accepted
+  openTermsModal(null);
+}
+
 function openTermsModal(e) {
   if (e) e.preventDefault();
+
+  const agreeBtn = document.getElementById('terms-agree-btn');
+  const scrollHint = document.getElementById('terms-scroll-hint');
+  const modalBody = document.getElementById('terms-modal-body');
+
+  // Reset state: disable agree button and show scroll hint
+  if (agreeBtn) {
+    agreeBtn.disabled = true;
+    agreeBtn.style.opacity = '0.45';
+    agreeBtn.style.cursor = 'not-allowed';
+  }
+  if (scrollHint) {
+    scrollHint.style.display = 'inline';
+    scrollHint.style.opacity = '1';
+  }
+
   openModal('modal-terms-conditions');
+
+  // Reset scroll to top so user has to scroll through content
+  if (modalBody) {
+    modalBody.scrollTop = 0;
+
+    // Remove any previously attached scroll listener
+    if (modalBody._termsScrollHandler) {
+      modalBody.removeEventListener('scroll', modalBody._termsScrollHandler);
+    }
+
+    modalBody._termsScrollHandler = function () {
+      // Allow a 30px tolerance for subpixel rendering differences
+      const isAtBottom = modalBody.scrollHeight - modalBody.scrollTop <= modalBody.clientHeight + 30;
+      if (isAtBottom) {
+        if (agreeBtn) {
+          agreeBtn.disabled = false;
+          agreeBtn.style.opacity = '1';
+          agreeBtn.style.cursor = 'pointer';
+        }
+        if (scrollHint) {
+          scrollHint.style.opacity = '0';
+          setTimeout(() => { scrollHint.style.display = 'none'; }, 300);
+        }
+      }
+    };
+
+    modalBody.addEventListener('scroll', modalBody._termsScrollHandler);
+
+    // Check immediately in case the content happens to be short enough
+    setTimeout(() => modalBody._termsScrollHandler(), 100);
+  }
 }
 
 function acceptTermsAndClose() {
   const chk = document.getElementById('reg-tnc');
   if (chk) chk.checked = true;
+
+  // Reset button style for next time modal is opened
+  const agreeBtn = document.getElementById('terms-agree-btn');
+  if (agreeBtn) {
+    agreeBtn.disabled = true;
+    agreeBtn.style.opacity = '0.45';
+    agreeBtn.style.cursor = 'not-allowed';
+  }
+
   closeModal('modal-terms-conditions');
   showToast('Terms & Conditions accepted.');
 }

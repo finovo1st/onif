@@ -48,6 +48,7 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
   const [refCode, setRefCode] = useState(initialRefCode || '');
   const [agreedToTnc, setAgreedToTnc] = useState(false);
   const [tncModalVisible, setTncModalVisible] = useState(false);
+  const [tncScrolledToBottom, setTncScrolledToBottom] = useState(false);
 
   // OTP Verification Fields
   const [otpCode, setOtpCode] = useState('');
@@ -395,11 +396,14 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
               autoCapitalize="characters"
             />
 
-            {/* Terms & Conditions Checkbox */}
+            {/* Terms & Conditions Checkbox — opens modal, cannot be ticked directly */}
             <View style={styles.tncRow}>
               <TouchableOpacity
                 style={[styles.checkboxBox, agreedToTnc && styles.checkboxBoxChecked]}
-                onPress={() => setAgreedToTnc(!agreedToTnc)}
+                onPress={() => {
+                  setTncScrolledToBottom(false);
+                  setTncModalVisible(true);
+                }}
                 activeOpacity={0.7}
               >
                 {agreedToTnc && <Feather name="check" size={13} color="#030507" />}
@@ -413,7 +417,7 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
                   >
                     Terms & Conditions
                   </Text>{' '}
-                  and investment risk disclosure.
+                  and investment risk disclosure. {agreedToTnc && <Text style={{ color: colors.goldSoft }}>✓</Text>}
                 </Text>
               </View>
             </View>
@@ -645,7 +649,7 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
         )}
       </View>
 
-      {/* TERMS & CONDITIONS MODAL */}
+      {/* TERMS & CONDITIONS MODAL — scroll-gated agree button */}
       <Modal
         visible={tncModalVisible}
         animationType="slide"
@@ -669,10 +673,22 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
             </View>
 
             {/* Scrollable Terms Content */}
-            <ScrollView style={styles.modalScrollBody} showsVerticalScrollIndicator={true}>
+            <ScrollView
+              style={styles.modalScrollBody}
+              showsVerticalScrollIndicator={true}
+              scrollEventThrottle={16}
+              onScroll={(e) => {
+                const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+                const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 32;
+                if (isBottom && !tncScrolledToBottom) setTncScrolledToBottom(true);
+              }}
+              onContentSizeChange={(_, contentHeight) => {
+                // If content fits without scrolling, unlock immediately
+              }}
+            >
               <Text style={styles.tncSectionNum}>1. Introduction</Text>
               <Text style={styles.tncBodyText}>
-                These Terms & Conditions (“Terms”) govern your access to and use of the FINOVO website, application, dashboard, trading-related services, and associated features (“Platform”). By registering for or using FINOVO, you confirm that you have read, understood, and agreed to these Terms.
+                These Terms & Conditions ("Terms") govern your access to and use of the FINOVO website, application, dashboard, trading-related services, and associated features ("Platform"). By registering for or using FINOVO, you confirm that you have read, understood, and agreed to these Terms.
               </Text>
 
               <Text style={styles.tncSectionNum}>2. Systematic Model</Text>
@@ -732,12 +748,12 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
 
               <Text style={styles.tncSectionNum}>13. Prohibited Activities</Text>
               <Text style={styles.tncBodyText}>
-                Users must not:{'\n'}
-                • Provide false or misleading information.{'\n'}
-                • Use another person's account.{'\n'}
-                • Attempt to manipulate Platform records or trading information.{'\n'}
-                • Conduct fraudulent transactions.{'\n'}
-                • Use the Platform for unlawful activities.{'\n'}
+                Users must not:{"\n"}
+                • Provide false or misleading information.{"\n"}
+                • Use another person's account.{"\n"}
+                • Attempt to manipulate Platform records or trading information.{"\n"}
+                • Conduct fraudulent transactions.{"\n"}
+                • Use the Platform for unlawful activities.{"\n"}
                 • Attempt unauthorized access to FINOVO systems.
               </Text>
 
@@ -772,12 +788,20 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
                   I confirm that all information and documents provided by me to the Company are true, accurate, complete, and up to date.
                 </Text>
                 <Text style={[styles.tncDeclarationSub, { marginTop: 10, color: colors.goldSoft, fontWeight: '700' }]}>
-                  By selecting “I Agree / I Acknowledge”, I confirm that I have read, understood, and voluntarily accepted the above declaration and the Company's applicable Terms & Conditions.
+                  By selecting "I Agree / I Acknowledge", I confirm that I have read, understood, and voluntarily accepted the above declaration and the Company's applicable Terms & Conditions.
                 </Text>
               </View>
             </ScrollView>
 
-            {/* Modal Actions */}
+            {/* Scroll hint shown until user reaches the bottom */}
+            {!tncScrolledToBottom && (
+              <View style={styles.tncScrollHint}>
+                <Feather name="chevrons-down" size={13} color={colors.textMuted} />
+                <Text style={styles.tncScrollHintText}>Scroll to the bottom to accept</Text>
+              </View>
+            )}
+
+            {/* Modal Footer Actions */}
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
@@ -787,14 +811,18 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
                 <Text style={styles.modalCloseBtnText}>Close</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalAgreeBtn}
+                style={[styles.modalAgreeBtn, !tncScrolledToBottom && styles.modalAgreeBtnDisabled]}
                 onPress={() => {
+                  if (!tncScrolledToBottom) return;
                   setAgreedToTnc(true);
+                  setTncScrolledToBottom(false); // reset for next open
                   setTncModalVisible(false);
                 }}
-                activeOpacity={0.8}
+                activeOpacity={tncScrolledToBottom ? 0.8 : 1}
               >
-                <Text style={styles.modalAgreeBtnText}>I Agree & Acknowledge</Text>
+                <Text style={[styles.modalAgreeBtnText, !tncScrolledToBottom && { opacity: 0.5 }]}>
+                  I Agree & Acknowledge
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1119,6 +1147,24 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: '#030507',
     fontWeight: '700',
+  },
+  modalAgreeBtnDisabled: {
+    backgroundColor: 'rgba(198, 153, 61, 0.35)',
+  },
+  tncScrollHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  tncScrollHintText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontStyle: 'italic',
   },
 });
 

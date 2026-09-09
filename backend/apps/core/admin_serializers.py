@@ -33,6 +33,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'username', 'first_name', 'last_name', 'full_name',
+            'country', 'phone_number', 'date_of_birth',
             'role', 'is_staff', 'is_superuser', 'kyc_status', 'kyc_document_type',
             'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url', 'kyc_submitted_at',
             'kyc_reviewed_at', 'kyc_rejection_reason',

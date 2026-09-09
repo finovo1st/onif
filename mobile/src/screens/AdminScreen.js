@@ -1836,15 +1836,53 @@ export default function AdminScreen({ onNavigate }) {
                 </TouchableOpacity>
               </View>
 
-              {/* KYC Document Proof Review (if documents exist) */}
-              {(selectedUser?.kyc_document_front_url || selectedUser?.kyc_document_back_url) && (
-                <View style={styles.kycReviewBox}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.goldSoft, marginBottom: 6 }}>
-                    Attached Government Identity Documents
+              {/* KYC Document Proof & Client Dossier Review */}
+              <View style={styles.kycReviewBox}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.goldSoft }}>
+                    Client KYC Dossier
                   </Text>
-                  <Text style={{ fontSize: 11, color: colors.textDim, marginBottom: 8 }}>
-                    {selectedUser?.kyc_document_type || 'ID Card'} • ID: {selectedUser?.kyc_document_number || 'N/A'}
+                  <Text style={{ fontSize: 10, color: colors.textDim }}>
+                    Status: <Text style={{ fontWeight: '700', color: selectedUser?.kyc_status === 'APPROVED' ? colors.success : selectedUser?.kyc_status === 'REJECTED' ? colors.danger : colors.goldSoft }}>{selectedUser?.kyc_status || 'UNVERIFIED'}</Text>
                   </Text>
+                </View>
+
+                {/* Client Information Summary */}
+                <View style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: 10, marginBottom: 10, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>Name:</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textMain }}>{selectedUser?.full_name || `${selectedUser?.first_name || ''} ${selectedUser?.last_name || ''}`.trim() || 'N/A'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>Email:</Text>
+                    <Text style={{ fontSize: 11, color: colors.textMain, fontFamily: 'IBMPlexMono-Regular' }}>{selectedUser?.email || 'N/A'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>Phone:</Text>
+                    <Text style={{ fontSize: 11, color: colors.textMain }}>{selectedUser?.phone_number || 'N/A'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>Country:</Text>
+                    <Text style={{ fontSize: 11, color: colors.goldSoft, fontWeight: '600' }}>{selectedUser?.country || 'N/A'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>DOB:</Text>
+                    <Text style={{ fontSize: 11, color: colors.textMain }}>{selectedUser?.date_of_birth || 'N/A'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 11, color: colors.textDim }}>ID Document:</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textMain }}>{selectedUser?.kyc_document_type || 'ID Card'} • {selectedUser?.kyc_document_number || 'N/A'}</Text>
+                  </View>
+                  {selectedUser?.kyc_submitted_at && (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 11, color: colors.textDim }}>Submitted:</Text>
+                      <Text style={{ fontSize: 10, color: colors.textDim }}>{new Date(selectedUser.kyc_submitted_at).toLocaleDateString()}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Proof Images if present */}
+                {(selectedUser?.kyc_document_front_url || selectedUser?.kyc_document_back_url) ? (
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     {selectedUser?.kyc_document_front_url && (
                       <TouchableOpacity
@@ -1871,8 +1909,12 @@ export default function AdminScreen({ onNavigate }) {
                       </TouchableOpacity>
                     )}
                   </View>
-                </View>
-              )}
+                ) : (
+                  <Text style={{ fontSize: 11, color: colors.textDim, fontStyle: 'italic', textAlign: 'center' }}>
+                    No ID document photos attached
+                  </Text>
+                )}
+              </View>
 
               {/* 3. Unlimited Earning Privilege Switch */}
               <Text style={styles.label}>Privileges &amp; Flags</Text>

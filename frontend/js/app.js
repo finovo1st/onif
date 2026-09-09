@@ -3697,27 +3697,116 @@ async function openManageUserModal(userId) {
     document.getElementById('adm-adj-amount').value = '';
     document.getElementById('adm-adj-reason').value = '';
 
-    // Populate KYC Document review box
+    // Populate Client Info & KYC Dossier review box
     const docBox = document.getElementById('adm-usr-kyc-doc-box');
     if (docBox) {
-      if (u.kyc_document_front_url || u.kyc_document_back_url) {
-        docBox.style.display = 'block';
-        const docImgWrap = document.getElementById('adm-usr-kyc-img-wrap');
-        if (docImgWrap) {
-          docImgWrap.innerHTML = '';
-          if (u.kyc_document_front_url) {
-            docImgWrap.innerHTML += `<img src="${u.kyc_document_front_url}" alt="KYC Front" style="width: 100%; height: 100%; object-fit: cover; margin-bottom: 4px;" onclick="openLightbox('${u.kyc_document_front_url}')">`;
-          }
-          if (u.kyc_document_back_url) {
-            docImgWrap.innerHTML += `<img src="${u.kyc_document_back_url}" alt="KYC Back" style="width: 100%; height: 100%; object-fit: cover;" onclick="openLightbox('${u.kyc_document_back_url}')">`;
+      docBox.style.display = 'block';
+
+      // 1. Client Profile Information
+      const fullName = (u.first_name || u.last_name)
+        ? `${u.first_name || ''} ${u.last_name || ''}`.trim()
+        : (u.full_name || 'Not provided');
+      
+      const nameEl = document.getElementById('adm-usr-kyc-client-name');
+      if (nameEl) nameEl.innerText = fullName;
+
+      const emailEl = document.getElementById('adm-usr-kyc-client-email');
+      if (emailEl) emailEl.innerText = u.email || '—';
+
+      const phoneEl = document.getElementById('adm-usr-kyc-client-phone');
+      if (phoneEl) phoneEl.innerText = u.phone_number || 'Not provided';
+
+      const countryEl = document.getElementById('adm-usr-kyc-client-country');
+      if (countryEl) countryEl.innerText = u.country || 'Not specified';
+
+      const dobEl = document.getElementById('adm-usr-kyc-client-dob');
+      if (dobEl) dobEl.innerText = u.date_of_birth || 'Not specified';
+
+      const sponsorEl = document.getElementById('adm-usr-kyc-sponsor');
+      if (sponsorEl) sponsorEl.innerText = u.parent_email || 'Root (None)';
+
+      const docTypeEl = document.getElementById('adm-usr-kyc-doctype');
+      if (docTypeEl) docTypeEl.innerText = u.kyc_document_type || 'Government ID';
+
+      const docNumEl = document.getElementById('adm-usr-kyc-docnum');
+      if (docNumEl) docNumEl.innerText = u.kyc_document_number || '—';
+
+      const submittedAtEl = document.getElementById('adm-usr-kyc-submitted-at');
+      if (submittedAtEl) {
+        submittedAtEl.innerText = u.kyc_submitted_at
+          ? new Date(u.kyc_submitted_at).toLocaleString()
+          : 'Not recorded';
+      }
+
+      // 2. Status badge
+      const statusBadge = document.getElementById('adm-usr-kyc-status-badge');
+      if (statusBadge) {
+        statusBadge.className = `badge ${
+          u.kyc_status === 'APPROVED' ? 'badge-approved' :
+          u.kyc_status === 'PENDING' ? 'badge-pending' :
+          u.kyc_status === 'REJECTED' ? 'badge-rejected' : 'badge-unverified'
+        }`;
+        statusBadge.innerText = u.kyc_status || 'UNVERIFIED';
+      }
+
+      // 3. Rejection Reason Banner
+      const rejBox = document.getElementById('adm-usr-kyc-rejection-box');
+      const rejText = document.getElementById('adm-usr-kyc-rejection-text');
+      if (rejBox && rejText) {
+        if (u.kyc_status === 'REJECTED' && u.kyc_rejection_reason) {
+          rejBox.style.display = 'block';
+          rejText.innerText = u.kyc_rejection_reason;
+        } else {
+          rejBox.style.display = 'none';
+        }
+      }
+
+      // 4. Document Previews (Front & Back)
+      const frontCard = document.getElementById('adm-usr-kyc-front-card');
+      const backCard = document.getElementById('adm-usr-kyc-back-card');
+      const frontWrap = document.getElementById('adm-usr-kyc-front-wrap');
+      const backWrap = document.getElementById('adm-usr-kyc-back-wrap');
+      const noDocsBanner = document.getElementById('adm-usr-kyc-nodocs');
+
+      const hasFront = !!u.kyc_document_front_url;
+      const hasBack = !!u.kyc_document_back_url;
+
+      if (hasFront || hasBack) {
+        if (noDocsBanner) noDocsBanner.style.display = 'none';
+        if (frontCard) {
+          frontCard.style.display = hasFront ? 'block' : 'none';
+          if (hasFront && frontWrap) {
+            frontWrap.innerHTML = `
+              <div style="position:relative; width:100%; height:130px; border-radius:var(--radius-sm); overflow:hidden; background:#080b0f; border:1px solid var(--line); cursor:pointer;" onclick="openLightbox('${u.kyc_document_front_url}')" title="Click to view full image">
+                <img src="${u.kyc_document_front_url}" alt="KYC Front" style="width:100%; height:100%; object-fit:contain; background:#000;">
+                <div style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.75); font-size:10px; color:#fff; padding:2px 7px; border-radius:3px; backdrop-filter:blur(4px);">🔍 Zoom Front</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                <span style="font-size:11.5px; font-weight:600; color:var(--text);">Front Photo</span>
+                <a href="${u.kyc_document_front_url}" target="_blank" style="color:var(--gold); font-size:11px; text-decoration:underline;">Full Size ↗</a>
+              </div>
+            `;
           }
         }
-        document.getElementById('adm-usr-kyc-doctype').innerText = u.kyc_document_type || 'Government ID';
-        document.getElementById('adm-usr-kyc-docnum').innerText = u.kyc_document_number || '—';
-        const docLink = document.getElementById('adm-usr-kyc-doclink');
-        if (docLink) docLink.href = u.kyc_document_front_url || u.kyc_document_back_url || '#';
+        if (backCard) {
+          backCard.style.display = hasBack ? 'block' : 'none';
+          if (hasBack && backWrap) {
+            backWrap.innerHTML = `
+              <div style="position:relative; width:100%; height:130px; border-radius:var(--radius-sm); overflow:hidden; background:#080b0f; border:1px solid var(--line); cursor:pointer;" onclick="openLightbox('${u.kyc_document_back_url}')" title="Click to view full image">
+                <img src="${u.kyc_document_back_url}" alt="KYC Back" style="width:100%; height:100%; object-fit:contain; background:#000;">
+                <div style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.75); font-size:10px; color:#fff; padding:2px 7px; border-radius:3px; backdrop-filter:blur(4px);">🔍 Zoom Back</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                <span style="font-size:11.5px; font-weight:600; color:var(--text);">Back Photo</span>
+                <a href="${u.kyc_document_back_url}" target="_blank" style="color:var(--gold); font-size:11px; text-decoration:underline;">Full Size ↗</a>
+              </div>
+            `;
+          }
+        }
       } else {
-        docBox.style.display = 'none';
+        if (noDocsBanner) noDocsBanner.style.display = 'block';
+        if (frontCard) frontCard.style.display = 'none';
+        if (backCard) backCard.style.display = 'none';
       }
     }
 
@@ -3767,12 +3856,28 @@ async function openAdminUserTeamModal(userId) {
 async function adminQuickKYCStatus(status) {
   const userId = document.getElementById('adm-usr-id').value;
   if (!userId) return;
+
+  let reason = '';
+  if (status === 'REJECTED') {
+    const inputReason = prompt('Please specify a rejection reason for the client (optional):', '');
+    if (inputReason === null) {
+      return; // User cancelled prompt
+    }
+    reason = inputReason.trim();
+  }
+
   try {
-    await apiCall(`/admin-panel/users/${userId}/`, 'PATCH', { kyc_status: status });
+    const payload = { kyc_status: status };
+    if (status === 'REJECTED' && reason) {
+      payload.kyc_rejection_reason = reason;
+    }
+    await apiCall(`/admin-panel/users/${userId}/`, 'PATCH', payload);
     document.getElementById('adm-usr-kyc').value = status;
     showToast(`KYC status updated to ${status}.`);
     loadAdminUsers();
     loadAdminData();
+    // Re-populate modal with updated data
+    openManageUserModal(userId);
   } catch (err) {
     showToast(err.message, true);
   }

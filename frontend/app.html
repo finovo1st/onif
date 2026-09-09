@@ -3201,7 +3201,7 @@
 
   <!-- A4. Manage User Modal -->
   <div id="modal-admin-manage-user" class="modal-backdrop">
-    <div class="modal" style="max-width: 580px; width: 100%;">
+    <div class="modal" style="max-width: 680px; width: 100%;">
       <div class="modal-header">
         <div>
           <h3 class="modal-title" id="adm-usr-modal-name">Manage User Account</h3>
@@ -3235,31 +3235,95 @@
           </div>
         </div>
 
-        <!-- KYC Document Review Box (if user submitted document) -->
+        <!-- KYC Verification & Client Info Dossier Box -->
         <div id="adm-usr-kyc-doc-box"
-          style="margin-bottom: 16px; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 12px; font-weight: 600; color: var(--gold-soft);">Uploaded KYC Document</span>
+          style="margin-bottom: 20px; padding: 16px 18px; background: rgba(14, 19, 25, 0.65); border: 1px solid var(--line); border-radius: var(--radius-md); display: none;">
+          
+          <!-- Top bar with title, badge & quick actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 700; color: var(--gold-soft); letter-spacing: 0.3px;">Client KYC Identity Dossier</span>
+              <span id="adm-usr-kyc-status-badge" class="badge badge-pending" style="font-size: 10px; padding: 2px 8px;">PENDING</span>
+            </div>
             <div style="display: flex; gap: 8px;">
               <button type="button" class="btn btn-sm btn-primary" onclick="adminQuickKYCStatus('APPROVED')"
-                style="padding: 3px 8px; font-size: 11px;">Approve KYC</button>
+                style="padding: 4px 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                ✓ Approve KYC
+              </button>
               <button type="button" class="btn btn-sm btn-danger" onclick="adminQuickKYCStatus('REJECTED')"
-                style="padding: 3px 8px; font-size: 11px;">Reject KYC</button>
+                style="padding: 4px 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                ✕ Reject KYC
+              </button>
             </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <div class="admin-qr-preview-box" id="adm-usr-kyc-img-wrap"
-              style="width: 56px; height: 56px; cursor: pointer;"
-              onclick="openLightbox(document.getElementById('adm-usr-kyc-img').src)">
-              <img id="adm-usr-kyc-img" src="" alt="KYC Document" style="width: 100%; height: 100%; object-fit: cover;">
+
+          <!-- Rejection Warning Banner (if status is REJECTED) -->
+          <div id="adm-usr-kyc-rejection-box" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-sm); font-size: 12px; color: #fca5a5;">
+            <strong>Rejection Reason:</strong> <span id="adm-usr-kyc-rejection-text">—</span>
+          </div>
+
+          <!-- Client Profile Information Grid -->
+          <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
+              Client Information
             </div>
-            <div style="font-size: 12px; line-height: 1.5; color: var(--mute);">
-              <div>Type: <b id="adm-usr-kyc-doctype" style="color: var(--text);">—</b></div>
-              <div>ID Number: <b id="adm-usr-kyc-docnum"
-                  style="color: var(--gold); font-family: var(--font-mono);">—</b></div>
-              <a id="adm-usr-kyc-doclink" href="#" target="_blank"
-                style="color: var(--gold); text-decoration: underline; font-size: 11px; margin-top: 2px; display: inline-block;">Open
-                Full Document</a>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 16px; font-size: 12px;">
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Full Legal Name</span>
+                <b id="adm-usr-kyc-client-name" style="color: var(--text); font-size: 13px;">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Email Address</span>
+                <b id="adm-usr-kyc-client-email" style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Phone Number</span>
+                <b id="adm-usr-kyc-client-phone" style="color: var(--text);">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Country of Residence</span>
+                <b id="adm-usr-kyc-client-country" style="color: var(--gold);">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Date of Birth</span>
+                <b id="adm-usr-kyc-client-dob" style="color: var(--text);">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Document Type</span>
+                <b id="adm-usr-kyc-doctype" style="color: var(--text); text-transform: uppercase;">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">ID / Document Number</span>
+                <b id="adm-usr-kyc-docnum" style="color: var(--gold); font-family: var(--font-mono); font-size: 13px;">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Submitted Date</span>
+                <b id="adm-usr-kyc-submitted-at" style="color: var(--text); font-size: 11px;">—</b>
+              </div>
+              <div>
+                <span style="color: var(--mute); display: block; font-size: 11px;">Sponsor / Referrer</span>
+                <b id="adm-usr-kyc-sponsor" style="color: var(--mute); font-size: 11px;">—</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Previews (Front & Back) -->
+          <div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
+              Attached Identity Documents
+            </div>
+            
+            <div id="adm-usr-kyc-nodocs" style="display: none; padding: 16px; text-align: center; color: var(--mute); font-size: 12px; background: rgba(0,0,0,0.2); border: 1px dashed var(--line); border-radius: var(--radius-sm);">
+              No photo identity documents uploaded for this account yet.
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+              <div id="adm-usr-kyc-front-card" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
+                <div id="adm-usr-kyc-front-wrap"></div>
+              </div>
+              <div id="adm-usr-kyc-back-card" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
+                <div id="adm-usr-kyc-back-wrap"></div>
+              </div>
             </div>
           </div>
         </div>

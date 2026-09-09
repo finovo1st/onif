@@ -12,6 +12,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import colors from '../theme/colors';
+import { copyToClipboard } from '../utils/clipboard';
 
 export default function ProfileScreen({ onNavigate }) {
   const {
@@ -37,11 +38,11 @@ export default function ProfileScreen({ onNavigate }) {
     }
   };
 
-  const copyText = (label, text) => {
+  const copyText = async (label, text) => {
     if (!text) return;
     setCopyFeedback(label);
     setTimeout(() => setCopyFeedback(null), 2500);
-    Alert.alert('Copied to Clipboard', `${label}: ${text}`);
+    await copyToClipboard(text, label, true);
   };
 
   const handleLogoutConfirm = () => {

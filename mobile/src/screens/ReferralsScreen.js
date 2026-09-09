@@ -12,6 +12,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { apiCall, APP_DOMAIN } from '../config/api';
 import colors from '../theme/colors';
+import { copyToClipboard } from '../utils/clipboard';
 
 export default function ReferralsScreen() {
   const { user } = useContext(AuthContext);
@@ -72,8 +73,8 @@ export default function ReferralsScreen() {
     setRefreshing(false);
   };
 
-  const copyText = (label, text) => {
-    Alert.alert('Copied to Clipboard', `${label}: ${text}`);
+  const copyText = async (label, text) => {
+    await copyToClipboard(text, label, true);
   };
 
   const currentDirLevel = summary.active_level || user?.active_level || 0;

@@ -14,9 +14,24 @@ import {
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
-import { apiCall } from '../config/api';
+import { apiCall, DEFAULT_API_HOST } from '../config/api';
 import colors from '../theme/colors';
+
+const getAdminQRPreview = (address, customQr) => {
+  if (customQr && typeof customQr === 'string' && customQr.trim()) {
+    const trimmed = customQr.trim();
+    if (trimmed.startsWith('data:image/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `${DEFAULT_API_HOST}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+  }
+  if (!address || address === '0x...' || address === 'T...') {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=4&data=FINOVO';
+  }
+  return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=4&data=${encodeURIComponent(address)}`;
+};
 
 export default function AdminScreen({ onNavigate }) {
   const { user } = useContext(AuthContext);
@@ -128,6 +143,8 @@ export default function AdminScreen({ onNavigate }) {
   const [companyWallets, setCompanyWallets] = useState({
     bep20: '0x71C8bf7B67295F2797e883FffFa7617bFF524b08',
     trc20: 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9',
+    bep20Qr: '',
+    trc20Qr: '',
   });
   const [plansList, setPlansList] = useState([]);
 
@@ -197,6 +214,17 @@ export default function AdminScreen({ onNavigate }) {
       const plans = await apiCall('/investments/plans/').catch(() => []);
       const pList = Array.isArray(plans) ? plans : (plans?.results || []);
       setPlansList(pList);
+
+      // 8. Deposit Wallets & QR Settings
+      const walletData = await apiCall('/dashboard/deposit-wallets/').catch(() => null);
+      if (walletData) {
+        setCompanyWallets({
+          bep20: walletData.BEP20 || '0x71C8bf7B67295F2797e883FffFa7617bFF524b08',
+          trc20: walletData.TRC20 || 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9',
+          bep20Qr: walletData.BEP20_QR || '',
+          trc20Qr: walletData.TRC20_QR || '',
+        });
+      }
     } catch (err) {
       console.warn('Admin load error:', err.message);
     }
@@ -538,19 +566,50 @@ export default function AdminScreen({ onNavigate }) {
     }
   };
 
-  // Save Deposit Wallets Action
+  // Save Deposit Wallets & QR Action
   const handleSaveCompanyWallets = async () => {
     setLoading(true);
     try {
-      await apiCall('/admin-panel/settings/company-wallets/', 'POST', {
-        bep20_address: companyWallets.bep20,
-        trc20_address: companyWallets.trc20,
-      }).catch(() => null);
-      Alert.alert('Wallets Saved', 'Official deposit receiving wallet addresses saved.');
+      await Promise.all([
+        apiCall('/admin-panel/settings/COMPANY_WALLET_BEP20/', 'PATCH', { value: companyWallets.bep20 }),
+        apiCall('/admin-panel/settings/COMPANY_WALLET_TRC20/', 'PATCH', { value: companyWallets.trc20 }),
+        apiCall('/admin-panel/settings/COMPANY_WALLET_BEP20_QR/', 'PATCH', { value: companyWallets.bep20Qr || '' }),
+        apiCall('/admin-panel/settings/COMPANY_WALLET_TRC20_QR/', 'PATCH', { value: companyWallets.trc20Qr || '' }),
+      ]);
+      Alert.alert('Wallets Saved', 'Official deposit receiving wallet addresses and QR codes saved successfully.');
     } catch (err) {
       Alert.alert('Save Error', err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePickAdminQR = async (network) => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Permission to access photo library is required.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+        base64: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const dataUrl = asset.base64
+          ? `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`
+          : asset.uri;
+        if (network === 'BEP20') {
+          setCompanyWallets(prev => ({ ...prev, bep20Qr: dataUrl }));
+        } else {
+          setCompanyWallets(prev => ({ ...prev, trc20Qr: dataUrl }));
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message);
     }
   };
 
@@ -1587,9 +1646,10 @@ export default function AdminScreen({ onNavigate }) {
           <View style={[styles.card, { marginTop: 14 }]}>
             <View style={styles.cardHeader}>
               <Text style={styles.eyebrow}>OFFICIAL RECEIVING CHANNELS</Text>
-              <Text style={styles.cardTitle}>Company Deposit Wallets</Text>
+              <Text style={styles.cardTitle}>Company Deposit Wallets &amp; QR Codes</Text>
             </View>
 
+            {/* BEP20 Section */}
             <Text style={styles.label}>BSC (BEP20) Official Address</Text>
             <TextInput
               style={styles.input}
@@ -1598,8 +1658,32 @@ export default function AdminScreen({ onNavigate }) {
               placeholder="0x..."
               placeholderTextColor={colors.textDim}
             />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 }}>
+              <View style={{ width: 56, height: 56, backgroundColor: '#FFF', borderRadius: 8, padding: 3, borderWidth: 1, borderColor: colors.goldSoft }}>
+                <Image
+                  key={`admin-bep-${companyWallets.bep20Qr}`}
+                  source={{ uri: getAdminQRPreview(companyWallets.bep20, companyWallets.bep20Qr) }}
+                  style={{ width: 48, height: 48 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <TouchableOpacity
+                  style={{ backgroundColor: 'rgba(198,153,61,0.15)', borderWidth: 1, borderColor: colors.bgCardBorderGold, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, alignSelf: 'flex-start' }}
+                  onPress={() => handlePickAdminQR('BEP20')}
+                >
+                  <Text style={{ color: colors.goldSoft, fontSize: 11, fontWeight: '700' }}>Upload BEP20 QR Image</Text>
+                </TouchableOpacity>
+                {!!companyWallets.bep20Qr && (
+                  <TouchableOpacity onPress={() => setCompanyWallets(prev => ({ ...prev, bep20Qr: '' }))}>
+                    <Text style={{ color: colors.accentDanger, fontSize: 10, fontWeight: '600' }}>Reset to Auto-Generated</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
 
-            <Text style={styles.label}>TRON (TRC20) Official Address</Text>
+            {/* TRC20 Section */}
+            <Text style={[styles.label, { marginTop: 8 }]}>TRON (TRC20) Official Address</Text>
             <TextInput
               style={styles.input}
               value={companyWallets.trc20}
@@ -1607,9 +1691,32 @@ export default function AdminScreen({ onNavigate }) {
               placeholder="T..."
               placeholderTextColor={colors.textDim}
             />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 }}>
+              <View style={{ width: 56, height: 56, backgroundColor: '#FFF', borderRadius: 8, padding: 3, borderWidth: 1, borderColor: colors.goldSoft }}>
+                <Image
+                  key={`admin-trc-${companyWallets.trc20Qr}`}
+                  source={{ uri: getAdminQRPreview(companyWallets.trc20, companyWallets.trc20Qr) }}
+                  style={{ width: 48, height: 48 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <TouchableOpacity
+                  style={{ backgroundColor: 'rgba(198,153,61,0.15)', borderWidth: 1, borderColor: colors.bgCardBorderGold, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, alignSelf: 'flex-start' }}
+                  onPress={() => handlePickAdminQR('TRC20')}
+                >
+                  <Text style={{ color: colors.goldSoft, fontSize: 11, fontWeight: '700' }}>Upload TRC20 QR Image</Text>
+                </TouchableOpacity>
+                {!!companyWallets.trc20Qr && (
+                  <TouchableOpacity onPress={() => setCompanyWallets(prev => ({ ...prev, trc20Qr: '' }))}>
+                    <Text style={{ color: colors.accentDanger, fontSize: 10, fontWeight: '600' }}>Reset to Auto-Generated</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
 
-            <TouchableOpacity style={styles.btnPrimary} onPress={handleSaveCompanyWallets}>
-              <Text style={styles.btnPrimaryText}>Save Receiving Wallets</Text>
+            <TouchableOpacity style={[styles.btnPrimary, { marginTop: 10 }]} onPress={handleSaveCompanyWallets}>
+              <Text style={styles.btnPrimaryText}>Save Receiving Wallets &amp; QR Codes</Text>
             </TouchableOpacity>
           </View>
 

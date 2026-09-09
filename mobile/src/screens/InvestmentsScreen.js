@@ -11,12 +11,28 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
-import { apiCall } from '../config/api';
+import { apiCall, DEFAULT_API_HOST } from '../config/api';
 import colors from '../theme/colors';
+import { copyToClipboard } from '../utils/clipboard';
+
+const getDepositQRUrl = (address, customQr = '') => {
+  if (customQr && typeof customQr === 'string' && customQr.trim()) {
+    const trimmed = customQr.trim();
+    if (trimmed.startsWith('data:image/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `${DEFAULT_API_HOST}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+  }
+  if (!address || address === 'Address not configured') {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=4&data=FINOVO';
+  }
+  return `https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=4&data=${encodeURIComponent(address)}`;
+};
 
 const DEFAULT_TIERS = [
   {
@@ -100,10 +116,12 @@ export default function InvestmentsScreen({ onNavigate }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [lightboxVisible, setLightboxVisible] = useState(false);
 
-  // Platform treasury deposit addresses
+  // Platform treasury deposit addresses and admin-set QR codes
   const [companyWallets, setCompanyWallets] = useState({
     BEP20: '0x71C8bf7B67295F2797e883FffFa7617bFF524b08',
     TRC20: 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9',
+    BEP20_QR: '',
+    TRC20_QR: '',
   });
 
   const loadPlansAndInvestments = async () => {
@@ -125,6 +143,8 @@ export default function InvestmentsScreen({ onNavigate }) {
         setCompanyWallets({
           BEP20: walletData.BEP20 || companyWallets.BEP20,
           TRC20: walletData.TRC20 || companyWallets.TRC20,
+          BEP20_QR: walletData.BEP20_QR || '',
+          TRC20_QR: walletData.TRC20_QR || '',
         });
       }
     } catch (err) {
@@ -233,9 +253,12 @@ export default function InvestmentsScreen({ onNavigate }) {
     }
   };
 
-  const copyAddress = () => {
-    const addr = companyWallets[depositNetwork];
-    Alert.alert('Copied to Clipboard', `Company ${depositNetwork} Deposit Address:\n${addr}`);
+  const currentAddress = companyWallets[depositNetwork] || 'Address not configured';
+  const currentCustomQr = depositNetwork === 'BEP20' ? (companyWallets.BEP20_QR || '') : (companyWallets.TRC20_QR || '');
+  const currentQrUrl = getDepositQRUrl(currentAddress, currentCustomQr);
+
+  const copyAddress = async () => {
+    await copyToClipboard(currentAddress, `Company ${depositNetwork} Deposit Address`, true);
   };
 
   const isKycApproved = user?.kyc_status === 'APPROVED';
@@ -525,7 +548,7 @@ export default function InvestmentsScreen({ onNavigate }) {
 
                 <View style={styles.walletCopyRow}>
                   <Text style={styles.companyWalletAddrText} numberOfLines={1}>
-                    {companyWallets[depositNetwork]}
+                    {currentAddress}
                   </Text>
                   <TouchableOpacity style={styles.miniCopyBtn} onPress={copyAddress}>
                     <Feather name="copy" size={11} color="#030507" style={{ marginRight: 3 }} />
@@ -533,13 +556,29 @@ export default function InvestmentsScreen({ onNavigate }) {
                   </TouchableOpacity>
                 </View>
 
+                {/* QR Code Preview Thumbnail with tap-to-enlarge */}
                 <TouchableOpacity
-                  style={styles.qrZoomRow}
+                  style={styles.qrPreviewCard}
                   onPress={() => setLightboxVisible(true)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
-                  <Feather name="maximize-2" size={12} color={colors.goldSoft} />
-                  <Text style={styles.qrZoomText}>Tap to enlarge Deposit QR Code</Text>
+                  <View style={styles.qrThumbnailWrap}>
+                    <Image
+                      key={`thumb-${depositNetwork}-${currentQrUrl}`}
+                      source={{ uri: currentQrUrl }}
+                      style={styles.qrThumbnailImg}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.qrPreviewInfo}>
+                    <View style={styles.qrBadgeRow}>
+                      <Feather name="maximize-2" size={12} color={colors.goldSoft} />
+                      <Text style={styles.qrZoomPrompt}>Tap to enlarge Deposit QR Code</Text>
+                    </View>
+                    <Text style={styles.qrHintText}>
+                      Scan with Binance, Trust Wallet, or TronLink app to pay.
+                    </Text>
+                  </View>
                 </TouchableOpacity>
 
                 <Text style={styles.walletNoticeText}>
@@ -613,18 +652,62 @@ export default function InvestmentsScreen({ onNavigate }) {
           activeOpacity={1}
           onPress={() => setLightboxVisible(false)}
         >
-          <View style={styles.lightboxCard}>
-            <Text style={styles.lightboxTitle}>Deposit QR Code ({depositNetwork})</Text>
-            <View style={styles.qrPlaceholder}>
-              <Feather name="grid" size={90} color={colors.goldSoft} />
+          <TouchableOpacity
+            style={styles.lightboxCard}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.lightboxHeader}>
+              <View>
+                <Text style={styles.lightboxTitle}>Deposit QR Code</Text>
+                <Text style={styles.lightboxSubtitle}>Official Treasury • USDT ({depositNetwork})</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.lightboxCloseIconBtn}
+                onPress={() => setLightboxVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Feather name="x" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.lightboxAddr} numberOfLines={2}>
-              {companyWallets[depositNetwork]}
-            </Text>
-            <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setLightboxVisible(false)}>
-              <Text style={styles.lightboxCloseBtnText}>Close Window</Text>
-            </TouchableOpacity>
-          </View>
+
+            {/* Scannable Admin-Set QR Code Container */}
+            <View style={styles.qrContainer}>
+              <Image
+                key={`modal-${depositNetwork}-${currentQrUrl}`}
+                source={{ uri: currentQrUrl }}
+                style={styles.qrImageLarge}
+                resizeMode="contain"
+              />
+            </View>
+
+            {/* Destination Address & Copy */}
+            <View style={styles.lightboxAddrBox}>
+              <Text style={styles.lightboxAddrLabel}>DEPOSIT ADDRESS ({depositNetwork}):</Text>
+              <Text style={styles.lightboxAddr} numberOfLines={2} selectable>
+                {currentAddress}
+              </Text>
+            </View>
+
+            <View style={styles.lightboxActionRow}>
+              <TouchableOpacity
+                style={styles.lightboxCopyBtn}
+                onPress={copyAddress}
+                activeOpacity={0.8}
+              >
+                <Feather name="copy" size={13} color="#030507" style={{ marginRight: 5 }} />
+                <Text style={styles.lightboxCopyBtnText}>Copy Address</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.lightboxCloseBtn}
+                onPress={() => setLightboxVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.lightboxCloseBtnText}>Close Window</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </ScrollView>
@@ -1192,51 +1275,156 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+  qrPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorderGold,
+    padding: 10,
+    marginVertical: 10,
+    gap: 12,
+  },
+  qrThumbnailWrap: {
+    width: 64,
+    height: 64,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.goldSoft,
+  },
+  qrThumbnailImg: {
+    width: 56,
+    height: 56,
+  },
+  qrPreviewInfo: {
+    flex: 1,
+  },
+  qrBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  qrZoomPrompt: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.goldSoft,
+  },
+  qrHintText: {
+    fontSize: 10.5,
+    color: colors.textMuted,
+    lineHeight: 14,
+  },
   lightboxOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
   },
   lightboxCard: {
     backgroundColor: '#070A0E',
     borderRadius: 16,
-    padding: 22,
+    padding: 20,
     borderWidth: 1,
     borderColor: colors.bgCardBorderGold,
     alignItems: 'center',
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 340,
+  },
+  lightboxHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+    marginBottom: 10,
   },
   lightboxTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: colors.textMain,
-    marginBottom: 16,
+    letterSpacing: -0.2,
   },
-  qrPlaceholder: {
-    width: 180,
-    height: 180,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.bgCardBorder,
+  lightboxSubtitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.goldSoft,
+    marginTop: 2,
+  },
+  lightboxCloseIconBtn: {
+    padding: 4,
+  },
+  qrContainer: {
+    width: 224,
+    height: 224,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 12,
+    borderWidth: 2,
+    borderColor: colors.goldSoft,
+  },
+  qrImageLarge: {
+    width: 204,
+    height: 204,
+  },
+  lightboxAddrBox: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    padding: 10,
     marginBottom: 14,
+  },
+  lightboxAddrLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textDim,
+    letterSpacing: 0.5,
+    marginBottom: 3,
   },
   lightboxAddr: {
     fontSize: 11,
     color: colors.goldSoft,
-    textAlign: 'center',
-    marginBottom: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    lineHeight: 15,
+  },
+  lightboxActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  lightboxCopyBtn: {
+    flex: 1.4,
+    flexDirection: 'row',
+    backgroundColor: colors.gold,
+    borderRadius: 8,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxCopyBtnText: {
+    color: '#030507',
+    fontWeight: '700',
+    fontSize: 12,
   },
   lightboxCloseBtn: {
+    flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   lightboxCloseBtnText: {
     color: colors.textMain,

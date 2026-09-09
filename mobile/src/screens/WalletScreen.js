@@ -13,7 +13,6 @@ import {
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
@@ -40,21 +39,6 @@ export default function WalletScreen({ onNavigate }) {
   const [wdrNetwork, setWdrNetwork] = useState('BEP20');
   const [wdrAddress, setWdrAddress] = useState('');
 
-  // Deposit Modal State
-  const [depModalVisible, setDepModalVisible] = useState(false);
-  const [depAmount, setDepAmount] = useState('');
-  const [depNetwork, setDepNetwork] = useState('BEP20');
-  const [depTxHash, setDepTxHash] = useState('');
-  const [depSender, setDepSender] = useState('');
-  const [depProofFile, setDepProofFile] = useState('');
-  const [depProof, setDepProof] = useState(null);
-  const [lightboxVisible, setLightboxVisible] = useState(false);
-
-  const companyWallets = {
-    BEP20: '0x71C8bf7B67295F2797e883FffFa7617bFF524b08',
-    TRC20: 'TYDzsYUE288J1EX9732B8kG89kEGY82kL9',
-  };
-
   const loadWalletData = async () => {
     try {
       const data = await apiCall('/dashboard/').catch(() => null);
@@ -67,16 +51,10 @@ export default function WalletScreen({ onNavigate }) {
         });
       }
 
-      // User deposits are tracked via investments in Finovo
+      // All deposits in Finovo are structured investment plan subscriptions
       const invs = await apiCall('/investments/').catch(() => []);
       const invList = Array.isArray(invs) ? invs : (invs?.results || []);
-      if (invList.length > 0) {
-        setDeposits(invList);
-      } else {
-        const deps = await apiCall('/deposits/').catch(() => []);
-        const depList = Array.isArray(deps) ? deps : (deps?.results || []);
-        setDeposits(depList);
-      }
+      setDeposits(invList);
 
       const wdrs = await apiCall('/withdrawals/').catch(() => []);
       const wdrList = Array.isArray(wdrs) ? wdrs : (wdrs?.results || []);
@@ -142,85 +120,7 @@ export default function WalletScreen({ onNavigate }) {
     }
   };
 
-  const handlePickDepositProof = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Permission to access photo library is required to attach deposit receipts.');
-        return;
-      }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.85,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const fileName = asset.fileName || asset.uri.split('/').pop() || `receipt_${Date.now()}.jpg`;
-        const fileType = asset.mimeType || 'image/jpeg';
-        setDepProof({
-          uri: asset.uri,
-          name: fileName,
-          type: fileType,
-        });
-        setDepProofFile(fileName);
-      }
-    } catch (err) {
-      Alert.alert('Upload Error', 'Could not select image: ' + err.message);
-    }
-  };
-
-  const handleDepositSubmit = async () => {
-    const amt = Number(depAmount);
-    if (!amt || amt <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid deposit amount.');
-      return;
-    }
-    if (!depTxHash && !depProof) {
-      Alert.alert('Missing Deposit Proof', 'Please enter your blockchain transaction hash (TxID) or upload a payment screenshot.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('amount', String(amt));
-      formData.append('network', depNetwork);
-      if (depTxHash) formData.append('txn_hash', depTxHash);
-      if (depSender) formData.append('sender_wallet_address', depSender);
-      if (depProof) {
-        formData.append('payment_proof', {
-          uri: Platform.OS === 'android' ? depProof.uri : depProof.uri.replace('file://', ''),
-          name: depProof.name,
-          type: depProof.type,
-        });
-      }
-
-      await apiCall('/deposits/', 'POST', formData, true);
-
-      setDepModalVisible(false);
-      setDepAmount('');
-      setDepTxHash('');
-      setDepSender('');
-      setDepProof(null);
-      setDepProofFile('');
-      Alert.alert(
-        'Deposit Proof Submitted',
-        `Your deposit proof of $${amt.toFixed(2)} USDT has been submitted for compliance verification.`
-      );
-      loadWalletData();
-    } catch (err) {
-      Alert.alert('Deposit Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyCompanyAddress = (net) => {
-    Alert.alert('Copied to Clipboard', `Treasury ${net} Address:\n${companyWallets[net]}`);
-  };
 
   const getStatusColor = (status) => {
     const s = String(status).toUpperCase();
@@ -283,11 +183,11 @@ export default function WalletScreen({ onNavigate }) {
       <View style={styles.btnRow}>
         <TouchableOpacity
           style={styles.btnPrimary}
-          onPress={() => setDepModalVisible(true)}
+          onPress={() => onNavigate && onNavigate('investments')}
           activeOpacity={0.8}
         >
           <Feather name="plus-circle" size={14} color="#030507" style={{ marginRight: 4 }} />
-          <Text style={styles.btnPrimaryText}>Deposit Funds</Text>
+          <Text style={styles.btnPrimaryText}>+ New Plan</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.btnSecondary}
@@ -299,28 +199,45 @@ export default function WalletScreen({ onNavigate }) {
         </TouchableOpacity>
       </View>
 
-      {/* Deposits History Card */}
+      {/* Plan Deposits History Card */}
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderRow}>
           <View>
-            <Text style={styles.eyebrow}>HISTORY</Text>
-            <Text style={styles.cardTitle}>Deposit History</Text>
+            <Text style={styles.eyebrow}>PORTFOLIO DEPOSITS</Text>
+            <Text style={styles.cardTitle}>Plan Deposit History</Text>
           </View>
+          <TouchableOpacity
+            style={styles.cardHeaderBtn}
+            onPress={() => onNavigate && onNavigate('investments')}
+            activeOpacity={0.7}
+          >
+            <Feather name="plus" size={11} color={colors.goldSoft} style={{ marginRight: 3 }} />
+            <Text style={styles.cardHeaderBtnText}>New Plan</Text>
+          </TouchableOpacity>
         </View>
 
         {deposits.length === 0 ? (
-          <Text style={{ color: colors.textMuted, fontSize: 13, paddingVertical: 12 }}>
-            No deposit requests recorded yet.
-          </Text>
+          <View style={styles.emptyCardBox}>
+            <Text style={{ color: colors.textMuted, fontSize: 13, paddingVertical: 8 }}>
+              No investment plan deposits recorded yet.
+            </Text>
+            <TouchableOpacity
+              style={styles.inlineActionBtn}
+              onPress={() => onNavigate && onNavigate('investments')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.inlineActionBtnText}>Explore Investment Plans →</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           deposits.map((dep, idx) => (
             <View key={dep.id || idx} style={styles.row}>
               <View style={{ flex: 1, paddingRight: 8 }}>
                 <Text style={{ color: colors.textMain, fontWeight: '700', fontSize: 13 }}>
-                  +${Number(dep.amount).toFixed(2)} USDT ({dep.network || 'BEP20'})
+                  {dep.plan_name || dep.package_name || (dep.plan ? `Plan #${dep.plan}` : 'Investment Plan')} • +${Number(dep.amount || 0).toFixed(2)} USDT
                 </Text>
                 <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
-                  Tx: {dep.txn_hash || 'Pending On-Chain Proof'}
+                  {dep.network ? `${dep.network} • ` : ''}Tx: {dep.txn_hash || 'Pending On-Chain Proof'}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -535,155 +452,7 @@ export default function WalletScreen({ onNavigate }) {
         </View>
       </Modal>
 
-      {/* DEPOSIT MODAL */}
-      <Modal visible={depModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Deposit Crypto Funds</Text>
-              <TouchableOpacity onPress={() => setDepModalVisible(false)}>
-                <Text style={{ color: colors.textMuted, fontSize: 20, fontWeight: '700' }}>✕</Text>
-              </TouchableOpacity>
-            </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
-              <Text style={styles.label}>Deposit Network *</Text>
-              <View style={styles.toggleRow}>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, depNetwork === 'BEP20' && styles.toggleBtnActive]}
-                  onPress={() => setDepNetwork('BEP20')}
-                >
-                  <Text style={[styles.toggleBtnText, depNetwork === 'BEP20' && styles.toggleBtnTextActive]}>
-                    BEP20 (USDT)
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, depNetwork === 'TRC20' && styles.toggleBtnActive]}
-                  onPress={() => setDepNetwork('TRC20')}
-                >
-                  <Text style={[styles.toggleBtnText, depNetwork === 'TRC20' && styles.toggleBtnTextActive]}>
-                    TRC20 (USDT)
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Company Wallet Address */}
-              <View style={styles.companyWalletBox}>
-                <Text style={styles.companyWalletLabel}>Official Treasury Deposit Destination ({depNetwork}):</Text>
-                <View style={styles.walletCopyRow}>
-                  <Text style={styles.companyWalletAddrText} numberOfLines={1}>
-                    {companyWallets[depNetwork]}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.miniCopyBtn}
-                    onPress={() => copyCompanyAddress(depNetwork)}
-                  >
-                    <Feather name="copy" size={11} color="#030507" style={{ marginRight: 3 }} />
-                    <Text style={styles.miniCopyBtnText}>Copy</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.qrZoomRow}
-                  onPress={() => setLightboxVisible(true)}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="maximize-2" size={12} color={colors.goldSoft} />
-                  <Text style={styles.qrZoomText}>Tap to enlarge Deposit QR Code</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.walletNoticeText}>
-                  Send USDT ({depNetwork}) directly to this vault address, then enter your TxID below.
-                </Text>
-              </View>
-
-              <Text style={styles.label}>Deposit Amount ($ USDT) *</Text>
-              <TextInput
-                style={styles.input}
-                value={depAmount}
-                onChangeText={setDepAmount}
-                keyboardType="numeric"
-                placeholder="500.00"
-                placeholderTextColor={colors.textDim}
-              />
-
-              <Text style={styles.label}>Transaction Hash (TxID) *</Text>
-              <TextInput
-                style={styles.input}
-                value={depTxHash}
-                onChangeText={setDepTxHash}
-                placeholder="Enter blockchain TxID hash"
-                placeholderTextColor={colors.textDim}
-              />
-
-              <Text style={styles.label}>Your Sender Wallet Address (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={depSender}
-                onChangeText={setDepSender}
-                placeholder="Enter your USDT wallet address"
-                placeholderTextColor={colors.textDim}
-              />
-
-              <Text style={styles.label}>Upload Payment Screenshot (Optional)</Text>
-              <TouchableOpacity
-                style={[styles.uploadBox, depProof && { borderColor: colors.accentGreenSoft, backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}
-                onPress={handlePickDepositProof}
-                activeOpacity={0.7}
-              >
-                <Feather name={depProof ? "check-circle" : "upload-cloud"} size={15} color={depProof ? colors.accentGreenSoft : colors.goldSoft} style={{ marginRight: 6 }} />
-                <Text style={[styles.uploadBoxText, depProof && { color: colors.accentGreenSoft, fontWeight: '600' }]}>
-                  {depProofFile ? `Attached: ${depProofFile}` : 'Attach Receipt Screenshot'}
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
-
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity
-                style={styles.modalBtnCancel}
-                onPress={() => setDepModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ color: colors.textMuted, fontWeight: '600', fontSize: 13 }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalBtnConfirm}
-                onPress={handleDepositSubmit}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#030507" />
-                ) : (
-                  <Text style={styles.modalBtnConfirmText}>Submit Deposit Proof</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* QR Code Lightbox Modal */}
-      <Modal visible={lightboxVisible} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.lightboxOverlay}
-          activeOpacity={1}
-          onPress={() => setLightboxVisible(false)}
-        >
-          <View style={styles.lightboxCard}>
-            <Text style={styles.lightboxTitle}>Deposit QR Code ({depNetwork})</Text>
-            <View style={styles.qrPlaceholder}>
-              <Feather name="grid" size={90} color={colors.goldSoft} />
-            </View>
-            <Text style={styles.lightboxAddr} numberOfLines={2}>
-              {companyWallets[depNetwork]}
-            </Text>
-            <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setLightboxVisible(false)}>
-              <Text style={styles.lightboxCloseBtnText}>Close Window</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </ScrollView>
   );
 }
@@ -976,70 +745,38 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
   },
-  companyWalletLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    marginBottom: 4,
-    fontWeight: '600',
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  walletCopyRow: {
+  cardHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  companyWalletAddrText: {
-    flex: 1,
-    fontSize: 11,
-    color: colors.goldSoft,
-    fontWeight: '600',
-  },
-  miniCopyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.gold,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  miniCopyBtnText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#030507',
-  },
-  qrZoomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginVertical: 4,
-  },
-  qrZoomText: {
-    fontSize: 11,
-    color: colors.goldSoft,
-    fontWeight: '600',
-  },
-  walletNoticeText: {
-    fontSize: 9.5,
-    color: colors.textDim,
-    lineHeight: 14,
-  },
-  uploadBox: {
-    backgroundColor: '#0E131A',
-    borderRadius: 8,
+    backgroundColor: 'rgba(198, 153, 61, 0.15)',
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: colors.bgCardBorderGold,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 6,
   },
-  uploadBoxText: {
-    fontSize: 11.5,
+  cardHeaderBtnText: {
     color: colors.goldSoft,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyCardBox: {
+    paddingVertical: 8,
+  },
+  inlineActionBtn: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  inlineActionBtnText: {
+    color: colors.goldSoft,
+    fontSize: 12,
+    fontWeight: '700',
   },
   modalBtnRow: {
     flexDirection: 'row',
@@ -1066,57 +803,6 @@ const styles = StyleSheet.create({
     color: '#030507',
     fontWeight: '700',
     fontSize: 13,
-  },
-  lightboxOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  lightboxCard: {
-    backgroundColor: '#070A0E',
-    borderRadius: 16,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.bgCardBorderGold,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 320,
-  },
-  lightboxTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textMain,
-    marginBottom: 16,
-  },
-  qrPlaceholder: {
-    width: 180,
-    height: 180,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.bgCardBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  lightboxAddr: {
-    fontSize: 11,
-    color: colors.goldSoft,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  lightboxCloseBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  lightboxCloseBtnText: {
-    color: colors.textMain,
-    fontWeight: '700',
-    fontSize: 12,
   },
 });
 

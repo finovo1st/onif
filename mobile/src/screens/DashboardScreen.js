@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall, APP_DOMAIN } from '../config/api';
 import colors from '../theme/colors';
+import { copyToClipboard } from '../utils/clipboard';
 
 export default function DashboardScreen({ onNavigate }) {
   const { user } = useContext(AuthContext);
@@ -108,11 +109,11 @@ export default function DashboardScreen({ onNavigate }) {
     setRefreshing(false);
   };
 
-  const copyText = (label, text) => {
+  const copyText = async (label, text) => {
     if (!text) return;
     setCopyFeedback(label);
     setTimeout(() => setCopyFeedback(null), 2500);
-    Alert.alert('Copied to Clipboard', `${label}: ${text}`);
+    await copyToClipboard(text, label, true);
   };
 
   const activeItems = activeInvestments.filter(

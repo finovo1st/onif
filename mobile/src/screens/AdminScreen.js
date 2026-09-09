@@ -709,16 +709,6 @@ export default function AdminScreen({ onNavigate }) {
           </View>
           <Text style={styles.screenTitle}>Platform Governance</Text>
         </View>
-
-        {/* Header Action: Trigger ROI Button (Matching Web Topbar) */}
-        <TouchableOpacity
-          style={styles.headerTriggerRoiBtn}
-          onPress={() => setRoiModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <Feather name="zap" size={12} color="#030507" style={{ marginRight: 4 }} />
-          <Text style={styles.headerTriggerRoiBtnText}>Trigger ROI</Text>
-        </TouchableOpacity>
       </View>
 
       {/* ─── 7 SUB-PAGE NAVIGATION PILLS (MATCHING FRONTEND ADMIN) ─── */}
@@ -1607,43 +1597,8 @@ export default function AdminScreen({ onNavigate }) {
          ═══════════════════════════════════════════════════════════════ */}
       {activeTab === 'settings' && (
         <View>
-          {/* Automated ROI Batch Trigger (Matching Web Topbar Action) */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.eyebrow}>BATCH CALCULATION ENGINE</Text>
-              <Text style={styles.cardTitle}>Automated Weekly ROI Trigger</Text>
-            </View>
-
-            <Text style={styles.roiDesc}>
-              Calculates weekly yield returns for active investor plans and automatically disburses 5-level referral upline commissions.
-            </Text>
-
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                style={[styles.btnPrimary, { flex: 1 }]}
-                onPress={() => {
-                  setRoiMode('full_week');
-                  setRoiModalVisible(true);
-                }}
-              >
-                <Feather name="zap" size={13} color="#030507" style={{ marginRight: 4 }} />
-                <Text style={styles.btnPrimaryText}>Trigger Full Week</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btnSecondary, { flex: 1 }]}
-                onPress={() => {
-                  setRoiMode('by_day');
-                  setRoiModalVisible(true);
-                }}
-              >
-                <Feather name="calendar" size={13} color={colors.textMain} style={{ marginRight: 4 }} />
-                <Text style={styles.btnSecondaryText}>Trigger By Day</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* Official Company Deposit Wallets Configuration */}
-          <View style={[styles.card, { marginTop: 14 }]}>
+          <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.eyebrow}>OFFICIAL RECEIVING CHANNELS</Text>
               <Text style={styles.cardTitle}>Company Deposit Wallets &amp; QR Codes</Text>

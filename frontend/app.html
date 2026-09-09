@@ -525,26 +525,8 @@
           <button class="btn btn-sm btn-secondary" onclick="openModal('modal-withdraw')">Withdraw</button>
         </div>
 
-        <!-- Admin Quick Action (shown when admin) -->
-        <div id="admin-topbar-actions" style="display: none; gap: 8px;">
-          <button class="btn btn-sm btn-gold" onclick="openTriggerROIModal('full_week')"
-            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;"
-            title="Trigger 1 full week ROI for all active investments regardless of elapsed days">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            Trigger ROI
-          </button>
-          <button class="btn btn-sm btn-secondary" onclick="openTriggerROIModal('by_day')"
-            style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;"
-            title="Trigger ROI with days logic (prorated by elapsed weekdays Mon–Fri)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Trigger ROI (By Day)
-          </button>
-        </div>
+        <!-- Admin Actions Placeholder -->
+        <div id="admin-topbar-actions" style="display: none; gap: 8px;"></div>
 
         <div class="topbar-user" onclick="switchNav('profile')" style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); cursor: pointer;" title="View & Edit Profile">
           <div class="user-avatar" id="sidebar-avatar">—</div>

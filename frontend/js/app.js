@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     loadAllAPIData().then(() => {
       // Check for deep view routes in hash if logged in
-      const validViews = ['dashboard', 'investments', 'wallet', 'referrals', 'kyc', 'support'];
+      const validViews = ['dashboard', 'investments', 'wallet', 'referrals', 'kyc', 'support', 'profile'];
       const currentHash = window.location.hash.replace('#', '').toLowerCase();
       if (validViews.includes(currentHash)) {
         switchNav(currentHash);
@@ -378,7 +378,7 @@ function renderAllViews() {
 
     // Ensure non-admin users always display a valid user view and NEVER the admin view
     const activePageView = document.querySelector('.page-view.active');
-    const validViews = ['dashboard', 'investments', 'wallet', 'referrals', 'kyc', 'support'];
+    const validViews = ['dashboard', 'investments', 'wallet', 'referrals', 'kyc', 'support', 'profile'];
     const currentHash = window.location.hash.replace('#', '').toLowerCase();
 
     if (validViews.includes(currentHash)) {
@@ -480,6 +480,7 @@ function renderAllViews() {
   renderWithdrawalsTable();
   renderReferralView();
   renderSupportTicketsTable();
+  renderProfileView();
 }
 
 function renderActiveInvestmentsList() {
@@ -1295,6 +1296,9 @@ function switchNav(viewName) {
   if (viewName === 'kyc') {
     renderKYCView();
   }
+  if (viewName === 'profile') {
+    renderProfileView();
+  }
 
   const titles = {
     dashboard: 'Dashboard Overview',
@@ -1302,7 +1306,8 @@ function switchNav(viewName) {
     wallet: 'Wallet & Ledger History',
     referrals: 'Multi-Level Referral Downline',
     kyc: 'Identity Verification (KYC)',
-    support: 'Support Center'
+    support: 'Support Center',
+    profile: 'Member Profile & Account Security'
   };
   const titleEl = document.getElementById('header-page-title');
   if (titleEl) titleEl.innerText = titles[viewName] || 'FINOVO Portal';
@@ -4325,6 +4330,279 @@ async function handleKYCSubmit(e) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg> Submit Identity Documents for Verification`;
     }
+  }
+}
+
+// ─── User Profile & Account Security Handlers ──────────────────────────
+
+function renderProfileView() {
+  if (!state.user) return;
+
+  const u = state.user;
+  const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || u.email;
+  const initials = ((u.first_name ? u.first_name[0] : '') + (u.last_name ? u.last_name[0] : '')).toUpperCase() || (u.username ? u.username.slice(0, 2).toUpperCase() : 'U');
+
+  // Hero Card
+  const avatarEl = document.getElementById('prof-hero-avatar');
+  if (avatarEl) avatarEl.innerText = initials;
+
+  const nameEl = document.getElementById('prof-hero-name');
+  if (nameEl) nameEl.innerText = fullName;
+
+  const roleEl = document.getElementById('prof-hero-role');
+  if (roleEl) {
+    if (state.isAdmin) {
+      roleEl.className = 'badge badge-admin';
+      roleEl.innerText = 'ADMIN';
+    } else {
+      roleEl.className = 'badge badge-standard';
+      roleEl.innerText = 'Investor';
+    }
+  }
+
+  const kycStatus = u.kyc_status || 'UNVERIFIED';
+  const heroKyc = document.getElementById('prof-hero-kyc');
+  if (heroKyc) {
+    if (kycStatus === 'APPROVED') {
+      heroKyc.className = 'badge badge-approved';
+      heroKyc.innerText = 'KYC Verified';
+    } else if (kycStatus === 'PENDING') {
+      heroKyc.className = 'badge badge-pending';
+      heroKyc.innerText = 'KYC Under Review';
+    } else if (kycStatus === 'REJECTED') {
+      heroKyc.className = 'badge badge-rejected';
+      heroKyc.innerText = 'KYC Rejected';
+    } else {
+      heroKyc.className = 'badge badge-unverified';
+      heroKyc.innerText = 'KYC Unverified';
+    }
+  }
+
+  const emailEl = document.getElementById('prof-hero-email');
+  if (emailEl) emailEl.innerText = u.email || '—';
+
+  const joinedEl = document.getElementById('prof-hero-joined');
+  if (joinedEl) {
+    const joinedDate = u.date_joined || u.created_at;
+    joinedEl.innerText = joinedDate ? `Joined: ${new Date(joinedDate).toLocaleDateString()}` : 'Joined: 2026';
+  }
+
+  const levelEl = document.getElementById('prof-hero-level');
+  if (levelEl) levelEl.innerText = `Level ${u.active_level || 0} Member`;
+
+  const idEl = document.getElementById('prof-hero-id');
+  if (idEl) idEl.innerText = u.id ? String(u.id) : '—';
+
+  const refcodeEl = document.getElementById('prof-hero-refcode');
+  if (refcodeEl) refcodeEl.innerText = u.referral_code || '—';
+
+  // Form Fields Prefill
+  const inputEmail = document.getElementById('prof-email');
+  if (inputEmail) inputEmail.value = u.email || '';
+
+  const inputUsername = document.getElementById('prof-username');
+  if (inputUsername) inputUsername.value = u.username || '';
+
+  const inputFirstName = document.getElementById('prof-first-name');
+  if (inputFirstName) inputFirstName.value = u.first_name || '';
+
+  const inputLastName = document.getElementById('prof-last-name');
+  if (inputLastName) inputLastName.value = u.last_name || '';
+
+  const inputPhone = document.getElementById('prof-phone');
+  if (inputPhone) inputPhone.value = u.phone_number || '';
+
+  const inputCountry = document.getElementById('prof-country');
+  if (inputCountry) inputCountry.value = u.country || '';
+
+  const inputDob = document.getElementById('prof-dob');
+  if (inputDob) inputDob.value = u.date_of_birth || '';
+
+  const inputPass = document.getElementById('prof-current-password');
+  if (inputPass) inputPass.value = '';
+
+  // Governance / Security summary
+  const parentEmailEl = document.getElementById('prof-parent-email');
+  if (parentEmailEl) parentEmailEl.innerText = u.parent_email || 'Direct Platform Member';
+
+  const summaryKyc = document.getElementById('prof-kyc-status-badge');
+  if (summaryKyc) {
+    if (kycStatus === 'APPROVED') {
+      summaryKyc.className = 'badge badge-approved';
+      summaryKyc.innerText = 'VERIFIED';
+    } else if (kycStatus === 'PENDING') {
+      summaryKyc.className = 'badge badge-pending';
+      summaryKyc.innerText = 'IN REVIEW';
+    } else if (kycStatus === 'REJECTED') {
+      summaryKyc.className = 'badge badge-rejected';
+      summaryKyc.innerText = 'REJECTED';
+    } else {
+      summaryKyc.className = 'badge badge-unverified';
+      summaryKyc.innerText = 'UNVERIFIED';
+    }
+  }
+
+  const emailVerBadge = document.getElementById('prof-email-verified-badge');
+  if (emailVerBadge) {
+    if (u.is_email_verified) {
+      emailVerBadge.className = 'badge badge-approved';
+      emailVerBadge.innerText = 'VERIFIED';
+    } else {
+      emailVerBadge.className = 'badge badge-unverified';
+      emailVerBadge.innerText = 'UNVERIFIED';
+    }
+  }
+}
+
+async function handleProfileUpdate(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-profile');
+  const email = document.getElementById('prof-email').value.trim();
+  const username = document.getElementById('prof-username').value.trim();
+  const first_name = document.getElementById('prof-first-name').value.trim();
+  const last_name = document.getElementById('prof-last-name').value.trim();
+  const phone_number = document.getElementById('prof-phone').value.trim();
+  const country = document.getElementById('prof-country').value.trim();
+  const date_of_birth = document.getElementById('prof-dob').value || null;
+  const current_password = document.getElementById('prof-current-password')?.value;
+
+  if (!email) {
+    showToast('Email address is required.', true);
+    return;
+  }
+  if (!username) {
+    showToast('Username is required.', true);
+    return;
+  }
+  if (!current_password) {
+    showToast('Current password is required to save profile changes.', true);
+    return;
+  }
+
+  const payload = {
+    email,
+    username,
+    first_name,
+    last_name,
+    phone_number,
+    country,
+    current_password,
+  };
+  if (date_of_birth) {
+    payload.date_of_birth = date_of_birth;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Saving Changes…';
+  }
+
+  try {
+    const updated = await apiCall('/auth/profile/', 'PATCH', payload);
+    if (updated) {
+      state.user = { ...state.user, ...updated };
+    }
+    const passInput = document.getElementById('prof-current-password');
+    if (passInput) passInput.value = '';
+    showToast('Profile information updated successfully!');
+    renderAllViews();
+    renderProfileView();
+  } catch (err) {
+    showToast(err.message || 'Failed to update profile.', true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save Profile Changes
+      `;
+    }
+  }
+}
+
+async function handlePasswordChange(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-change-password');
+  const old_password = document.getElementById('prof-curr-pass').value;
+  const new_password = document.getElementById('prof-new-pass').value;
+  const new_password2 = document.getElementById('prof-confirm-pass').value;
+
+  if (!old_password) {
+    showToast('Please enter your current password.', true);
+    return;
+  }
+  if (!new_password) {
+    showToast('Please enter a new password.', true);
+    return;
+  }
+  if (new_password.length < 8) {
+    showToast('New password must be at least 8 characters.', true);
+    return;
+  }
+  if (new_password !== new_password2) {
+    showToast('New passwords do not match.', true);
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Updating Password…';
+  }
+
+  try {
+    const res = await apiCall('/auth/change-password/', 'POST', {
+      old_password,
+      new_password,
+      new_password2
+    });
+    showToast(res?.detail || 'Password changed successfully!');
+    const form = document.getElementById('form-profile-password');
+    if (form) form.reset();
+  } catch (err) {
+    showToast(err.message || 'Failed to change password.', true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        Update Password
+      `;
+    }
+  }
+}
+
+function togglePassField(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btnEl.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+  } else {
+    input.type = 'password';
+    btnEl.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+  }
+}
+
+function copyHeroProfileId() {
+  if (state.user && state.user.id) {
+    navigator.clipboard.writeText(String(state.user.id))
+      .then(() => showToast('Member ID copied to clipboard!'))
+      .catch(() => showToast(String(state.user.id)));
+  }
+}
+
+function copyHeroReferralCode() {
+  if (state.user && state.user.referral_code) {
+    navigator.clipboard.writeText(state.user.referral_code)
+      .then(() => showToast('Referral code copied to clipboard!'))
+      .catch(() => showToast(state.user.referral_code));
   }
 }
 

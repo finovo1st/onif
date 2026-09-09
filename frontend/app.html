@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="img/icon.png">
   <link rel="apple-touch-icon" href="img/icon.png">
   <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css?v=9">
+  <link rel="stylesheet" href="css/style.css?v=10">
   <!-- Instant Auth State Detection to Prevent Flash of Dummy/Unauthenticated Content -->
   <script>
     (function() {
@@ -371,6 +371,9 @@
         <a class="nav-item" onclick="switchNav('support')" id="nav-support">
           <span>Support Tickets</span>
         </a>
+        <a class="nav-item" onclick="switchNav('profile')" id="nav-profile">
+          <span>Profile</span>
+        </a>
         <a class="nav-item" href="download.html" target="_blank" id="nav-download-app" title="Download Official Finovo Mobile App" style="color: var(--gold-soft); display: inline-flex; align-items: center; gap: 5px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -494,6 +497,13 @@
               </svg>
               <span>Support Ticket Center</span>
             </a>
+            <a class="nav-dropdown-item" onclick="switchNav('profile')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>User Profile & Security</span>
+            </a>
           </div>
         </div>
       </nav>
@@ -526,14 +536,14 @@
           </button>
         </div>
 
-        <div class="topbar-user" style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line);">
+        <div class="topbar-user" onclick="switchNav('profile')" style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); cursor: pointer;" title="View & Edit Profile">
           <div class="user-avatar" id="sidebar-avatar">—</div>
           <div class="user-info-text">
             <div class="user-name" id="sidebar-username">—</div>
             <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
               <span class="user-role" id="sidebar-userrole">Level 0 Unlock</span>
               <span id="sidebar-kyc-badge" class="badge badge-unverified"
-                style="font-size: 9.5px; padding: 2px 6px; cursor: pointer;" onclick="switchNav('kyc')">KYC
+                style="font-size: 9.5px; padding: 2px 6px; cursor: pointer;" onclick="event.stopPropagation(); switchNav('kyc')">KYC
                 Unverified</span>
             </div>
           </div>
@@ -1495,7 +1505,226 @@
         </div>
       </section>
 
-      <!-- ================= 6. ADMIN PORTAL VIEW ================= -->
+      <!-- ================= 6. USER PROFILE & SECURITY VIEW ================= -->
+      <section id="view-profile" class="page-view">
+        <!-- Profile Hero Card -->
+        <div class="card profile-hero-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(198, 153, 61, 0.08) 0%, rgba(14, 19, 25, 0.85) 100%); border: 1px solid rgba(198, 153, 61, 0.25); padding: 24px;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <div class="profile-hero-avatar" id="prof-hero-avatar" style="width: 68px; height: 68px; border-radius: 50%; background: rgba(198, 153, 61, 0.15); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--gold);">
+                U
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <h2 id="prof-hero-name" style="margin: 0; font-size: 22px; font-weight: 700; color: var(--text);">User Name</h2>
+                  <span id="prof-hero-role" class="badge badge-standard">Investor</span>
+                  <span id="prof-hero-kyc" class="badge badge-unverified" style="cursor: pointer;" onclick="switchNav('kyc')">KYC Unverified</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--mute); flex-wrap: wrap;">
+                  <span id="prof-hero-email" style="display: flex; align-items: center; gap: 4px; font-family: var(--font-mono);">user@example.com</span>
+                  <span>•</span>
+                  <span id="prof-hero-joined">Joined: —</span>
+                  <span>•</span>
+                  <span id="prof-hero-level" style="color: var(--gold-soft); font-weight: 600;">Level 0 Member</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Copy Badges -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="profile-id-box" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+                <div>
+                  <div style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">Member ID</div>
+                  <div id="prof-hero-id" style="font-size: 12px; font-family: var(--font-mono); color: var(--text); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyHeroProfileId()" title="Copy User ID">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+
+              <div class="profile-id-box" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+                <div>
+                  <div style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">Referral Code</div>
+                  <div id="prof-hero-refcode" style="font-size: 12px; font-family: var(--font-mono); color: var(--gold); font-weight: 700;">—</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyHeroReferralCode()" title="Copy Referral Code">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column Grid for Profile Info and Password Change -->
+        <div class="grid-2" style="gap: 24px; align-items: start;">
+          <!-- Left Column: Personal Information Form -->
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Account Details</div>
+                <h2 class="section-title">Personal Information</h2>
+              </div>
+            </div>
+            <p style="font-size: 13px; color: var(--mute); margin-bottom: 20px;">
+              Update your account credentials and contact details. Your email is your primary institutional login identifier.
+            </p>
+
+            <form id="form-profile-info" onsubmit="handleProfileUpdate(event)">
+              <div class="form-group">
+                <label class="form-label" for="prof-email">Email Address <span style="color: var(--gold);">*</span></label>
+                <input type="email" id="prof-email" class="form-control" required placeholder="your.email@example.com" style="font-family: var(--font-mono);">
+                <div style="font-size: 11px; color: var(--mute); margin-top: 4px;">
+                  Updating email changes your account login address and where system receipts and withdrawal OTPs are sent.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-username">Username <span style="color: var(--gold);">*</span></label>
+                <input type="text" id="prof-username" class="form-control" required placeholder="Choose a username" style="font-family: var(--font-mono);">
+              </div>
+
+              <div class="grid-2" style="gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label" for="prof-first-name">Legal First Name</label>
+                  <input type="text" id="prof-first-name" class="form-control" placeholder="First Name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="prof-last-name">Legal Last Name</label>
+                  <input type="text" id="prof-last-name" class="form-control" placeholder="Last Name">
+                </div>
+              </div>
+
+              <div class="grid-2" style="gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label" for="prof-phone">Phone Number</label>
+                  <input type="tel" id="prof-phone" class="form-control" placeholder="+1 (555) 000-0000">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="prof-country">Country / Jurisdiction</label>
+                  <input type="text" id="prof-country" class="form-control" placeholder="Country of residence">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-dob">Date of Birth</label>
+                <input type="date" id="prof-dob" class="form-control">
+              </div>
+
+              <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+                <label class="form-label" for="prof-current-password">Current Password <span style="color: var(--gold);">*</span></label>
+                <div style="position: relative;">
+                  <input type="password" id="prof-current-password" class="form-control" required placeholder="Enter current password to authorize changes" autocomplete="current-password">
+                  <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-current-password', this)" title="Show / Hide Password">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  </button>
+                </div>
+                <div style="font-size: 11px; color: var(--mute); margin-top: 4px;">
+                  Enter your existing account password to authorize and save these profile updates.
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="btn-save-profile" style="width: 100%; justify-content: center; margin-top: 10px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Save Profile Changes
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Change Password & Security Details -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Change Password Card -->
+            <div class="card">
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Authentication Security</div>
+                  <h2 class="section-title">Change Password</h2>
+                </div>
+              </div>
+              <p style="font-size: 13px; color: var(--mute); margin-bottom: 20px;">
+                Ensure your account is protected with a secure password containing at least 8 characters.
+              </p>
+
+              <form id="form-profile-password" onsubmit="handlePasswordChange(event)">
+                <div class="form-group">
+                  <label class="form-label" for="prof-curr-pass">Current Password <span style="color: var(--accent-danger);">*</span></label>
+                  <div style="position: relative;">
+                    <input type="password" id="prof-curr-pass" class="form-control" required placeholder="Enter current password" autocomplete="current-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-curr-pass', this)" title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="prof-new-pass">New Password <span style="color: var(--gold);">*</span></label>
+                  <div style="position: relative;">
+                    <input type="password" id="prof-new-pass" class="form-control" required minlength="8" placeholder="Enter new password (min. 8 characters)" autocomplete="new-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-new-pass', this)" title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="prof-confirm-pass">Confirm New Password <span style="color: var(--gold);">*</span></label>
+                  <div style="position: relative;">
+                    <input type="password" id="prof-confirm-pass" class="form-control" required minlength="8" placeholder="Re-enter new password" autocomplete="new-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-confirm-pass', this)" title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-secondary" id="btn-change-password" style="width: 100%; justify-content: center; margin-top: 10px; border-color: var(--gold-soft); color: var(--gold);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  Update Password
+                </button>
+              </form>
+            </div>
+
+            <!-- Account Security & Upline Summary Card -->
+            <div class="card">
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Trust &amp; Hierarchy</div>
+                  <h2 class="section-title">Account Governance</h2>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                  <span style="color: var(--mute);">Sponsor / Upline:</span>
+                  <b id="prof-parent-email" style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">Direct Platform Member</b>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                  <span style="color: var(--mute);">Identity Verification:</span>
+                  <span id="prof-kyc-status-badge" class="badge badge-unverified" style="cursor: pointer;" onclick="switchNav('kyc')">UNVERIFIED</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                  <span style="color: var(--mute);">Email Verification:</span>
+                  <span id="prof-email-verified-badge" class="badge badge-approved">VERIFIED</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: var(--mute);">Capital Return Cap:</span>
+                  <b style="color: var(--gold); font-family: var(--font-mono);">300% (3.0x Factor)</b>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 7. ADMIN PORTAL VIEW ================= -->
       <section id="view-admin" class="page-view">
 
 
@@ -3633,7 +3862,7 @@
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/app.js?v=19"></script>
+  <script src="js/app.js?v=20"></script>
 </body>
 
 </html>

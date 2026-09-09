@@ -107,6 +107,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     kyc_document_front_url = serializers.SerializerMethodField(read_only=True)
     kyc_document_back_url = serializers.SerializerMethodField(read_only=True)
     is_commission_bypassed = serializers.BooleanField(read_only=True)
+    current_password = serializers.CharField(
+        write_only=True,
+        required=False,
+        error_messages={
+            'required': 'Current password is required to update your profile.',
+            'blank': 'Current password is required to update your profile.',
+        },
+    )
 
     class Meta:
         model = User
@@ -120,15 +128,45 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'referral_code', 'parent_email', 'active_level', 'active_direct_level', 'active_roi_level',
             'bypass_plan_and_level_requirements', 'is_commission_bypassed',
             'date_joined', 'created_at',
+            'current_password',
         ]
         read_only_fields = [
-            'id', 'email', 'role', 'is_staff', 'is_superuser', 'kyc_status',
+            'id', 'role', 'is_staff', 'is_superuser', 'kyc_status',
             'kyc_document_type', 'kyc_document_number', 'kyc_document_front_url', 'kyc_document_back_url',
             'kyc_submitted_at', 'kyc_reviewed_at', 'kyc_rejection_reason',
             'is_email_verified', 'referral_code', 'active_level', 'active_direct_level', 'active_roi_level',
             'bypass_plan_and_level_requirements', 'is_commission_bypassed',
             'date_joined', 'created_at', 'parent_email',
         ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        current_password = attrs.pop('current_password', None)
+        if not current_password:
+            raise serializers.ValidationError({
+                'current_password': 'Current password is required to update your profile.'
+            })
+
+        user = self.instance or (self.context.get('request').user if self.context.get('request') else None)
+        if user and not user.check_password(current_password):
+            raise serializers.ValidationError({
+                'current_password': 'Current password is incorrect.'
+            })
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        validated_data.pop('current_password', None)
+        return super().update(instance, validated_data)
+
+    def validate_email(self, value):
+        user = self.instance
+        normalized = value.strip().lower()
+        if user and user.email.lower() == normalized:
+            return normalized
+        if User.objects.filter(email__iexact=normalized).exclude(pk=getattr(user, 'pk', None)).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
+        return normalized
 
     def get_full_name(self, obj) -> str:
         return obj.full_name

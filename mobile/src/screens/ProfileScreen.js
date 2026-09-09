@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,11 +8,14 @@ import {
   Alert,
   RefreshControl,
   Switch,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import colors from '../theme/colors';
 import { copyToClipboard } from '../utils/clipboard';
+import { apiCall } from '../config/api';
 
 export default function ProfileScreen({ onNavigate }) {
   const {
@@ -27,6 +30,39 @@ export default function ProfileScreen({ onNavigate }) {
   const [refreshing, setRefreshing] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(null);
 
+  // Profile editing state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [email, setEmail] = useState(user?.email || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [firstName, setFirstName] = useState(user?.first_name || '');
+  const [lastName, setLastName] = useState(user?.last_name || '');
+  const [phone, setPhone] = useState(user?.phone_number || '');
+  const [country, setCountry] = useState(user?.country || '');
+  const [profileCurrentPassword, setProfileCurrentPassword] = useState('');
+  const [showProfileCurrentPassword, setShowProfileCurrentPassword] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password changing state
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || '');
+      setUsername(user.username || '');
+      setFirstName(user.first_name || '');
+      setLastName(user.last_name || '');
+      setPhone(user.phone_number || '');
+      setCountry(user.country || '');
+    }
+  }, [user]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -35,6 +71,80 @@ export default function ProfileScreen({ onNavigate }) {
       console.warn('Profile refresh error:', e.message);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!email.trim()) {
+      Alert.alert('Validation Error', 'Email address is required.');
+      return;
+    }
+    if (!username.trim()) {
+      Alert.alert('Validation Error', 'Username is required.');
+      return;
+    }
+    if (!profileCurrentPassword) {
+      Alert.alert('Validation Error', 'Current password is required to save profile changes.');
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      const payload = {
+        email: email.trim(),
+        username: username.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone_number: phone.trim(),
+        country: country.trim(),
+        current_password: profileCurrentPassword,
+      };
+      await apiCall('/auth/profile/', 'PATCH', payload);
+      if (fetchProfile) await fetchProfile();
+      Alert.alert('Success', 'Your profile details have been updated successfully.');
+      setIsEditingProfile(false);
+      setProfileCurrentPassword('');
+    } catch (err) {
+      Alert.alert('Update Failed', err.message || 'Could not update profile.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!oldPassword) {
+      Alert.alert('Validation Error', 'Please enter your current password.');
+      return;
+    }
+    if (!newPassword) {
+      Alert.alert('Validation Error', 'Please enter a new password.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      Alert.alert('Validation Error', 'New password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Validation Error', 'New passwords do not match.');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const res = await apiCall('/auth/change-password/', 'POST', {
+        old_password: oldPassword,
+        new_password: newPassword,
+        new_password2: confirmPassword,
+      });
+      Alert.alert('Success', res?.detail || 'Password changed successfully.');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsChangingPassword(false);
+    } catch (err) {
+      Alert.alert('Password Change Failed', err.message || 'Could not change password.');
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -238,7 +348,305 @@ export default function ProfileScreen({ onNavigate }) {
         </View>
       )}
 
-      {/* ─── 4. ACCOUNT NAVIGATION & VERIFICATION ─── */}
+      {/* ─── 4. PERSONAL DETAILS & EDIT PROFILE ─── */}
+      <Text style={styles.sectionHeading}>PROFILE &amp; SECURITY SETTINGS</Text>
+      <View style={styles.formCard}>
+        <View style={styles.formCardHeader}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={[styles.menuIconBox, { backgroundColor: 'rgba(198, 153, 61, 0.15)' }]}>
+              <Feather name="user" size={17} color={colors.goldSoft} />
+            </View>
+            <View>
+              <Text style={styles.formCardTitle}>Personal Information</Text>
+              <Text style={styles.formCardSub}>Edit email, names, and contact details</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.editToggleBtn}
+            onPress={() => {
+              setIsEditingProfile(!isEditingProfile);
+              setProfileCurrentPassword('');
+            }}
+            activeOpacity={0.7}
+          >
+            <Feather
+              name={isEditingProfile ? 'x' : 'edit-2'}
+              size={13}
+              color={isEditingProfile ? colors.accentDanger : colors.goldSoft}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={[
+                styles.editToggleText,
+                { color: isEditingProfile ? colors.accentDanger : colors.goldSoft },
+              ]}
+            >
+              {isEditingProfile ? 'Cancel' : 'Edit'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {!isEditingProfile ? (
+          <View style={styles.infoList}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email Address</Text>
+              <Text style={styles.infoVal}>{user?.email || 'Not Set'}</Text>
+            </View>
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Username</Text>
+              <Text style={styles.infoVal}>@{user?.username || 'member'}</Text>
+            </View>
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Full Legal Name</Text>
+              <Text style={styles.infoVal}>{fullName}</Text>
+            </View>
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone Number</Text>
+              <Text style={styles.infoVal}>{user?.phone_number || 'Not Set'}</Text>
+            </View>
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Country / Region</Text>
+              <Text style={styles.infoVal}>{user?.country || 'Not Set'}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.editForm}>
+            <Text style={styles.inputLabel}>Email Address *</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email address"
+              placeholderTextColor={colors.textDim}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Text style={styles.inputHelp}>
+              Updating email updates your account sign-in address.
+            </Text>
+
+            <Text style={styles.inputLabel}>Username *</Text>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="Enter username"
+              placeholderTextColor={colors.textDim}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="First name"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Last name"
+                  placeholderTextColor={colors.textDim}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+1 (555) 000-0000"
+              placeholderTextColor={colors.textDim}
+              keyboardType="phone-pad"
+            />
+
+            <Text style={styles.inputLabel}>Country / Jurisdiction</Text>
+            <TextInput
+              style={styles.input}
+              value={country}
+              onChangeText={setCountry}
+              placeholder="Country"
+              placeholderTextColor={colors.textDim}
+            />
+
+            <Text style={[styles.inputLabel, { marginTop: 8 }]}>Current Password *</Text>
+            <View style={styles.passInputWrap}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={profileCurrentPassword}
+                onChangeText={setProfileCurrentPassword}
+                placeholder="Enter current password to confirm"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showProfileCurrentPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.passEyeBtn}
+                onPress={() => setShowProfileCurrentPassword(!showProfileCurrentPassword)}
+              >
+                <Feather
+                  name={showProfileCurrentPassword ? 'eye-off' : 'eye'}
+                  size={15}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.inputHelp}>
+              Required to verify your identity before saving profile changes.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.primaryActionBtn}
+              onPress={handleSaveProfile}
+              disabled={savingProfile}
+              activeOpacity={0.8}
+            >
+              {savingProfile ? (
+                <ActivityIndicator size="small" color="#030507" />
+              ) : (
+                <>
+                  <Feather name="check" size={15} color="#030507" style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryActionBtnText}>Save Profile Details</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* ─── 5. SECURITY & CHANGE PASSWORD ─── */}
+      <View style={styles.formCard}>
+        <View style={styles.formCardHeader}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={[styles.menuIconBox, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+              <Feather name="lock" size={17} color={colors.accentDanger} />
+            </View>
+            <View>
+              <Text style={styles.formCardTitle}>Password &amp; Security</Text>
+              <Text style={styles.formCardSub}>Change your account login password</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.editToggleBtn}
+            onPress={() => setIsChangingPassword(!isChangingPassword)}
+            activeOpacity={0.7}
+          >
+            <Feather
+              name={isChangingPassword ? 'x' : 'key'}
+              size={13}
+              color={isChangingPassword ? colors.accentDanger : colors.goldSoft}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={[
+                styles.editToggleText,
+                { color: isChangingPassword ? colors.accentDanger : colors.goldSoft },
+              ]}
+            >
+              {isChangingPassword ? 'Cancel' : 'Change'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {!isChangingPassword ? (
+          <View style={{ paddingVertical: 4 }}>
+            <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 17 }}>
+              Protect your account by ensuring you use a strong, unique password of at least 8 characters.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.editForm}>
+            <Text style={styles.inputLabel}>Current Password *</Text>
+            <View style={styles.passInputWrap}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={oldPassword}
+                onChangeText={setOldPassword}
+                placeholder="Enter current password"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showOldPass}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.passEyeBtn}
+                onPress={() => setShowOldPass(!showOldPass)}
+              >
+                <Feather name={showOldPass ? 'eye-off' : 'eye'} size={15} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>New Password (min. 8 characters) *</Text>
+            <View style={styles.passInputWrap}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Enter new password"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showNewPass}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.passEyeBtn}
+                onPress={() => setShowNewPass(!showNewPass)}
+              >
+                <Feather name={showNewPass ? 'eye-off' : 'eye'} size={15} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Confirm New Password *</Text>
+            <View style={styles.passInputWrap}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm new password"
+                placeholderTextColor={colors.textDim}
+                secureTextEntry={!showConfirmPass}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.passEyeBtn}
+                onPress={() => setShowConfirmPass(!showConfirmPass)}
+              >
+                <Feather name={showConfirmPass ? 'eye-off' : 'eye'} size={15} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.primaryActionBtn, { backgroundColor: colors.gold, marginTop: 14 }]}
+              onPress={handleChangePassword}
+              disabled={savingPassword}
+              activeOpacity={0.8}
+            >
+              {savingPassword ? (
+                <ActivityIndicator size="small" color="#030507" />
+              ) : (
+                <>
+                  <Feather name="shield" size={15} color="#030507" style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryActionBtnText}>Update Password</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* ─── 6. ACCOUNT NAVIGATION & VERIFICATION ─── */}
       <Text style={styles.sectionHeading}>ACCOUNT &amp; GOVERNANCE</Text>
       <View style={styles.menuGroup}>
         {/* KYC Verification Item */}
@@ -743,5 +1151,121 @@ const styles = StyleSheet.create({
   footerSubText: {
     fontSize: 9.5,
     color: colors.textDim,
+  },
+
+  // Profile Edit & Password Form Styles
+  formCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    padding: 16,
+    marginBottom: 16,
+  },
+  formCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  formCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textMain,
+  },
+  formCardSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  editToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+  },
+  editToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  infoList: {
+    marginTop: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  infoVal: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.textMain,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  editForm: {
+    marginTop: 6,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    marginTop: 6,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: '#0E131A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    color: colors.textMain,
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  inputHelp: {
+    fontSize: 10,
+    color: colors.textDim,
+    marginBottom: 6,
+    lineHeight: 14,
+  },
+  passInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+    marginBottom: 4,
+  },
+  passEyeBtn: {
+    position: 'absolute',
+    right: 12,
+    padding: 6,
+  },
+  primaryActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.goldSoft,
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  primaryActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#030507',
   },
 });

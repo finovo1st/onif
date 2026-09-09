@@ -3526,4 +3526,54 @@ html.app-ready .main-wrapper { display: flex !important; }
   box-shadow: none;
   transform: none;
 }
+
+/* ─── Profile & Account Security View Styles ────────────────────────── */
+.btn-toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--mute);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  z-index: 2;
+}
+
+.btn-toggle-eye:hover {
+  color: var(--gold);
+}
+
+.profile-hero-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(198, 153, 61, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .profile-hero-card {
+    padding: 16px !important;
+  }
+  .profile-id-box {
+    flex: 1;
+    min-width: 130px;
+  }
+}
+
 

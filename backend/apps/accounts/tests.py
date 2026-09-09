@@ -164,10 +164,34 @@ class AuthTests(APITestCase):
         user = self._create_verified_user()
         refresh = RefreshToken.for_user(user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
-        response = self.client.patch(self.profile_url, {'first_name': 'Jane', 'country': 'India'})
+        response = self.client.patch(self.profile_url, {
+            'first_name': 'Jane',
+            'country': 'India',
+            'current_password': 'SecurePass123!',
+        })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user.refresh_from_db()
         self.assertEqual(user.first_name, 'Jane')
+
+    def test_update_profile_missing_password(self):
+        user = self._create_verified_user()
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+        response = self.client.patch(self.profile_url, {'first_name': 'Jane', 'country': 'India'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('current_password', response.data)
+
+    def test_update_profile_wrong_password(self):
+        user = self._create_verified_user()
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+        response = self.client.patch(self.profile_url, {
+            'first_name': 'Jane',
+            'country': 'India',
+            'current_password': 'IncorrectPassword!',
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('current_password', response.data)
 
     def test_profile_unauthenticated(self):
         response = self.client.get(self.profile_url)

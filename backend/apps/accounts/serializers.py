@@ -45,11 +45,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, validators=[validate_password]
     )
     password2 = serializers.CharField(write_only=True, required=True, label='Confirm Password')
-    referral_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    referral_code = serializers.CharField(write_only=True, required=True, allow_blank=False)
 
     class Meta:
         model = User
         fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password2', 'referral_code']
+
+    def validate_referral_code(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Referral code is required for registration.")
+        code = value.strip().upper()
+        if not User.objects.filter(referral_code=code).exists():
+            raise serializers.ValidationError("Invalid referral code. Please enter a valid sponsor code.")
+        return code
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -57,19 +65,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        referral_code = validated_data.pop('referral_code', None)
+        referral_code = validated_data.pop('referral_code')
         validated_data.pop('password2')
         password = validated_data.pop('password')
 
         user = User(**validated_data)
 
-        # Link parent via referral code
-        if referral_code:
-            try:
-                parent = User.objects.get(referral_code=referral_code)
-                user.parent = parent
-            except User.DoesNotExist:
-                raise serializers.ValidationError({'referral_code': 'Invalid referral code.'})
+        # Link parent via referral code (compulsory)
+        try:
+            parent = User.objects.get(referral_code=referral_code)
+            user.parent = parent
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'referral_code': 'Invalid referral code.'})
 
         user.set_password(password)
         user.save()

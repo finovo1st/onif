@@ -1585,6 +1585,17 @@ async function handleRegister(e) {
     return;
   }
 
+  if (!referral_code) {
+    showToast('A sponsor referral code is required to register.', true);
+    const refInput = document.getElementById('reg-refcode');
+    if (refInput) {
+      refInput.focus();
+      refInput.style.borderColor = 'var(--accent-danger, #ef4444)';
+      setTimeout(() => { if (refInput) refInput.style.borderColor = ''; }, 3500);
+    }
+    return;
+  }
+
   if (tncCheckbox && !tncCheckbox.checked) {
     showToast('Please read and agree to the Terms & Conditions before creating an account.', true);
     return;

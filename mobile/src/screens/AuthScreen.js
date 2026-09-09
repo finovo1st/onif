@@ -128,6 +128,10 @@ export default function AuthScreen({ initialMode, initialRefCode, initialEmail }
       Alert.alert('Password Error', 'Passwords do not match.');
       return;
     }
+    if (!refCode || !refCode.trim()) {
+      Alert.alert('Validation Error', 'A sponsor referral code is required to register.');
+      return;
+    }
     if (!agreedToTnc) {
       Alert.alert(
         'Terms & Conditions Required',
@@ -440,12 +444,12 @@ export default function AuthScreen({ initialMode, initialRefCode, initialEmail }
               secureTextEntry={!showRegPassword}
             />
 
-            <Text style={styles.label}>Sponsor / Referral Code (Optional)</Text>
+            <Text style={styles.label}>Sponsor / Referral Code *</Text>
             <TextInput
               style={styles.input}
               value={refCode}
               onChangeText={setRefCode}
-              placeholder="Enter sponsor code if any"
+              placeholder="Enter sponsor referral code"
               placeholderTextColor={colors.textDim}
               autoCapitalize="characters"
             />

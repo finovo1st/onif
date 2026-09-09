@@ -24,6 +24,7 @@ class AuthTests(APITestCase):
         self.reset_password_url = reverse('accounts:reset_password')
         self.change_email_url = reverse('accounts:change_unverified_email')
 
+        self.sponsor = self._create_verified_user('sponsor@finovo.com', 'sponsor')
         self.user_data = {
             'email': 'test@finovo.com',
             'username': 'testuser',
@@ -31,6 +32,7 @@ class AuthTests(APITestCase):
             'last_name': 'Doe',
             'password': 'SecurePass123!',
             'password2': 'SecurePass123!',
+            'referral_code': self.sponsor.referral_code,
         }
 
     def _create_verified_user(self, email='verified@finovo.com', username='verified'):
@@ -54,6 +56,11 @@ class AuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(email='test@finovo.com').exists())
 
+    def test_register_without_referral_code(self):
+        data = {k: v for k, v in self.user_data.items() if k != 'referral_code'}
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_register_password_mismatch(self):
         data = {**self.user_data, 'password2': 'WrongPass123!'}
         response = self.client.post(self.register_url, data)
@@ -65,12 +72,12 @@ class AuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_with_referral_code(self):
-        sponsor = self._create_verified_user('sponsor@finovo.com', 'sponsor')
-        data = {**self.user_data, 'referral_code': sponsor.referral_code}
+        new_sponsor = self._create_verified_user('sponsor2@finovo.com', 'sponsor2')
+        data = {**self.user_data, 'referral_code': new_sponsor.referral_code}
         response = self.client.post(self.register_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         new_user = User.objects.get(email='test@finovo.com')
-        self.assertEqual(new_user.parent, sponsor)
+        self.assertEqual(new_user.parent, new_sponsor)
 
     def test_register_with_invalid_referral_code(self):
         data = {**self.user_data, 'referral_code': 'INVALID00'}

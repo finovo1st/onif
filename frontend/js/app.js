@@ -347,8 +347,14 @@ function renderAllViews() {
   const adminActions = document.getElementById('admin-topbar-actions');
 
   if (isAdmin) {
-    if (topNavUser) topNavUser.style.display = 'none';
-    if (topNavAdmin) topNavAdmin.style.display = 'flex';
+    if (topNavUser) {
+      topNavUser.style.display = 'none';
+      topNavUser.classList.add('hidden');
+    }
+    if (topNavAdmin) {
+      topNavAdmin.style.display = 'flex';
+      topNavAdmin.classList.remove('hidden');
+    }
     if (userActions) userActions.style.display = 'none';
     if (adminActions) adminActions.style.display = 'flex';
     document.getElementById('sidebar-userrole').innerHTML = `<span class="badge badge-admin">ADMIN COMMAND</span>`;
@@ -356,8 +362,14 @@ function renderAllViews() {
     // Automatically default to Admin Overview on login
     switchAdminNav('overview');
   } else {
-    if (topNavUser) topNavUser.style.display = 'flex';
-    if (topNavAdmin) topNavAdmin.style.display = 'none';
+    if (topNavUser) {
+      topNavUser.style.display = 'flex';
+      topNavUser.classList.remove('hidden');
+    }
+    if (topNavAdmin) {
+      topNavAdmin.style.display = 'none';
+      topNavAdmin.classList.add('hidden');
+    }
     if (userActions) userActions.style.display = 'flex';
     if (adminActions) adminActions.style.display = 'none';
     const banner = document.getElementById('admin-investor-mode-banner');
@@ -1861,8 +1873,14 @@ function handleLogout() {
   const adminActions = document.getElementById('admin-topbar-actions');
   const banner = document.getElementById('admin-investor-mode-banner');
 
-  if (topNavUser) topNavUser.style.display = 'flex';
-  if (topNavAdmin) topNavAdmin.style.display = 'none';
+  if (topNavUser) {
+    topNavUser.style.display = 'flex';
+    topNavUser.classList.remove('hidden');
+  }
+  if (topNavAdmin) {
+    topNavAdmin.style.display = 'none';
+    topNavAdmin.classList.add('hidden');
+  }
   if (userActions) userActions.style.display = 'flex';
   if (adminActions) adminActions.style.display = 'none';
   if (banner) banner.style.display = 'none';

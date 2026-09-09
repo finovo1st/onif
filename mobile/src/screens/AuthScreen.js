@@ -15,23 +15,29 @@ import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import colors from '../theme/colors';
 
-export default function AuthScreen({ initialMode, initialRefCode }) {
+export default function AuthScreen({ initialMode, initialRefCode, initialEmail }) {
   const [authMode, setAuthMode] = useState(initialMode || 'login'); // 'login' | 'register' | 'verify-otp' | 'forgot' | 'reset'
   const {
     login,
     register,
     verifyEmail,
     resendOTP,
+    changeUnverifiedEmail,
     forgotPassword,
     resendForgotOTP,
     resetPassword,
+    logout,
     loading,
   } = useContext(AuthContext);
 
   useEffect(() => {
     if (initialMode) setAuthMode(initialMode);
     if (initialRefCode) setRefCode(initialRefCode);
-  }, [initialMode, initialRefCode]);
+    if (initialEmail) {
+      setEmail(initialEmail);
+      setOtpEmailDisplay(initialEmail);
+    }
+  }, [initialMode, initialRefCode, initialEmail]);
 
   // Form State - Clean Live Empty Defaults
   const [email, setEmail] = useState('');
@@ -54,6 +60,9 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
   const [otpCode, setOtpCode] = useState('');
   const [otpEmailDisplay, setOtpEmailDisplay] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState('');
+  const [changeEmailLoading, setChangeEmailLoading] = useState(false);
 
   // Forgot / Reset Password Fields
   const [resetIdentifier, setResetIdentifier] = useState('');
@@ -85,13 +94,29 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
       return;
     }
     try {
-      await login(email, password);
+      const res = await login(email, password);
+      if (res && res.requiresVerification) {
+        setOtpEmailDisplay(res.email || email);
+        setOtpCode('');
+        setOtpCountdown(60);
+        setAuthMode('verify-otp');
+        Alert.alert(
+          'Verification Required',
+          'Please enter the 6-digit verification code sent to your email to verify your account.'
+        );
+      }
     } catch (err) {
       Alert.alert(
         'Sign In Failed',
         err.message || 'Unable to sign in. Please verify your credentials.'
       );
     }
+  };
+
+  const onCancelOTP = (targetMode) => {
+    logout();
+    setOtpCode('');
+    setAuthMode(targetMode);
   };
 
   const onRegisterSubmit = async () => {
@@ -150,6 +175,35 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
       Alert.alert('Code Sent', 'A fresh 6-digit verification code has been dispatched to your email.');
     } catch (err) {
       Alert.alert('Resend Error', err.message);
+    }
+  };
+
+  const onChangeEmailSubmit = async () => {
+    const trimmed = newEmailInput.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@')) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+    if (trimmed === (otpEmailDisplay || email).toLowerCase()) {
+      Alert.alert('Validation Error', 'The new email must be different from current email.');
+      return;
+    }
+
+    setChangeEmailLoading(true);
+    try {
+      const res = await changeUnverifiedEmail(trimmed);
+      const updated = res?.email || trimmed;
+      setOtpEmailDisplay(updated);
+      setEmail(updated);
+      setNewEmailInput('');
+      setShowChangeEmail(false);
+      setOtpCode('');
+      setOtpCountdown(60);
+      Alert.alert('Email Updated', 'Your email address has been updated and a fresh verification code has been dispatched.');
+    } catch (err) {
+      Alert.alert('Update Failed', err.message || 'Unable to update email address.');
+    } finally {
+      setChangeEmailLoading(false);
     }
   };
 
@@ -458,6 +512,46 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
               <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>{otpEmailDisplay}</Text>
             </Text>
 
+            <TouchableOpacity
+              onPress={() => {
+                setShowChangeEmail(!showChangeEmail);
+                if (!showChangeEmail) setNewEmailInput(otpEmailDisplay || email);
+              }}
+              style={{ marginTop: 2, marginBottom: 12 }}
+              activeOpacity={0.7}
+            >
+              <Text style={{ color: colors.goldSoft, fontSize: 12, textDecorationLine: 'underline', fontWeight: '600' }}>
+                {showChangeEmail ? 'Hide Email Edit' : 'Wrong email? Change'}
+              </Text>
+            </TouchableOpacity>
+
+            {showChangeEmail && (
+              <View style={{ width: '100%', marginBottom: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                <Text style={[styles.label, { marginTop: 0 }]}>Enter Correct Email</Text>
+                <TextInput
+                  style={[styles.input, { marginBottom: 10 }]}
+                  value={newEmailInput}
+                  onChangeText={setNewEmailInput}
+                  placeholder="correct@example.com"
+                  placeholderTextColor={colors.textDim}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={[styles.btnPrimary, { height: 42, paddingVertical: 0, justifyContent: 'center' }]}
+                  onPress={onChangeEmailSubmit}
+                  disabled={changeEmailLoading}
+                  activeOpacity={0.8}
+                >
+                  {changeEmailLoading ? (
+                    <ActivityIndicator color="#030507" size="small" />
+                  ) : (
+                    <Text style={[styles.btnPrimaryText, { fontSize: 13 }]}>Update & Send New OTP</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={{ width: '100%', marginTop: 8 }}>
               <Text style={styles.label}>6-Digit Verification Code</Text>
               <TextInput
@@ -503,14 +597,25 @@ export default function AuthScreen({ initialMode, initialRefCode }) {
               )}
             </View>
 
-            <TouchableOpacity
-              style={{ marginTop: 18 }}
-              onPress={() => setAuthMode('register')}
-            >
-              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
-                ← <Text style={{ color: colors.goldSoft, fontWeight: '700' }}>Back to registration</Text>
-              </Text>
-            </TouchableOpacity>
+            <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => onCancelOTP('login')}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.goldSoft, fontSize: 13, fontWeight: '700' }}>
+                  ← Back to Sign In
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => onCancelOTP('register')}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>
+                  Create Account
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 

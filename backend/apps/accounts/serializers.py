@@ -23,7 +23,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = User.objects.filter(username__iexact=login_id).first()
             if user:
                 attrs[self.username_field] = user.email
-        return super().validate(attrs)
+        data = super().validate(attrs)
+        data['is_email_verified'] = self.user.is_email_verified
+        data['email'] = self.user.email
+        return data
 
     @classmethod
     def get_token(cls, user):
@@ -274,3 +277,18 @@ class ResendOTPSerializer(serializers.Serializer):
     """Request a new OTP for email verification."""
 
     email = serializers.EmailField(required=True)
+
+
+class ChangeUnverifiedEmailSerializer(serializers.Serializer):
+    """Change email for an unverified account."""
+
+    new_email = serializers.EmailField(required=True)
+
+    def validate_new_email(self, value):
+        value = value.lower().strip()
+        user = self.context['request'].user
+        if user.email.lower() == value:
+            raise serializers.ValidationError("New email must be different from current email.")
+        if User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("An account with this email address already exists.")
+        return value

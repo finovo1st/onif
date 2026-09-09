@@ -17,6 +17,18 @@ export const AuthProvider = ({ children }) => {
         setAuthToken(res.access);
         setTokenState(res.access);
         const profile = await apiCall('/auth/profile/');
+
+        const isUserAdmin = Boolean(
+          profile?.is_staff ||
+          profile?.is_superuser ||
+          (profile?.role && String(profile.role).toUpperCase() === 'ADMIN')
+        );
+
+        if (profile && !profile.is_email_verified && !isUserAdmin) {
+          setUser(null);
+          return { success: false, requiresVerification: true, email: profile.email || email };
+        }
+
         if (profile) {
           setUser(profile);
         }
@@ -74,6 +86,14 @@ export const AuthProvider = ({ children }) => {
   const resendOTP = async (email) => {
     try {
       return await apiCall('/auth/resend-otp/', 'POST', { email });
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const changeUnverifiedEmail = async (newEmail) => {
+    try {
+      return await apiCall('/auth/change-email/', 'POST', { new_email: newEmail });
     } catch (err) {
       throw err;
     }
@@ -164,6 +184,7 @@ export const AuthProvider = ({ children }) => {
         register,
         verifyEmail,
         resendOTP,
+        changeUnverifiedEmail,
         forgotPassword,
         resendForgotOTP,
         resetPassword,

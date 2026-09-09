@@ -22,6 +22,7 @@ class AuthTests(APITestCase):
         self.change_password_url = reverse('accounts:change_password')
         self.forgot_password_url = reverse('accounts:forgot_password')
         self.reset_password_url = reverse('accounts:reset_password')
+        self.change_email_url = reverse('accounts:change_unverified_email')
 
         self.user_data = {
             'email': 'test@finovo.com',
@@ -87,6 +88,16 @@ class AuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
+        self.assertTrue(response.data.get('is_email_verified'))
+
+    def test_login_unverified_user_returns_flag(self):
+        User.objects.create_user(email='unverified@finovo.com', username='unverified', password='SecurePass123!')
+        response = self.client.post(self.login_url, {
+            'email': 'unverified@finovo.com',
+            'password': 'SecurePass123!'
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data.get('is_email_verified'))
 
     def test_login_wrong_password(self):
         self._create_verified_user()
@@ -148,6 +159,38 @@ class AuthTests(APITestCase):
         refresh = RefreshToken.for_user(user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
         response = self.client.post(self.verify_email_url, {'otp': '123456'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # ── Change Unverified Email ───────────────────────────────────────────────
+
+    def test_change_unverified_email_success(self):
+        user = User.objects.create_user(email='wrong@finovo.com', username='wronguser', password='Pass123!')
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+
+        response = self.client.post(self.change_email_url, {'new_email': 'corrected@finovo.com'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'corrected@finovo.com')
+
+        user.refresh_from_db()
+        self.assertEqual(user.email, 'corrected@finovo.com')
+        self.assertIsNotNone(user.email_otp)
+
+    def test_change_unverified_email_duplicate(self):
+        self._create_verified_user('existing@finovo.com', 'existinguser')
+        user = User.objects.create_user(email='wrong2@finovo.com', username='wronguser2', password='Pass123!')
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+
+        response = self.client.post(self.change_email_url, {'new_email': 'existing@finovo.com'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_unverified_email_already_verified(self):
+        user = self._create_verified_user('already_verified@finovo.com', 'verifieduser2')
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+
+        response = self.client.post(self.change_email_url, {'new_email': 'new_attempt@finovo.com'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # ── Profile ───────────────────────────────────────────────────────────────

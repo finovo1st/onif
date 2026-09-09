@@ -18,6 +18,7 @@ from .serializers import (
     ResetPasswordSerializer,
     VerifyEmailSerializer,
     ResendOTPSerializer,
+    ChangeUnverifiedEmailSerializer,
 )
 from .services import send_otp_email, verify_otp
 
@@ -124,6 +125,42 @@ class ResendOTPView(APIView):
             return Response({'detail': 'Failed to send OTP. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({'detail': 'OTP sent successfully. Please check your email.'})
+
+
+class ChangeUnverifiedEmailView(APIView):
+    """
+    POST /api/v1/auth/change-email/
+    Update email address on an unverified account and dispatch a new OTP.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.is_email_verified:
+            return Response(
+                {'detail': 'Email is already verified and cannot be changed here.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ChangeUnverifiedEmailSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        new_email = serializer.validated_data['new_email']
+        user.email = new_email
+        user.save(update_fields=['email'])
+
+        try:
+            send_otp_email(user, subject='Verify your new FINOVO account email')
+        except Exception:
+            return Response(
+                {'detail': 'Email updated, but failed to send OTP. Please click Resend Code.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response({
+            'detail': 'Email updated successfully. A new verification OTP has been sent.',
+            'email': new_email
+        })
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

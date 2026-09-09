@@ -29,8 +29,16 @@ function MainApp({ initialDeepLink }) {
   const { token, user, isAdmin, adminMode } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'investments' | 'wallet' | 'referrals' | 'profile' | 'kyc' | 'support' | 'admin'
 
-  if (!token || !user) {
-    return <AuthScreen initialMode={initialDeepLink?.mode} initialRefCode={initialDeepLink?.refCode} />;
+  const isVerified = user?.is_email_verified || isAdmin;
+
+  if (!token || !user || !isVerified) {
+    return (
+      <AuthScreen
+        initialMode={user && !isVerified ? 'verify-otp' : initialDeepLink?.mode}
+        initialRefCode={initialDeepLink?.refCode}
+        initialEmail={user?.email}
+      />
+    );
   }
 
   const navigateTo = (tabName) => {

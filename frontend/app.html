@@ -237,7 +237,17 @@
                 <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <p class="otp-verify-desc">We've sent a 6-digit verification code to<br><strong id="otp-email-display"></strong></p>
+            <p class="otp-verify-desc">We've sent a 6-digit verification code to<br><strong id="otp-email-display"></strong> <a href="#" id="link-toggle-change-email" onclick="toggleChangeEmailForm(); return false;" style="color: var(--gold, #c6993d); font-size: 12px; margin-left: 6px; text-decoration: underline; font-weight: 600;">Wrong email?</a></p>
+
+            <!-- Change Email Mini-Form (Collapsible) -->
+            <div id="otp-change-email-box" style="display: none; margin: 12px 0 16px 0; padding: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px;">
+              <label style="font-size: 11px; color: var(--text-muted, #94a3b8); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Update email address</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="email" id="otp-new-email-input" placeholder="correct@example.com" style="flex: 1; height: 38px; font-size: 13px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border-color, rgba(255,255,255,0.15)); background: rgba(0,0,0,0.3); color: #fff;">
+                <button type="button" id="btn-save-new-email" onclick="submitChangeEmail()" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; border-radius: 6px; white-space: nowrap;">Update</button>
+                <button type="button" onclick="toggleChangeEmailForm(false)" class="btn" style="height: 38px; padding: 0 10px; font-size: 12px; border-radius: 6px; background: transparent; border: 1px solid var(--border-color, rgba(255,255,255,0.2)); color: var(--text-muted, #94a3b8);">✕</button>
+              </div>
+            </div>
 
             <form onsubmit="handleVerifyOTP(event)">
               <div class="otp-input-group">
@@ -259,9 +269,9 @@
                 Code</button>
             </div>
 
-            <div style="margin-top: 20px; text-align:center;">
-              <a href="#" onclick="switchAuthTab('register'); return false;" class="forgot" style="font-size:13px; color: var(--gold); font-weight: 600;">←
-                Back to Register</a>
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <a href="#" onclick="cancelOTPAndSwitch('login'); return false;" class="forgot" style="color: var(--gold); font-weight: 600;">← Back to Sign In</a>
+              <a href="#" onclick="cancelOTPAndSwitch('register'); return false;" class="forgot" style="color: var(--text-muted, #888); font-weight: 500;">Create Another Account</a>
             </div>
           </div>
 

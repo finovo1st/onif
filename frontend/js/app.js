@@ -266,6 +266,18 @@ async function loadAllAPIData() {
     // 1. Fetch User Profile
     state.user = await apiCall('/auth/profile/');
 
+    // Strict Email Verification Gate: Gate dashboard access if email is unverified (except for admins/superusers)
+    const isUserAdmin = state.user && (state.user.role === 'ADMIN' || state.user.is_staff || state.user.is_superuser);
+    if (state.user && !state.user.is_email_verified && !isUserAdmin) {
+      document.documentElement.classList.remove('app-loading');
+      document.documentElement.classList.add('auth-pending');
+      const loader = document.getElementById('app-init-loader');
+      if (loader) loader.style.display = 'none';
+      showAuthOverlay();
+      showOTPStep(state.user.email);
+      return;
+    }
+
     // 2. Fetch Dashboard Overview & All Core Resources Parallelly
     const [overviewData, investmentsData, plansData, ledgerData, teamData, commData, depositsData, withdrawalsData, ticketsData, levelsData] = await Promise.all([
       apiCall('/dashboard/').catch(() => null),
@@ -1345,6 +1357,13 @@ function switchAuthTab(tab) {
   }
 }
 
+function cancelOTPAndSwitch(tab) {
+  if (_otpCountdownTimer) clearInterval(_otpCountdownTimer);
+  state.token = null;
+  localStorage.removeItem('finovo_token');
+  switchAuthTab(tab);
+}
+
 // Show the OTP verification step
 let _otpEmail = '';
 let _otpCountdownTimer = null;
@@ -1355,6 +1374,7 @@ function showOTPStep(email) {
   document.getElementById('form-register').style.display = 'none';
   document.getElementById('form-verify-otp').style.display = 'block';
   document.getElementById('otp-email-display').innerText = email;
+  toggleChangeEmailForm(false);
 
   const title = document.getElementById('auth-form-title');
   const subtitle = document.getElementById('auth-form-subtitle');
@@ -1497,8 +1517,16 @@ async function handleLogin(e) {
     if (data && data.access) {
       state.token = data.access;
       localStorage.setItem('finovo_token', data.access);
-      showToast('Signed in successfully!');
       if (passwordInput) passwordInput.value = '';
+
+      // Strict Email Verification Gate: If unverified, divert immediately to OTP screen
+      if (data.is_email_verified === false) {
+        showToast('Please verify your email address to access your account.');
+        showOTPStep(data.email || email);
+        return;
+      }
+
+      showToast('Signed in successfully!');
 
       // Transition smoothly into loading state
       document.documentElement.classList.remove('auth-pending');
@@ -1715,6 +1743,59 @@ async function handleResendOTP() {
     setTimeout(() => document.getElementById('otp-d1')?.focus(), 50);
   } catch (err) {
     showToast(err.message || 'Failed to resend OTP.', true);
+  }
+}
+
+function toggleChangeEmailForm(forceState) {
+  const box = document.getElementById('otp-change-email-box');
+  const input = document.getElementById('otp-new-email-input');
+  if (!box) return;
+
+  const willShow = forceState !== undefined ? forceState : (box.style.display === 'none');
+  box.style.display = willShow ? 'block' : 'none';
+  if (willShow && input) {
+    input.value = _otpEmail || '';
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+async function submitChangeEmail() {
+  const input = document.getElementById('otp-new-email-input');
+  const saveBtn = document.getElementById('btn-save-new-email');
+  const newEmail = input ? input.value.trim() : '';
+
+  if (!newEmail || !newEmail.includes('@')) {
+    showToast('Please enter a valid email address.', true);
+    return;
+  }
+  if (newEmail.toLowerCase() === (_otpEmail || '').toLowerCase()) {
+    showToast('The new email must be different from the current email.', true);
+    return;
+  }
+
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerText = 'Updating…'; }
+
+  try {
+    const res = await apiCall('/auth/change-email/', 'POST', { new_email: newEmail });
+    _otpEmail = res.email || newEmail;
+    if (state.user) state.user.email = _otpEmail;
+    const displayEl = document.getElementById('otp-email-display');
+    if (displayEl) displayEl.innerText = _otpEmail;
+
+    toggleChangeEmailForm(false);
+    showToast('Email updated successfully! A new OTP has been sent.');
+    startOTPCountdown(60);
+
+    // Clear digit inputs
+    ['otp-d1', 'otp-d2', 'otp-d3', 'otp-d4', 'otp-d5', 'otp-d6'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.className = 'otp-digit'; }
+    });
+    setTimeout(() => document.getElementById('otp-d1')?.focus(), 50);
+  } catch (err) {
+    showToast(err.message || 'Failed to update email address.', true);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = 'Update'; }
   }
 }
 

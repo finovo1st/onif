@@ -7,6 +7,7 @@ from .views import (
     LogoutView,
     VerifyEmailView,
     ResendOTPView,
+    ChangeUnverifiedEmailView,
     ProfileView,
     KYCSubmitView,
     ChangePasswordView,
@@ -26,6 +27,7 @@ urlpatterns = [
     # Email verification
     path('verify-email/', VerifyEmailView.as_view(), name='verify_email'),
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
+    path('change-email/', ChangeUnverifiedEmailView.as_view(), name='change_unverified_email'),
 
     # Profile & KYC
     path('profile/', ProfileView.as_view(), name='profile'),

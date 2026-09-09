@@ -385,12 +385,14 @@ def distribute_roi_for_investment(investment: Investment, mode: str = 'by_day') 
         return Decimal('0.00')
 
     if mode == 'by_day':
-        # Determine date range for ROI calculation
         current_date = timezone.now().date()
         if investment.last_roi_date:
             calc_start = investment.last_roi_date + timedelta(days=1)
+        elif investment.start_date:
+            # Day of investment is excluded; begin calculation from the following day
+            calc_start = investment.start_date + timedelta(days=1)
         else:
-            calc_start = investment.start_date
+            calc_start = investment.created_at.date() + timedelta(days=1)
             
         profit_days = _get_profit_days(calc_start, current_date)
         

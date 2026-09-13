@@ -43,18 +43,30 @@ else
     exit 1
 fi
 
-# 3. Media / KYC Documents Backup (Uses portable alpine container to snapshot volume)
+# 3. Media / KYC Documents Backup (Inspects active backend container volume)
 MEDIA_FILE="$BACKUP_DIR/media/finovo_media_${TIMESTAMP}.tar.gz"
 echo "[2/3] Archiving user media & KYC files..."
 
-docker run --rm \
-    -v finovo_media_data:/media_source:ro \
-    -v "$BACKUP_DIR/media":/media_dest \
-    alpine tar -czf "/media_dest/finovo_media_${TIMESTAMP}.tar.gz" -C /media_source . 2>/dev/null || \
-docker run --rm \
-    -v "${PROJECT_DIR##*/}_media_data":/media_source:ro \
-    -v "$BACKUP_DIR/media":/media_dest \
-    alpine tar -czf "/media_dest/finovo_media_${TIMESTAMP}.tar.gz" -C /media_source .
+BACKEND_CONTAINER=$(docker compose -f "$PROJECT_DIR/docker-compose.prod.yml" ps -q backend 2>/dev/null || docker ps -qf "name=finovo.*backend" | head -n 1 || true)
+MEDIA_VOLUME=""
+
+if [ -n "$BACKEND_CONTAINER" ]; then
+    MEDIA_VOLUME=$(docker inspect "$BACKEND_CONTAINER" --format '{{range .Mounts}}{{if eq .Destination "/app/media"}}{{.Name}}{{end}}{{end}}' 2>/dev/null || true)
+fi
+
+if [ -z "$MEDIA_VOLUME" ]; then
+    MEDIA_VOLUME=$(docker volume ls -q | grep -E "(${PROJECT_DIR##*/}|finovo).*media_data" | head -n 1 || true)
+fi
+
+if [ -n "$MEDIA_VOLUME" ]; then
+    echo "  -> Found media volume: $MEDIA_VOLUME"
+    docker run --rm \
+        -v "$MEDIA_VOLUME":/media_source:ro \
+        -v "$BACKUP_DIR/media":/media_dest \
+        alpine tar -czf "/media_dest/finovo_media_${TIMESTAMP}.tar.gz" -C /media_source .
+else
+    echo "[WARNING] Could not locate active media volume."
+fi
 
 if [ -s "$MEDIA_FILE" ]; then
     MEDIA_SIZE=$(du -h "$MEDIA_FILE" | cut -f1)

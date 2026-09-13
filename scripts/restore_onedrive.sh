@@ -98,9 +98,12 @@ else
 fi
 
 LOCAL_DOWNLOAD_FILE="$TMP_RESTORE_DIR/$SELECTED_BACKUP"
+TIMESTAMP=$(echo "$SELECTED_BACKUP" | sed -nE 's/.*finovo_db_([0-9]+_[0-9]+)\.sql\.gz/\1/p')
+MEDIA_BACKUP="finovo_media_${TIMESTAMP}.tar.gz"
+LOCAL_MEDIA_FILE=""
 
-# Download selected backup
-echo "[2/3] Fetching backup from OneDrive: $SELECTED_BACKUP..."
+# Download selected database backup
+echo "[2/3] Fetching database backup from OneDrive: $SELECTED_BACKUP..."
 if [ "$USE_RCLONE" = true ]; then
     rclone copyto "${ONEDRIVE_REMOTE}:${ONEDRIVE_REMOTE_FOLDER}/db/$SELECTED_BACKUP" "$LOCAL_DOWNLOAD_FILE" --progress
 else
@@ -112,10 +115,36 @@ if [ ! -s "$LOCAL_DOWNLOAD_FILE" ]; then
     exit 1
 fi
 
+# Fetch corresponding media archive if it exists
+if [ -n "$MEDIA_BACKUP" ]; then
+    MEDIA_EXISTS=false
+    if [ "$USE_RCLONE" = true ]; then
+        if rclone lsf "${ONEDRIVE_REMOTE}:${ONEDRIVE_REMOTE_FOLDER}/media/$MEDIA_BACKUP" 2>/dev/null | grep -q "$MEDIA_BACKUP"; then
+            MEDIA_EXISTS=true
+        fi
+    elif [ -f "$ONEDRIVE_LOCAL_PATH/$ONEDRIVE_REMOTE_FOLDER/media/$MEDIA_BACKUP" ]; then
+        MEDIA_EXISTS=true
+    fi
+
+    if [ "$MEDIA_EXISTS" = true ]; then
+        echo "  -> Fetching matching media archive: $MEDIA_BACKUP..."
+        LOCAL_MEDIA_FILE="$TMP_RESTORE_DIR/$MEDIA_BACKUP"
+        if [ "$USE_RCLONE" = true ]; then
+            rclone copyto "${ONEDRIVE_REMOTE}:${ONEDRIVE_REMOTE_FOLDER}/media/$MEDIA_BACKUP" "$LOCAL_MEDIA_FILE" --progress
+        else
+            cp "$ONEDRIVE_LOCAL_PATH/$ONEDRIVE_REMOTE_FOLDER/media/$MEDIA_BACKUP" "$LOCAL_MEDIA_FILE"
+        fi
+    fi
+fi
+
 # Execute restore.sh
 echo "[3/3] Passing downloaded backup to restore script..."
-bash "$PROJECT_DIR/scripts/restore.sh" "$LOCAL_DOWNLOAD_FILE"
+if [ -n "$LOCAL_MEDIA_FILE" ] && [ -s "$LOCAL_MEDIA_FILE" ]; then
+    bash "$PROJECT_DIR/scripts/restore.sh" "$LOCAL_DOWNLOAD_FILE" "$LOCAL_MEDIA_FILE"
+else
+    bash "$PROJECT_DIR/scripts/restore.sh" "$LOCAL_DOWNLOAD_FILE"
+fi
 
-# Cleanup temporary downloaded file
-rm -f "$LOCAL_DOWNLOAD_FILE"
+# Cleanup temporary downloaded files
+rm -f "$LOCAL_DOWNLOAD_FILE" "$LOCAL_MEDIA_FILE"
 echo "[CLEANUP] Temporary restore files cleared."

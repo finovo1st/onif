@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="css/style.css?v=10">
   <!-- Instant Auth State Detection to Prevent Flash of Dummy/Unauthenticated Content -->
   <script>
-    (function() {
+    (function () {
       try {
         var token = localStorage.getItem('finovo_token');
         if (token) {
@@ -96,7 +96,8 @@
         <div class="brand-copy">
           <div class="eyebrow">WELCOME BACK</div>
           <h1>Your portfolio, exactly<br>where you left it.</h1>
-          <p><span style="color: var(--gold); font-weight: 600;">Sign in</span> to track balances, review market-linked yield, and manage withdrawals from one dashboard.</p>
+          <p><span style="color: var(--gold); font-weight: 600;">Sign in</span> to track balances, review market-linked
+            yield, and manage withdrawals from one dashboard.</p>
 
           <div class="trust-list">
             <div class="item"><span class="tick">&check;</span> Segregated custody</div>
@@ -105,7 +106,7 @@
           </div>
         </div>
 
-        <div class="brand-foot">&copy; 2026 <span class="brand-text-dyn">FINOVO</span>. All rights reserved.</div>
+        <div class="brand-foot">&copy; 2021 <span class="brand-text-dyn">FINOVO</span>. All rights reserved.</div>
       </div>
 
       <!-- RIGHT — form panel -->
@@ -125,28 +126,33 @@
 
           <div class="form-head">
             <h2 id="auth-form-title" style="color: var(--gold);">Sign in</h2>
-            <p id="auth-form-subtitle">New to Finovo? <a href="#"
-                onclick="switchAuthTab('register'); return false;" style="color: var(--gold); font-weight: 600;">Register</a></p>
+            <p id="auth-form-subtitle">New to Finovo? <a href="#" onclick="switchAuthTab('register'); return false;"
+                style="color: var(--gold); font-weight: 600;">Register</a></p>
           </div>
 
           <!-- Login Form -->
           <form id="form-login" onsubmit="handleLogin(event)">
-            <div id="login-error-msg" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px;">
-              <span>⚠️</span> <span id="login-error-text">Wrong credentials. Please check your username/email and password.</span>
+            <div id="login-error-msg"
+              style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px;">
+              <span>⚠️</span> <span id="login-error-text">Wrong credentials. Please check your username/email and
+                password.</span>
             </div>
 
             <div class="field">
               <label>Email or Username</label>
               <div class="input-row">
-                <input type="text" id="login-email" placeholder="you@example.com or johndoe" oninput="clearLoginError()" required>
+                <input type="text" id="login-email" placeholder="you@example.com or johndoe" oninput="clearLoginError()"
+                  required>
               </div>
             </div>
 
             <div class="field">
               <label>Password</label>
               <div class="input-row">
-                <input type="password" id="login-password" placeholder="Enter your password" oninput="clearLoginError()" required>
-                <button type="button" class="toggle-pw" onclick="const pw = document.getElementById('login-password'); pw.type = pw.type === 'password' ? 'text' : 'password'; this.innerText = pw.type === 'password' ? 'SHOW' : 'HIDE';">SHOW</button>
+                <input type="password" id="login-password" placeholder="Enter your password" oninput="clearLoginError()"
+                  required>
+                <button type="button" class="toggle-pw"
+                  onclick="const pw = document.getElementById('login-password'); pw.type = pw.type === 'password' ? 'text' : 'password'; this.innerText = pw.type === 'password' ? 'SHOW' : 'HIDE';">SHOW</button>
               </div>
             </div>
 
@@ -160,7 +166,8 @@
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Sign In</button>
 
             <div class="legal">
-              By continuing, you agree to FINOVO's <a href="#" onclick="openTermsModal(event)">Terms &amp; Conditions</a>.
+              By continuing, you agree to FINOVO's <a href="#" onclick="openTermsModal(event)">Terms &amp;
+                Conditions</a>.
             </div>
           </form>
 
@@ -203,7 +210,8 @@
             </div>
 
             <div class="field">
-              <label>Sponsor / Referral Code <span style="color: var(--gold, #c6993d); font-weight: 700;">*</span></label>
+              <label>Sponsor / Referral Code <span
+                  style="color: var(--gold, #c6993d); font-weight: 700;">*</span></label>
               <div class="input-row">
                 <input type="text" id="reg-refcode" placeholder="Enter sponsor's referral code" required>
               </div>
@@ -211,22 +219,28 @@
 
             <!-- Terms & Conditions Checkbox -->
             <div class="field" style="margin-top: 14px; margin-bottom: 14px;">
-              <label class="remember" style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--mute); line-height: 1.5; cursor: pointer;">
-                <input type="checkbox" id="reg-tnc" required style="margin-top: 2px; accent-color: var(--gold); width: 16px; height: 16px; min-width: 16px; flex-shrink: 0; cursor: pointer;" onclick="openTermsFromCheckbox(event)">
+              <label class="remember"
+                style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--mute); line-height: 1.5; cursor: pointer;">
+                <input type="checkbox" id="reg-tnc" required
+                  style="margin-top: 2px; accent-color: var(--gold); width: 16px; height: 16px; min-width: 16px; flex-shrink: 0; cursor: pointer;"
+                  onclick="openTermsFromCheckbox(event)">
                 <span>
                   I confirm that I am 18+ and have read, understood, and agree to the
-                  <a href="#" onclick="openTermsModal(event)" style="color: var(--gold); text-decoration: underline; font-weight: 600;">Terms &amp; Conditions</a>
+                  <a href="#" onclick="openTermsModal(event)"
+                    style="color: var(--gold); text-decoration: underline; font-weight: 600;">Terms &amp; Conditions</a>
                   and investment risk disclosure.
                 </span>
               </label>
             </div>
 
-            <button type="submit" id="reg-submit-btn" class="btn btn-primary" style="width: 100%; justify-content: center;">Register</button>
+            <button type="submit" id="reg-submit-btn" class="btn btn-primary"
+              style="width: 100%; justify-content: center;">Register</button>
 
             <div class="divider">or</div>
 
             <div class="row-between" style="justify-content: center;">
-              <span>Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;" class="forgot" style="color: var(--gold); font-weight: 600;">Sign in</a></span>
+              <span>Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;" class="forgot"
+                  style="color: var(--gold); font-weight: 600;">Sign in</a></span>
             </div>
           </form>
 
@@ -234,29 +248,46 @@
           <div id="form-verify-otp" style="display: none;">
             <div class="otp-verify-icon">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <path
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <p class="otp-verify-desc">We've sent a 6-digit verification code to<br><strong id="otp-email-display"></strong> <a href="#" id="link-toggle-change-email" onclick="toggleChangeEmailForm(); return false;" style="color: var(--gold, #c6993d); font-size: 12px; margin-left: 6px; text-decoration: underline; font-weight: 600;">Wrong email?</a></p>
+            <p class="otp-verify-desc">We've sent a 6-digit verification code to<br><strong
+                id="otp-email-display"></strong> <a href="#" id="link-toggle-change-email"
+                onclick="toggleChangeEmailForm(); return false;"
+                style="color: var(--gold, #c6993d); font-size: 12px; margin-left: 6px; text-decoration: underline; font-weight: 600;">Wrong
+                email?</a></p>
 
             <!-- Change Email Mini-Form (Collapsible) -->
-            <div id="otp-change-email-box" style="display: none; margin: 12px 0 16px 0; padding: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px;">
-              <label style="font-size: 11px; color: var(--text-muted, #94a3b8); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Update email address</label>
+            <div id="otp-change-email-box"
+              style="display: none; margin: 12px 0 16px 0; padding: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px;">
+              <label
+                style="font-size: 11px; color: var(--text-muted, #94a3b8); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Update
+                email address</label>
               <div style="display: flex; gap: 8px;">
-                <input type="email" id="otp-new-email-input" placeholder="correct@example.com" style="flex: 1; height: 38px; font-size: 13px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border-color, rgba(255,255,255,0.15)); background: rgba(0,0,0,0.3); color: #fff;">
-                <button type="button" id="btn-save-new-email" onclick="submitChangeEmail()" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; border-radius: 6px; white-space: nowrap;">Update</button>
-                <button type="button" onclick="toggleChangeEmailForm(false)" class="btn" style="height: 38px; padding: 0 10px; font-size: 12px; border-radius: 6px; background: transparent; border: 1px solid var(--border-color, rgba(255,255,255,0.2)); color: var(--text-muted, #94a3b8);">✕</button>
+                <input type="email" id="otp-new-email-input" placeholder="correct@example.com"
+                  style="flex: 1; height: 38px; font-size: 13px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border-color, rgba(255,255,255,0.15)); background: rgba(0,0,0,0.3); color: #fff;">
+                <button type="button" id="btn-save-new-email" onclick="submitChangeEmail()" class="btn btn-primary"
+                  style="height: 38px; padding: 0 14px; font-size: 12px; border-radius: 6px; white-space: nowrap;">Update</button>
+                <button type="button" onclick="toggleChangeEmailForm(false)" class="btn"
+                  style="height: 38px; padding: 0 10px; font-size: 12px; border-radius: 6px; background: transparent; border: 1px solid var(--border-color, rgba(255,255,255,0.2)); color: var(--text-muted, #94a3b8);">✕</button>
               </div>
             </div>
 
             <form onsubmit="handleVerifyOTP(event)">
               <div class="otp-input-group">
-                <input type="text" id="otp-d1" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" required>
-                <input type="text" id="otp-d2" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
-                <input type="text" id="otp-d3" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
-                <input type="text" id="otp-d4" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
-                <input type="text" id="otp-d5" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
-                <input type="text" id="otp-d6" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                <input type="text" id="otp-d1" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  autocomplete="one-time-code" required>
+                <input type="text" id="otp-d2" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  required>
+                <input type="text" id="otp-d3" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  required>
+                <input type="text" id="otp-d4" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  required>
+                <input type="text" id="otp-d5" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  required>
+                <input type="text" id="otp-d6" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                  required>
               </div>
 
               <button type="submit" id="otp-submit-btn" class="btn btn-primary"
@@ -269,9 +300,12 @@
                 Code</button>
             </div>
 
-            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-              <a href="#" onclick="cancelOTPAndSwitch('login'); return false;" class="forgot" style="color: var(--gold); font-weight: 600;">← Back to Sign In</a>
-              <a href="#" onclick="cancelOTPAndSwitch('register'); return false;" class="forgot" style="color: var(--text-muted, #888); font-weight: 500;">Create Another Account</a>
+            <div
+              style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <a href="#" onclick="cancelOTPAndSwitch('login'); return false;" class="forgot"
+                style="color: var(--gold); font-weight: 600;">← Back to Sign In</a>
+              <a href="#" onclick="cancelOTPAndSwitch('register'); return false;" class="forgot"
+                style="color: var(--text-muted, #888); font-weight: 500;">Create Another Account</a>
             </div>
           </div>
 
@@ -290,8 +324,8 @@
             <div class="divider">or</div>
 
             <div class="row-between" style="justify-content: center;">
-              <span>Remember your password? <a href="#" onclick="switchAuthTab('login'); return false;"
-                  class="forgot" style="color: var(--gold); font-weight: 600;">Sign in</a></span>
+              <span>Remember your password? <a href="#" onclick="switchAuthTab('login'); return false;" class="forgot"
+                  style="color: var(--gold); font-weight: 600;">Sign in</a></span>
             </div>
           </form>
 
@@ -308,8 +342,9 @@
             <div class="field">
               <label>6-Digit Verification Code</label>
               <div class="input-row">
-                <input type="text" id="reset-otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
-                  required style="font-family: var(--font-mono); letter-spacing: 3px; font-weight:600;">
+                <input type="text" id="reset-otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}"
+                  inputmode="numeric" required
+                  style="font-family: var(--font-mono); letter-spacing: 3px; font-weight:600;">
               </div>
             </div>
 
@@ -384,7 +419,9 @@
         <a class="nav-item" onclick="switchNav('profile')" id="nav-profile">
           <span>Profile</span>
         </a>
-        <a class="nav-item" href="download.html" target="_blank" id="nav-download-app" title="Download Official Finovo Mobile App" style="color: var(--gold-soft); display: inline-flex; align-items: center; gap: 5px;">
+        <a class="nav-item" href="download.html" target="_blank" id="nav-download-app"
+          title="Download Official Finovo Mobile App"
+          style="color: var(--gold-soft); display: inline-flex; align-items: center; gap: 5px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
@@ -528,14 +565,17 @@
         <!-- Admin Actions Placeholder -->
         <div id="admin-topbar-actions" style="display: none; gap: 8px;"></div>
 
-        <div class="topbar-user" onclick="switchNav('profile')" style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); cursor: pointer;" title="View & Edit Profile">
+        <div class="topbar-user" onclick="switchNav('profile')"
+          style="margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); cursor: pointer;"
+          title="View & Edit Profile">
           <div class="user-avatar" id="sidebar-avatar">—</div>
           <div class="user-info-text">
             <div class="user-name" id="sidebar-username">—</div>
             <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
               <span class="user-role" id="sidebar-userrole">Level 0 Unlock</span>
               <span id="sidebar-kyc-badge" class="badge badge-unverified"
-                style="font-size: 9.5px; padding: 2px 6px; cursor: pointer;" onclick="event.stopPropagation(); switchNav('kyc')">KYC
+                style="font-size: 9.5px; padding: 2px 6px; cursor: pointer;"
+                onclick="event.stopPropagation(); switchNav('kyc')">KYC
                 Unverified</span>
             </div>
           </div>
@@ -667,8 +707,8 @@
               income fills and accelerates your investment plan toward max return.
             </p>
             <div class="ref-box">
-              <input type="text" id="dash-ref-link" class="ref-code-input" readonly
-                value="" placeholder="Generating your referral link…">
+              <input type="text" id="dash-ref-link" class="ref-code-input" readonly value=""
+                placeholder="Generating your referral link…">
               <button class="btn btn-sm btn-primary" onclick="copyReferralLink()">Copy Link</button>
             </div>
             <div
@@ -1500,20 +1540,26 @@
       <!-- ================= 6. USER PROFILE & SECURITY VIEW ================= -->
       <section id="view-profile" class="page-view">
         <!-- Profile Hero Card -->
-        <div class="card profile-hero-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(198, 153, 61, 0.08) 0%, rgba(14, 19, 25, 0.85) 100%); border: 1px solid rgba(198, 153, 61, 0.25); padding: 24px;">
+        <div class="card profile-hero-card"
+          style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(198, 153, 61, 0.08) 0%, rgba(14, 19, 25, 0.85) 100%); border: 1px solid rgba(198, 153, 61, 0.25); padding: 24px;">
           <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
             <div style="display: flex; align-items: center; gap: 18px;">
-              <div class="profile-hero-avatar" id="prof-hero-avatar" style="width: 68px; height: 68px; border-radius: 50%; background: rgba(198, 153, 61, 0.15); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--gold);">
+              <div class="profile-hero-avatar" id="prof-hero-avatar"
+                style="width: 68px; height: 68px; border-radius: 50%; background: rgba(198, 153, 61, 0.15); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--gold);">
                 U
               </div>
               <div>
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                  <h2 id="prof-hero-name" style="margin: 0; font-size: 22px; font-weight: 700; color: var(--text);">User Name</h2>
+                  <h2 id="prof-hero-name" style="margin: 0; font-size: 22px; font-weight: 700; color: var(--text);">User
+                    Name</h2>
                   <span id="prof-hero-role" class="badge badge-standard">Investor</span>
-                  <span id="prof-hero-kyc" class="badge badge-unverified" style="cursor: pointer;" onclick="switchNav('kyc')">KYC Unverified</span>
+                  <span id="prof-hero-kyc" class="badge badge-unverified" style="cursor: pointer;"
+                    onclick="switchNav('kyc')">KYC Unverified</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--mute); flex-wrap: wrap;">
-                  <span id="prof-hero-email" style="display: flex; align-items: center; gap: 4px; font-family: var(--font-mono);">user@example.com</span>
+                <div
+                  style="display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--mute); flex-wrap: wrap;">
+                  <span id="prof-hero-email"
+                    style="display: flex; align-items: center; gap: 4px; font-family: var(--font-mono);">user@example.com</span>
                   <span>•</span>
                   <span id="prof-hero-joined">Joined: —</span>
                   <span>•</span>
@@ -1524,23 +1570,41 @@
 
             <!-- Quick Copy Badges -->
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="profile-id-box" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+              <div class="profile-id-box"
+                style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
                 <div>
-                  <div style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">Member ID</div>
-                  <div id="prof-hero-id" style="font-size: 12px; font-family: var(--font-mono); color: var(--text); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</div>
+                  <div
+                    style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">
+                    Member ID</div>
+                  <div id="prof-hero-id"
+                    style="font-size: 12px; font-family: var(--font-mono); color: var(--text); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    —</div>
                 </div>
-                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyHeroProfileId()" title="Copy User ID">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;"
+                  onclick="copyHeroProfileId()" title="Copy User ID">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
                 </button>
               </div>
 
-              <div class="profile-id-box" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+              <div class="profile-id-box"
+                style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
                 <div>
-                  <div style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">Referral Code</div>
-                  <div id="prof-hero-refcode" style="font-size: 12px; font-family: var(--font-mono); color: var(--gold); font-weight: 700;">—</div>
+                  <div
+                    style="font-size: 10px; text-transform: uppercase; color: var(--mute); font-family: var(--font-mono); letter-spacing: 0.05em;">
+                    Referral Code</div>
+                  <div id="prof-hero-refcode"
+                    style="font-size: 12px; font-family: var(--font-mono); color: var(--gold); font-weight: 700;">—
+                  </div>
                 </div>
-                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyHeroReferralCode()" title="Copy Referral Code">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;"
+                  onclick="copyHeroReferralCode()" title="Copy Referral Code">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -1558,21 +1622,27 @@
               </div>
             </div>
             <p style="font-size: 13px; color: var(--mute); margin-bottom: 20px;">
-              Update your account credentials and contact details. Your email is your primary institutional login identifier.
+              Update your account credentials and contact details. Your email is your primary institutional login
+              identifier.
             </p>
 
             <form id="form-profile-info" onsubmit="handleProfileUpdate(event)">
               <div class="form-group">
-                <label class="form-label" for="prof-email">Email Address <span style="color: var(--gold);">*</span></label>
-                <input type="email" id="prof-email" class="form-control" required placeholder="your.email@example.com" style="font-family: var(--font-mono);">
+                <label class="form-label" for="prof-email">Email Address <span
+                    style="color: var(--gold);">*</span></label>
+                <input type="email" id="prof-email" class="form-control" required placeholder="your.email@example.com"
+                  style="font-family: var(--font-mono);">
                 <div style="font-size: 11px; color: var(--mute); margin-top: 4px;">
-                  Updating email changes your account login address and where system receipts and withdrawal OTPs are sent.
+                  Updating email changes your account login address and where system receipts and withdrawal OTPs are
+                  sent.
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="prof-username">Username <span style="color: var(--gold);">*</span></label>
-                <input type="text" id="prof-username" class="form-control" required placeholder="Choose a username" style="font-family: var(--font-mono);">
+                <label class="form-label" for="prof-username">Username <span
+                    style="color: var(--gold);">*</span></label>
+                <input type="text" id="prof-username" class="form-control" required placeholder="Choose a username"
+                  style="font-family: var(--font-mono);">
               </div>
 
               <div class="grid-2" style="gap: 14px;">
@@ -1602,12 +1672,19 @@
                 <input type="date" id="prof-dob" class="form-control">
               </div>
 
-              <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
-                <label class="form-label" for="prof-current-password">Current Password <span style="color: var(--gold);">*</span></label>
+              <div class="form-group"
+                style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+                <label class="form-label" for="prof-current-password">Current Password <span
+                    style="color: var(--gold);">*</span></label>
                 <div style="position: relative;">
-                  <input type="password" id="prof-current-password" class="form-control" required placeholder="Enter current password to authorize changes" autocomplete="current-password">
-                  <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-current-password', this)" title="Show / Hide Password">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  <input type="password" id="prof-current-password" class="form-control" required
+                    placeholder="Enter current password to authorize changes" autocomplete="current-password">
+                  <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-current-password', this)"
+                    title="Show / Hide Password">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
                   </button>
                 </div>
                 <div style="font-size: 11px; color: var(--mute); margin-top: 4px;">
@@ -1615,7 +1692,8 @@
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-primary" id="btn-save-profile" style="width: 100%; justify-content: center; margin-top: 10px;">
+              <button type="submit" class="btn btn-primary" id="btn-save-profile"
+                style="width: 100%; justify-content: center; margin-top: 10px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -1642,36 +1720,58 @@
 
               <form id="form-profile-password" onsubmit="handlePasswordChange(event)">
                 <div class="form-group">
-                  <label class="form-label" for="prof-curr-pass">Current Password <span style="color: var(--accent-danger);">*</span></label>
+                  <label class="form-label" for="prof-curr-pass">Current Password <span
+                      style="color: var(--accent-danger);">*</span></label>
                   <div style="position: relative;">
-                    <input type="password" id="prof-curr-pass" class="form-control" required placeholder="Enter current password" autocomplete="current-password">
-                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-curr-pass', this)" title="Show / Hide Password">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <input type="password" id="prof-curr-pass" class="form-control" required
+                      placeholder="Enter current password" autocomplete="current-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-curr-pass', this)"
+                      title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                     </button>
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="prof-new-pass">New Password <span style="color: var(--gold);">*</span></label>
+                  <label class="form-label" for="prof-new-pass">New Password <span
+                      style="color: var(--gold);">*</span></label>
                   <div style="position: relative;">
-                    <input type="password" id="prof-new-pass" class="form-control" required minlength="8" placeholder="Enter new password (min. 8 characters)" autocomplete="new-password">
-                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-new-pass', this)" title="Show / Hide Password">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <input type="password" id="prof-new-pass" class="form-control" required minlength="8"
+                      placeholder="Enter new password (min. 8 characters)" autocomplete="new-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-new-pass', this)"
+                      title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                     </button>
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="prof-confirm-pass">Confirm New Password <span style="color: var(--gold);">*</span></label>
+                  <label class="form-label" for="prof-confirm-pass">Confirm New Password <span
+                      style="color: var(--gold);">*</span></label>
                   <div style="position: relative;">
-                    <input type="password" id="prof-confirm-pass" class="form-control" required minlength="8" placeholder="Re-enter new password" autocomplete="new-password">
-                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-confirm-pass', this)" title="Show / Hide Password">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <input type="password" id="prof-confirm-pass" class="form-control" required minlength="8"
+                      placeholder="Re-enter new password" autocomplete="new-password">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassField('prof-confirm-pass', this)"
+                      title="Show / Hide Password">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                     </button>
                   </div>
                 </div>
 
-                <button type="submit" class="btn btn-secondary" id="btn-change-password" style="width: 100%; justify-content: center; margin-top: 10px; border-color: var(--gold-soft); color: var(--gold);">
+                <button type="submit" class="btn btn-secondary" id="btn-change-password"
+                  style="width: 100%; justify-content: center; margin-top: 10px; border-color: var(--gold-soft); color: var(--gold);">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -1691,17 +1791,23 @@
               </div>
 
               <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
                   <span style="color: var(--mute);">Sponsor / Upline:</span>
-                  <b id="prof-parent-email" style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">Direct Platform Member</b>
+                  <b id="prof-parent-email"
+                    style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">Direct Platform
+                    Member</b>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
                   <span style="color: var(--mute);">Identity Verification:</span>
-                  <span id="prof-kyc-status-badge" class="badge badge-unverified" style="cursor: pointer;" onclick="switchNav('kyc')">UNVERIFIED</span>
+                  <span id="prof-kyc-status-badge" class="badge badge-unverified" style="cursor: pointer;"
+                    onclick="switchNav('kyc')">UNVERIFIED</span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
                   <span style="color: var(--mute);">Email Verification:</span>
                   <span id="prof-email-verified-badge" class="badge badge-approved">VERIFIED</span>
                 </div>
@@ -2442,7 +2548,8 @@
 
               </div>
               <div style="display: flex; justify-content: flex-end; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <button type="button" class="btn btn-secondary" onclick="handleAdminResetCompanyWallets()" title="Reset BEP20 and TRC20 wallets &amp; QR back to system defaults">
+                <button type="button" class="btn btn-secondary" onclick="handleAdminResetCompanyWallets()"
+                  title="Reset BEP20 and TRC20 wallets &amp; QR back to system defaults">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                     <path d="M3 3v5h5"></path>
@@ -3238,12 +3345,15 @@
         <!-- KYC Verification & Client Info Dossier Box -->
         <div id="adm-usr-kyc-doc-box"
           style="margin-bottom: 20px; padding: 16px 18px; background: rgba(14, 19, 25, 0.65); border: 1px solid var(--line); border-radius: var(--radius-md); display: none;">
-          
+
           <!-- Top bar with title, badge & quick actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 8px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--gold-soft); letter-spacing: 0.3px;">Client KYC Identity Dossier</span>
-              <span id="adm-usr-kyc-status-badge" class="badge badge-pending" style="font-size: 10px; padding: 2px 8px;">PENDING</span>
+              <span style="font-size: 13px; font-weight: 700; color: var(--gold-soft); letter-spacing: 0.3px;">Client
+                KYC Identity Dossier</span>
+              <span id="adm-usr-kyc-status-badge" class="badge badge-pending"
+                style="font-size: 10px; padding: 2px 8px;">PENDING</span>
             </div>
             <div style="display: flex; gap: 8px;">
               <button type="button" class="btn btn-sm btn-primary" onclick="adminQuickKYCStatus('APPROVED')"
@@ -3258,23 +3368,28 @@
           </div>
 
           <!-- Rejection Warning Banner (if status is REJECTED) -->
-          <div id="adm-usr-kyc-rejection-box" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-sm); font-size: 12px; color: #fca5a5;">
+          <div id="adm-usr-kyc-rejection-box"
+            style="display: none; margin-bottom: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-sm); font-size: 12px; color: #fca5a5;">
             <strong>Rejection Reason:</strong> <span id="adm-usr-kyc-rejection-text">—</span>
           </div>
 
           <!-- Client Profile Information Grid -->
-          <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
+          <div
+            style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
+            <div
+              style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
               Client Information
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 16px; font-size: 12px;">
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 16px; font-size: 12px;">
               <div>
                 <span style="color: var(--mute); display: block; font-size: 11px;">Full Legal Name</span>
                 <b id="adm-usr-kyc-client-name" style="color: var(--text); font-size: 13px;">—</b>
               </div>
               <div>
                 <span style="color: var(--mute); display: block; font-size: 11px;">Email Address</span>
-                <b id="adm-usr-kyc-client-email" style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">—</b>
+                <b id="adm-usr-kyc-client-email"
+                  style="color: var(--text); font-family: var(--font-mono); font-size: 12px;">—</b>
               </div>
               <div>
                 <span style="color: var(--mute); display: block; font-size: 11px;">Phone Number</span>
@@ -3294,7 +3409,8 @@
               </div>
               <div>
                 <span style="color: var(--mute); display: block; font-size: 11px;">ID / Document Number</span>
-                <b id="adm-usr-kyc-docnum" style="color: var(--gold); font-family: var(--font-mono); font-size: 13px;">—</b>
+                <b id="adm-usr-kyc-docnum"
+                  style="color: var(--gold); font-family: var(--font-mono); font-size: 13px;">—</b>
               </div>
               <div>
                 <span style="color: var(--mute); display: block; font-size: 11px;">Submitted Date</span>
@@ -3309,19 +3425,23 @@
 
           <!-- Document Previews (Front & Back) -->
           <div>
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
+            <div
+              style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 8px;">
               Attached Identity Documents
             </div>
-            
-            <div id="adm-usr-kyc-nodocs" style="display: none; padding: 16px; text-align: center; color: var(--mute); font-size: 12px; background: rgba(0,0,0,0.2); border: 1px dashed var(--line); border-radius: var(--radius-sm);">
+
+            <div id="adm-usr-kyc-nodocs"
+              style="display: none; padding: 16px; text-align: center; color: var(--mute); font-size: 12px; background: rgba(0,0,0,0.2); border: 1px dashed var(--line); border-radius: var(--radius-sm);">
               No photo identity documents uploaded for this account yet.
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-              <div id="adm-usr-kyc-front-card" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
+              <div id="adm-usr-kyc-front-card"
+                style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
                 <div id="adm-usr-kyc-front-wrap"></div>
               </div>
-              <div id="adm-usr-kyc-back-card" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
+              <div id="adm-usr-kyc-back-card"
+                style="display: none; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px;">
                 <div id="adm-usr-kyc-back-wrap"></div>
               </div>
             </div>
@@ -3906,10 +4026,13 @@
       <div class="modal-footer"
         style="padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); flex-shrink: 0;">
         <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-          <span id="terms-scroll-hint" style="font-size: 11px; color: var(--mute); font-family: var(--font-mono); transition: opacity 0.3s;">↓ Scroll to the bottom to accept</span>
+          <span id="terms-scroll-hint"
+            style="font-size: 11px; color: var(--mute); font-family: var(--font-mono); transition: opacity 0.3s;">↓
+            Scroll to the bottom to accept</span>
         </div>
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terms-conditions')">Close</button>
-        <button type="button" id="terms-agree-btn" class="btn btn-primary" onclick="acceptTermsAndClose()" disabled style="opacity: 0.45; cursor: not-allowed;">I Agree &amp; Acknowledge</button>
+        <button type="button" id="terms-agree-btn" class="btn btn-primary" onclick="acceptTermsAndClose()" disabled
+          style="opacity: 0.45; cursor: not-allowed;">I Agree &amp; Acknowledge</button>
       </div>
     </div>
   </div>

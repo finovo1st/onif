@@ -174,23 +174,23 @@ export default function ProfileScreen({ onNavigate }) {
   const kycText = isKycApproved
     ? 'KYC Verified'
     : user?.kyc_status === 'IN_REVIEW'
-    ? 'KYC In Review'
-    : 'KYC Pending';
+      ? 'KYC In Review'
+      : 'KYC Pending';
   const kycBg = isKycApproved
     ? colors.badgeApprovedBg
     : user?.kyc_status === 'IN_REVIEW'
-    ? colors.badgePendingBg
-    : colors.badgeRejectedBg;
+      ? colors.badgePendingBg
+      : colors.badgeRejectedBg;
   const kycBorder = isKycApproved
     ? colors.badgeApprovedBorder
     : user?.kyc_status === 'IN_REVIEW'
-    ? colors.badgePendingBorder
-    : colors.badgeRejectedBorder;
+      ? colors.badgePendingBorder
+      : colors.badgeRejectedBorder;
   const kycColor = isKycApproved
     ? colors.accentGreenSoft
     : user?.kyc_status === 'IN_REVIEW'
-    ? colors.accentWarning
-    : colors.accentDanger;
+      ? colors.accentWarning
+      : colors.accentDanger;
 
   const initials = (
     (user?.first_name ? user.first_name[0] : '') +
@@ -785,7 +785,7 @@ export default function ProfileScreen({ onNavigate }) {
       {/* ─── 7. FOOTER BRANDING ─── */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>FINOVO Mobile v1.0.0 • Institutional Trading Desk</Text>
-        <Text style={styles.footerSubText}>© 2026 FINOVO. Segregated Vault Architecture.</Text>
+        <Text style={styles.footerSubText}>© 2021 FINOVO. Segregated Vault Architecture.</Text>
       </View>
     </ScrollView>
   );

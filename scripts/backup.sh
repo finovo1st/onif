@@ -13,6 +13,7 @@ set -eo pipefail
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_DIR="${FINOVO_BACKUP_DIR:-/var/backups/finovo}"
 PROJECT_DIR="${FINOVO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+RETENTION_DAYS="${FINOVO_RETENTION_DAYS:-30}"
 
 mkdir -p "$BACKUP_DIR/db"
 mkdir -p "$BACKUP_DIR/media"
@@ -62,10 +63,10 @@ else
     echo "[WARNING] Media backup file was not created or media volume is empty."
 fi
 
-# 4. Retention Policy (Delete backups older than 14 days)
-echo "[3/3] Enforcing 14-day retention policy..."
-find "$BACKUP_DIR/db" -type f -name "finovo_db_*.sql.gz" -mtime +14 -delete
-find "$BACKUP_DIR/media" -type f -name "finovo_media_*.tar.gz" -mtime +14 -delete
+# 4. Retention Policy (Delete backups older than configured retention period)
+echo "[3/3] Enforcing ${RETENTION_DAYS}-day retention policy..."
+find "$BACKUP_DIR/db" -type f -name "finovo_db_*.sql.gz" -mtime +"$RETENTION_DAYS" -delete
+find "$BACKUP_DIR/media" -type f -name "finovo_media_*.tar.gz" -mtime +"$RETENTION_DAYS" -delete
 
 echo "=================================================="
 echo "[$(date)] Backup Completed Successfully!"

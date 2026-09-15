@@ -22,7 +22,7 @@ class InvestmentAdmin(admin.ModelAdmin):
         'deposit_network', 'deposit_txn_hash',
         'start_date', 'end_date',
     )
-    list_filter = ('status', 'plan', 'deposit_network', 'created_at')
+    list_filter = ('user__is_demo', 'status', 'plan', 'deposit_network', 'created_at')
     search_fields = ('user__email', 'user__username', 'id', 'deposit_txn_hash')
     ordering = ('-created_at',)
     readonly_fields = ('id', 'created_at', 'updated_at', 'approved_by', 'approved_at')

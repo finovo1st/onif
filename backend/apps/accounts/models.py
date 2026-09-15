@@ -153,6 +153,14 @@ class User(AbstractUser):
         help_text=_('Allows this user to earn unlimited direct & ROI commissions without an active plan and with all levels unlocked.')
     )
 
+    # Demo / Simulation Isolation Flag
+    is_demo = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name=_('Is Demo Account'),
+        help_text=_('Designates whether this is an isolated simulated demo account completely excluded from platform metrics and automation.')
+    )
+
     @property
     def active_direct_level(self) -> int:
         return self.active_level

@@ -31,6 +31,9 @@ def distribute_direct_income_task(self, investment_id: str):
             id=investment_id,
             status=Investment.Status.ACTIVE,
         )
+        if getattr(investment.user, 'is_demo', False):
+            logger.info(f"Investment {investment_id} belongs to demo user. Skipping direct income task.")
+            return
     except Investment.DoesNotExist:
         logger.warning(f"Investment {investment_id} not found or not active. Skipping direct income.")
         return
@@ -81,7 +84,8 @@ def distribute_weekly_roi_task(self):
     logger.info(f"[ROI Engine] Starting weekly ROI distribution (daywise) at {timezone.now()}")
 
     active_investments = Investment.objects.filter(
-        status=Investment.Status.ACTIVE
+        status=Investment.Status.ACTIVE,
+        user__is_demo=False,
     ).select_related('user', 'plan').order_by('id')
 
     total = 0

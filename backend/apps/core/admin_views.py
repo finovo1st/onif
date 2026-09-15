@@ -50,42 +50,45 @@ class AdminOverviewView(APIView):
     permission_classes = [IsAdminRoleOrStaff]
 
     def get(self, request):
-        # Users
-        total_users = User.objects.count()
-        verified_users = User.objects.filter(is_email_verified=True).count()
-        pending_kyc_count = User.objects.filter(kyc_status=User.KYCStatus.PENDING).count()
-        active_users_count = User.objects.filter(
+        # Users (Real only)
+        real_users = User.objects.filter(is_demo=False)
+        total_users = real_users.count()
+        verified_users = real_users.filter(is_email_verified=True).count()
+        pending_kyc_count = real_users.filter(kyc_status=User.KYCStatus.PENDING).count()
+        active_users_count = real_users.filter(
             investments__status=Investment.Status.ACTIVE
         ).distinct().count()
 
-        # Investments
-        active_investments_qs = Investment.objects.filter(status=Investment.Status.ACTIVE)
+        # Investments (Real only)
+        active_investments_qs = Investment.objects.filter(status=Investment.Status.ACTIVE, user__is_demo=False)
         active_investments_count = active_investments_qs.count()
         active_investments_total = active_investments_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
         pending_investments_qs = Investment.objects.filter(
-            status__in=[Investment.Status.DEPOSIT_PENDING, Investment.Status.PENDING]
+            status__in=[Investment.Status.DEPOSIT_PENDING, Investment.Status.PENDING],
+            user__is_demo=False,
         )
         pending_investments_count = pending_investments_qs.count()
         pending_investments_total = pending_investments_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        total_investments_total = Investment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        total_investments_total = Investment.objects.filter(user__is_demo=False).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Withdrawals
-        pending_withdrawals_qs = Withdrawal.objects.filter(status=Withdrawal.Status.PENDING)
+        # Withdrawals (Real only)
+        pending_withdrawals_qs = Withdrawal.objects.filter(status=Withdrawal.Status.PENDING, user__is_demo=False)
         pending_withdrawals_count = pending_withdrawals_qs.count()
         pending_withdrawals_total = pending_withdrawals_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        approved_withdrawals_qs = Withdrawal.objects.filter(status=Withdrawal.Status.APPROVED)
+        approved_withdrawals_qs = Withdrawal.objects.filter(status=Withdrawal.Status.APPROVED, user__is_demo=False)
         approved_withdrawals_count = approved_withdrawals_qs.count()
         approved_withdrawals_total = approved_withdrawals_qs.aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
-        # Wallets & Liabilities
-        total_system_balance = Wallet.objects.aggregate(total=Sum('balance'))['total'] or Decimal('0.00')
-        total_system_deposited = Wallet.objects.aggregate(total=Sum('total_deposited'))['total'] or Decimal('0.00')
-        total_roi_earned = Wallet.objects.aggregate(total=Sum('total_roi_earned'))['total'] or Decimal('0.00')
-        total_direct_income = Wallet.objects.aggregate(total=Sum('total_direct_income'))['total'] or Decimal('0.00')
-        total_referral_income = Wallet.objects.aggregate(total=Sum('total_referral_income'))['total'] or Decimal('0.00')
+        # Wallets & Liabilities (Real only)
+        real_wallets = Wallet.objects.filter(user__is_demo=False)
+        total_system_balance = real_wallets.aggregate(total=Sum('balance'))['total'] or Decimal('0.00')
+        total_system_deposited = real_wallets.aggregate(total=Sum('total_deposited'))['total'] or Decimal('0.00')
+        total_roi_earned = real_wallets.aggregate(total=Sum('total_roi_earned'))['total'] or Decimal('0.00')
+        total_direct_income = real_wallets.aggregate(total=Sum('total_direct_income'))['total'] or Decimal('0.00')
+        total_referral_income = real_wallets.aggregate(total=Sum('total_referral_income'))['total'] or Decimal('0.00')
         total_commissions_paid = total_direct_income + total_referral_income
         try:
             total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
@@ -168,6 +171,13 @@ class AdminInvestmentListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Investment.objects.select_related('user', 'plan', 'approved_by').order_by('-created_at')
+        is_demo_param = self.request.query_params.get('is_demo')
+        if is_demo_param is not None and is_demo_param.lower() in ('true', '1'):
+            qs = qs.filter(user__is_demo=True)
+        elif is_demo_param is not None and is_demo_param.lower() in ('all',):
+            pass
+        else:
+            qs = qs.filter(user__is_demo=False)
         status_param = self.request.query_params.get('status')
         if status_param and status_param != 'all':
             qs = qs.filter(status=status_param.upper())
@@ -293,6 +303,13 @@ class AdminWithdrawalListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Withdrawal.objects.select_related('user', 'reviewed_by').order_by('-created_at')
+        is_demo_param = self.request.query_params.get('is_demo')
+        if is_demo_param is not None and is_demo_param.lower() in ('true', '1'):
+            qs = qs.filter(user__is_demo=True)
+        elif is_demo_param is not None and is_demo_param.lower() in ('all',):
+            pass
+        else:
+            qs = qs.filter(user__is_demo=False)
         status_param = self.request.query_params.get('status')
         if status_param and status_param != 'all':
             qs = qs.filter(status=status_param.upper())
@@ -444,6 +461,13 @@ class AdminUserListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = User.objects.select_related('parent', 'wallet').prefetch_related('investments').order_by('-created_at')
+        is_demo_param = self.request.query_params.get('is_demo')
+        if is_demo_param is not None and is_demo_param.lower() in ('true', '1'):
+            qs = qs.filter(is_demo=True)
+        elif is_demo_param is not None and is_demo_param.lower() in ('all',):
+            pass
+        else:
+            qs = qs.filter(is_demo=False)
         search = self.request.query_params.get('search')
         if search:
             qs = qs.filter(
@@ -822,7 +846,10 @@ class AdminTriggerROIEngineView(APIView):
         if mode not in ['full_week', 'by_day']:
             mode = 'full_week'
 
-        active_investments = Investment.objects.filter(status=Investment.Status.ACTIVE).select_related('user', 'plan')
+        active_investments = Investment.objects.filter(
+            status=Investment.Status.ACTIVE,
+            user__is_demo=False,
+        ).select_related('user', 'plan')
         total_investments_processed = 0
         total_roi_distributed = Decimal('0.00')
 
@@ -917,13 +944,15 @@ class AdminCompanyFundsSummaryView(APIView):
 
         total_count = qs.count()
 
-        # Company Cash Flow Telemetry
+        # Company Cash Flow Telemetry (Real accounts only)
         total_plan_amounts = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
+            user__is_demo=False,
         ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
 
         total_trading_capital = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
+            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
+            user__is_demo=False,
         ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
 
         try:
@@ -932,11 +961,13 @@ class AdminCompanyFundsSummaryView(APIView):
             total_generation = Decimal('0.00')
 
         total_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED
+            status=Withdrawal.Status.APPROVED,
+            user__is_demo=False,
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
         total_net_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED
+            status=Withdrawal.Status.APPROVED,
+            user__is_demo=False,
         ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
         # Total cash = Total plan inflows (gross package deposits)

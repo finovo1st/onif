@@ -13,7 +13,7 @@ class DepositAdmin(admin.ModelAdmin):
     the Investment creation flow and approved via InvestmentAdmin.
     """
     list_display = ('id', 'user', 'amount', 'network', 'status', 'txn_hash', 'created_at')
-    list_filter = ('status', 'network', 'created_at')
+    list_filter = ('user__is_demo', 'status', 'network', 'created_at')
     search_fields = ('user__email', 'txn_hash', 'id')
     ordering = ('-created_at',)
     readonly_fields = ('id', 'created_at', 'updated_at')
@@ -70,7 +70,7 @@ class WithdrawalAdmin(admin.ModelAdmin):
         'id', 'user', 'withdrawal_type', 'amount', 'net_amount',
         'network', 'status', 'created_at',
     )
-    list_filter = ('status', 'withdrawal_type', 'network', 'created_at')
+    list_filter = ('user__is_demo', 'status', 'withdrawal_type', 'network', 'created_at')
     search_fields = ('user__email', 'wallet_address', 'txn_hash', 'id')
     ordering = ('-created_at',)
     readonly_fields = ('id', 'created_at', 'updated_at', 'net_amount')

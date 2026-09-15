@@ -2671,6 +2671,23 @@
           <input type="text" id="wdr-address" class="form-control" placeholder="Paste your USDT wallet address"
             required>
         </div>
+        <div class="form-group">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Security Authorization OTP</span>
+            <span style="font-size: 11px; color: var(--gold); font-weight: 500;">Sent to Registered Email</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="wdr-otp" class="form-control" placeholder="6-digit code" maxlength="6"
+              style="letter-spacing: 3px; font-weight: 700; font-family: var(--font-mono);" required>
+            <button type="button" id="btn-request-wdr-otp" class="btn btn-secondary" onclick="requestWithdrawalOTP(event)"
+              style="white-space: nowrap; padding: 0 14px; font-size: 12px; font-weight: 600; min-width: 95px; justify-content: center;">
+              Get Code
+            </button>
+          </div>
+          <small style="color: var(--mute); font-size: 11px; margin-top: 5px; display: block;">
+            Click "Get Code" to receive an authorization code on your registered email.
+          </small>
+        </div>
         <div
           style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 13px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">

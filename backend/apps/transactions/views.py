@@ -1,7 +1,29 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from .models import Deposit, Withdrawal
 from .serializers import DepositSerializer, WithdrawalSerializer
+
+
+class WithdrawalRequestOTPView(APIView):
+    """
+    POST /api/v1/withdrawals/request-otp/
+    Dispatches a 6-digit withdrawal verification OTP to the authenticated user's email.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from apps.accounts.services import send_withdrawal_otp_email
+        try:
+            send_withdrawal_otp_email(request.user)
+            return Response({
+                'detail': 'Withdrawal authorization code has been sent to your registered email.'
+            }, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({
+                'detail': 'Failed to send withdrawal authorization OTP. Please try again.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DepositListView(generics.ListAPIView):
@@ -43,7 +65,9 @@ class WithdrawalListCreateView(generics.ListCreateAPIView):
         return self.request.user.withdrawals.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        withdrawal = serializer.save(user=self.request.user)
+        from apps.notifications.emails import notify_withdrawal_requested
+        notify_withdrawal_requested(withdrawal)
 
 
 class WithdrawalDetailView(generics.RetrieveAPIView):

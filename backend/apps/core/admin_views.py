@@ -263,6 +263,10 @@ class AdminInvestmentRejectView(APIView):
         investment.approved_at = timezone.now()
         investment.save(update_fields=['status', 'rejection_reason', 'approved_by', 'approved_at', 'updated_at'])
 
+        # Send notification to user
+        from apps.notifications.emails import notify_deposit_rejected
+        notify_deposit_rejected(investment, reason)
+
         # Audit Log
         AuditLog.objects.create(
             user=request.user,
@@ -363,6 +367,10 @@ class AdminWithdrawalApproveView(APIView):
                 withdrawal.txn_hash = txn_hash
             withdrawal.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'txn_hash', 'updated_at'])
 
+            # Send payout notification to user
+            from apps.notifications.emails import notify_withdrawal_approved
+            notify_withdrawal_approved(withdrawal)
+
             # Audit Log
             AuditLog.objects.create(
                 user=request.user,
@@ -404,6 +412,10 @@ class AdminWithdrawalRejectView(APIView):
         withdrawal.reviewed_by = request.user
         withdrawal.reviewed_at = timezone.now()
         withdrawal.save(update_fields=['status', 'notes', 'reviewed_by', 'reviewed_at', 'updated_at'])
+
+        # Send notification to user
+        from apps.notifications.emails import notify_withdrawal_rejected
+        notify_withdrawal_rejected(withdrawal, reason)
 
         # Audit Log
         AuditLog.objects.create(
@@ -464,10 +476,15 @@ class AdminUserDetailView(generics.RetrieveUpdateAPIView):
         return AdminUserListSerializer
 
     def perform_update(self, serializer):
+        old_kyc = self.get_object().kyc_status
         instance = serializer.save()
         if 'kyc_status' in serializer.validated_data:
             instance.kyc_reviewed_at = timezone.now()
             instance.save(update_fields=['kyc_reviewed_at'])
+            new_kyc = instance.kyc_status
+            if new_kyc in [User.KYCStatus.APPROVED, User.KYCStatus.REJECTED] and new_kyc != old_kyc:
+                from apps.notifications.emails import notify_kyc_status_changed
+                notify_kyc_status_changed(instance, new_kyc, instance.kyc_rejection_reason)
 
 
 
@@ -617,6 +634,10 @@ class AdminUserBalanceAdjustView(APIView):
                 }
             )
 
+            # Send notification to user
+            from apps.notifications.emails import notify_balance_adjusted
+            notify_balance_adjusted(user, action, amount, reason, txn.balance_after)
+
         return Response({
             'detail': f"Successfully {action.lower()}ed ${amount} to {user.email}.",
             'balance_after': float(txn.balance_after),
@@ -686,6 +707,9 @@ class AdminTicketReplyView(APIView):
             elif ticket.status == Ticket.Status.OPEN:
                 ticket.status = Ticket.Status.IN_PROGRESS
             ticket.save(update_fields=['status', 'updated_at'])
+
+            from apps.notifications.emails import notify_ticket_reply
+            notify_ticket_reply(ticket, reply)
 
         return Response({
             'detail': 'Reply posted successfully.',

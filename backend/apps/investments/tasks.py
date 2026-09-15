@@ -111,13 +111,8 @@ def distribute_weekly_roi_task(self):
                         reference_id=str(investment.id),
                     )
                 else:
-                    Notification.objects.create(
-                        user=investment.user,
-                        title='Weekly ROI Credited',
-                        message=f'${roi_credited} has been credited to your wallet as weekly ROI.',
-                        notification_type=Notification.NotificationType.INVESTMENT,
-                        reference_id=str(investment.id),
-                    )
+                    from apps.notifications.emails import notify_weekly_roi
+                    notify_weekly_roi(investment.user, roi_credited, investment.plan.name)
 
         except Exception as exc:
             errors += 1

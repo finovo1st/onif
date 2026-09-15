@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="supported-color-schemes" content="dark" />
+  <title>{{ subject|default:"FINOVO Notification" }}</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    body,table,td,p,a,li { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table,td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; height:auto; outline:none; text-decoration:none; display:block; }
+    body { margin:0!important; padding:0!important; background-color:#030507; font-family:'Inter',system-ui,-apple-system,sans-serif; color:#F1F3F7; -webkit-font-smoothing:antialiased; }
+
+    /* Responsive overrides */
+    @media only screen and (max-width:620px) {
+      .outer-wrap { padding:20px 10px 40px!important; }
+      .card-wrap   { border-radius:0!important; }
+      .card-body   { padding:24px 20px!important; }
+      .card-header { padding:22px 20px 18px!important; }
+      .card-footer { padding:18px 20px!important; }
+      .title-text  { font-size:18px!important; }
+      .otp-code    { font-size:28px!important; letter-spacing:5px!important; }
+      .logo-img    { max-width:130px!important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#030507;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#F1F3F7;">
+
+  <!-- ── Outer Background ── -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#030507">
+    <tr>
+      <td class="outer-wrap" align="center" style="padding:36px 16px 52px;">
+
+        <!-- ── Brand micro-label ── -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding-bottom:16px;">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#4A5568;">
+                &#9632; &nbsp;FINOVO &nbsp;&bull;&nbsp; SECURE OFFICIAL NOTIFICATION&nbsp; &#9632;
+              </span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ════ MAIN CARD ════ -->
+        <table role="presentation" class="card-wrap" width="100%" cellpadding="0" cellspacing="0" border="0"
+          style="max-width:600px;background-color:#0E1319;border:1px solid rgba(255,255,255,0.08);border-top-color:rgba(255,255,255,0.15);border-radius:10px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 20px 50px rgba(0,0,0,0.7);">
+
+          <!-- Gold top rule (1px accent line) -->
+          <tr>
+            <td style="height:2px;background:linear-gradient(90deg,transparent 0%,#C6993D 20%,#DFBD69 50%,#C6993D 80%,transparent 100%);font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- ── HEADER ── -->
+          <tr>
+            <td class="card-header" align="center"
+              style="padding:28px 40px 24px;background:rgba(10,14,19,0.6);border-bottom:1px solid rgba(255,255,255,0.06);">
+
+              {% if logo_base64 %}
+              <img class="logo-img" src="data:image/png;base64,{{ logo_base64 }}"
+                   alt="FINOVO" width="160" height="auto"
+                   style="display:block;margin:0 auto;max-width:160px;height:auto;border:0;" />
+              {% else %}
+              <!-- Text logo fallback -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td valign="middle" style="padding-right:10px;">
+                    <div style="width:36px;height:36px;background:linear-gradient(135deg,rgba(198,153,61,0.2),rgba(198,153,61,0.05));border:1px solid rgba(198,153,61,0.3);border-radius:4px;text-align:center;line-height:36px;box-shadow:0 0 15px rgba(198,153,61,0.15);">
+                      <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-top:8px;">
+                        <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" stroke="#C6993D" stroke-width="1.8" fill="none"/>
+                        <polygon points="16,7 23,11 23,21 16,25 9,21 9,11" fill="#C6993D" opacity="0.18"/>
+                        <circle cx="16" cy="16" r="2.8" fill="#DFBD69"/>
+                      </svg>
+                    </div>
+                  </td>
+                  <td valign="middle" align="left">
+                    <div style="font-family:'Outfit',sans-serif;font-size:21px;font-weight:500;color:#F1F3F7;letter-spacing:-0.015em;line-height:1;">FINOVO</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:#C6993D;margin-top:3px;">Global Wealth Platform</div>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+
+            </td>
+          </tr>
+
+          <!-- ── BODY ── -->
+          <tr>
+            <td class="card-body" style="padding:32px 40px 28px;">
+
+              <!-- ── Status Badge ── -->
+              {% if badge_text %}
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:22px;">
+                <tr>
+                  <td>
+                    {% if badge_type == 'green' %}
+                    <span style="display:inline-block;font-family:'IBM Plex Mono',monospace;padding:5px 12px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;background:rgba(198,153,61,0.1);color:#C6993D;border:1px solid rgba(198,153,61,0.25);">
+                      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#4CAF7D;margin-right:6px;vertical-align:middle;box-shadow:0 0 8px #4CAF7D;"></span>{{ badge_text }}
+                    </span>
+                    {% elif badge_type == 'red' %}
+                    <span style="display:inline-block;font-family:'IBM Plex Mono',monospace;padding:5px 12px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;background:rgba(239,68,68,0.1);color:#EF4444;border:1px solid rgba(239,68,68,0.25);">
+                      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444;margin-right:6px;vertical-align:middle;box-shadow:0 0 8px #EF4444;"></span>{{ badge_text }}
+                    </span>
+                    {% elif badge_type == 'blue' %}
+                    <span style="display:inline-block;font-family:'IBM Plex Mono',monospace;padding:5px 12px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;background:rgba(198,153,61,0.08);color:#DFBD69;border:1px solid rgba(198,153,61,0.2);">
+                      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#DFBD69;margin-right:6px;vertical-align:middle;box-shadow:0 0 8px #DFBD69;"></span>{{ badge_text }}
+                    </span>
+                    {% else %}
+                    <!-- Gold default -->
+                    <span style="display:inline-block;font-family:'IBM Plex Mono',monospace;padding:5px 12px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;background:rgba(198,153,61,0.1);color:#C6993D;border:1px solid rgba(198,153,61,0.25);">
+                      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#C6993D;margin-right:6px;vertical-align:middle;box-shadow:0 0 8px #C6993D;"></span>{{ badge_text }}
+                    </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+
+              <!-- ── Title ── -->
+              <h1 class="title-text"
+                style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:500;color:#F1F3F7;margin:0 0 12px 0;line-height:1.3;letter-spacing:-0.015em;">
+                {{ title }}
+              </h1>
+
+              <!-- ── Greeting ── -->
+              <p style="font-size:14px;color:#8A94A4;margin:0 0 16px 0;font-weight:400;line-height:1.5;">
+                Hello{% if user_name %} <strong style="color:#F1F3F7;font-weight:500;">{{ user_name }}</strong>{% endif %},
+              </p>
+
+              <!-- ── Message ── -->
+              <div style="font-size:14px;line-height:1.65;color:#CBD5E1;margin:0 0 24px 0;">
+                {{ message|linebreaks }}
+              </div>
+
+              <!-- ── OTP Card ── -->
+              {% if otp_code %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:rgba(10,14,19,0.6);border:1px solid rgba(198,153,61,0.35);border-top-color:rgba(198,153,61,0.5);border-radius:8px;margin:4px 0 28px;box-shadow:0 4px 20px rgba(198,153,61,0.15),inset 0 1px 0 rgba(198,153,61,0.15);">
+                <tr>
+                  <td align="center" style="padding:28px 20px;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.14em;color:#8A94A4;text-transform:uppercase;margin-bottom:14px;">
+                      One-Time Authorization Code
+                    </div>
+                    <div class="otp-code"
+                      style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;letter-spacing:8px;color:#DFBD69;font-variant-numeric:tabular-nums;">
+                      {{ otp_code }}
+                    </div>
+                    <div style="font-size:12px;color:#4A5568;margin-top:14px;line-height:1.5;font-family:'IBM Plex Mono',monospace;">
+                      Expires in <span style="color:#8A94A4;">{{ expiry_minutes|default:10 }} min</span>
+                      &nbsp;&bull;&nbsp; Single-use &nbsp;&bull;&nbsp; Never share this code
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+
+              <!-- ── Details Table ── -->
+              {% if details %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:rgba(10,14,19,0.6);border:1px solid rgba(255,255,255,0.06);border-top-color:rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;margin:4px 0 28px;">
+                <!-- Table eyebrow -->
+                <tr>
+                  <td colspan="2"
+                    style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.14em;color:#4A5568;text-transform:uppercase;">
+                    Transaction Details
+                  </td>
+                </tr>
+                {% for item in details %}
+                <tr style="border-bottom:{% if forloop.last %}none{% else %}1px solid rgba(255,255,255,0.04){% endif %};">
+                  <td style="padding:12px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.04em;color:#8A94A4;text-transform:uppercase;width:42%;border-bottom:{% if forloop.last %}none{% else %}1px solid rgba(255,255,255,0.04){% endif %};">
+                    {{ item.label }}
+                  </td>
+                  <td style="padding:12px 16px;font-family:{% if item.highlight %}'IBM Plex Mono',monospace{% else %}'Inter',sans-serif{% endif %};font-size:{% if item.highlight %}13px{% else %}13px{% endif %};font-weight:{% if item.highlight %}600{% else %}500{% endif %};text-align:right;word-break:break-all;border-bottom:{% if forloop.last %}none{% else %}1px solid rgba(255,255,255,0.04){% endif %};color:{% if item.highlight %}#DFBD69{% else %}#F1F3F7{% endif %};">
+                    {{ item.value }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </table>
+              {% endif %}
+
+              <!-- ── Security Notice ── -->
+              {% if security_notice %}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:rgba(198,153,61,0.06);border-left:3px solid #C6993D;border-radius:0 4px 4px 0;margin:4px 0 8px;">
+                <tr>
+                  <td style="padding:12px 16px;font-size:12px;line-height:1.6;color:#8A94A4;font-family:'Inter',sans-serif;">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#C6993D;">Security Advisory</span><br>
+                    <span style="margin-top:4px;display:block;">{{ security_notice }}</span>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr><td style="height:1px;background:rgba(255,255,255,0.06);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+          <!-- ── FOOTER ── -->
+          <tr>
+            <td class="card-footer" align="center"
+              style="padding:20px 40px 24px;background:rgba(5,7,10,0.8);text-align:center;">
+              <p style="font-size:11px;color:#4A5568;margin:0 0 4px 0;font-family:'Inter',sans-serif;line-height:1.6;">
+                Automated notification from FINOVO Global Asset Platform.
+              </p>
+              <p style="font-size:11px;color:#374151;margin:0 0 16px 0;font-family:'Inter',sans-serif;line-height:1.6;">
+                Unauthorized action? Secure your account immediately and contact support.
+              </p>
+              <div style="border-top:1px solid rgba(255,255,255,0.05);padding-top:14px;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#374151;letter-spacing:0.04em;">
+                  &copy; {{ current_year|default:"2026" }} FINOVO &nbsp;&bull;&nbsp; All rights reserved
+                </span>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+        <!-- ════ END CARD ════ -->
+
+        <!-- Anti-phishing note -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin-top:20px;">
+          <tr>
+            <td align="center">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#1F2937;letter-spacing:0.08em;text-transform:uppercase;">
+                FINOVO will NEVER ask for your password, private keys, or OTP via email
+              </span>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

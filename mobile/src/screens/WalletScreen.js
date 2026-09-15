@@ -38,6 +38,32 @@ export default function WalletScreen({ onNavigate }) {
   const [wdrAmount, setWdrAmount] = useState('');
   const [wdrNetwork, setWdrNetwork] = useState('BEP20');
   const [wdrAddress, setWdrAddress] = useState('');
+  const [wdrOtp, setWdrOtp] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+
+  const handleRequestOtp = async () => {
+    if (otpCooldown > 0 || otpSending) return;
+    setOtpSending(true);
+    try {
+      await apiCall('/withdrawals/request-otp/', 'POST');
+      Alert.alert('Code Sent', 'A 6-digit withdrawal authorization code has been sent to your registered email.');
+      setOtpCooldown(60);
+      const timer = setInterval(() => {
+        setOtpCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      Alert.alert('OTP Error', err.message || 'Failed to send OTP.');
+    } finally {
+      setOtpSending(false);
+    }
+  };
 
   const loadWalletData = async () => {
     try {
@@ -97,6 +123,10 @@ export default function WalletScreen({ onNavigate }) {
       Alert.alert('Missing Address', 'Please paste your destination USDT wallet address.');
       return;
     }
+    if (!wdrOtp.trim()) {
+      Alert.alert('Missing Code', 'Please enter the 6-digit withdrawal verification code sent to your email.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -105,9 +135,11 @@ export default function WalletScreen({ onNavigate }) {
         amount: amt,
         network: wdrNetwork,
         wallet_address: wdrAddress,
+        otp: wdrOtp.trim(),
       });
 
       setWdrModalVisible(false);
+      setWdrOtp('');
       Alert.alert(
         'Withdrawal Submitted',
         `Request for $${amt.toFixed(2)} USDT (Net: $${netReceived.toFixed(2)}) submitted for Admin payout verification.`
@@ -412,6 +444,25 @@ export default function WalletScreen({ onNavigate }) {
                 onChangeText={setWdrAddress}
                 placeholder="Paste destination wallet address"
                 placeholderTextColor={colors.textDim}
+              />
+
+              {/* Withdrawal OTP */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+                <Text style={[styles.label, { marginTop: 0 }]}>Security Authorization OTP *</Text>
+                <TouchableOpacity onPress={handleRequestOtp} disabled={otpCooldown > 0 || otpSending}>
+                  <Text style={{ color: otpCooldown > 0 ? colors.textDim : colors.goldSoft, fontSize: 12, fontWeight: '700' }}>
+                    {otpSending ? 'Sending...' : otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Get Code'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={[styles.input, { letterSpacing: 3, fontFamily: 'monospace', fontWeight: '700', textAlign: 'center' }]}
+                value={wdrOtp}
+                onChangeText={setWdrOtp}
+                placeholder="6-digit OTP"
+                placeholderTextColor={colors.textDim}
+                keyboardType="numeric"
+                maxLength={6}
               />
 
               {/* Fee & Net Preview Box (Matching Web) */}

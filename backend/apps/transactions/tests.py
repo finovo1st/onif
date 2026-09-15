@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core import mail
 from apps.transactions.models import Deposit, Withdrawal, NetworkChoices
 
 User = get_user_model()
@@ -47,6 +48,7 @@ class TransactionSerializerTests(TestCase):
         from rest_framework.test import APIRequestFactory
         from apps.wallet.services import credit_wallet
         from apps.wallet.models import WalletTransaction
+        from apps.accounts.services import send_withdrawal_otp_email
         
         request = APIRequestFactory().post('/')
         request.user = self.user
@@ -62,12 +64,26 @@ class TransactionSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn('amount', serializer.errors)
         
-        # Credit wallet and test successful validation
+        # Credit wallet
         credit_wallet(self.user, Decimal('50.00'), WalletTransaction.Category.DEPOSIT)
         
+        # Missing OTP test
+        serializer = WithdrawalSerializer(data=data, context={'request': request})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('otp', serializer.errors)
+
+        # Invalid OTP test
+        data['otp'] = '000000'
+        serializer = WithdrawalSerializer(data=data, context={'request': request})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('otp', serializer.errors)
+
+        # Generate real OTP and test successful validation
+        valid_otp = send_withdrawal_otp_email(self.user)
+        data['otp'] = valid_otp
         serializer = WithdrawalSerializer(data=data, context={'request': request})
         self.assertTrue(serializer.is_valid())
-        self.assertEqual(serializer.validated_data['net_amount'], Decimal('19.00')) # 20 - 1 fee
+        self.assertEqual(serializer.validated_data['net_amount'], Decimal('19.00'))
 
 
 from rest_framework.test import APITestCase
@@ -78,6 +94,7 @@ class TransactionViewTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(email='view@example.com', username='viewuser')
         self.client.force_authenticate(user=self.user)
+        mail.outbox.clear()
 
     def test_list_deposits(self):
         self.user.is_staff = True
@@ -86,7 +103,16 @@ class TransactionViewTests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_create_withdrawal(self):
+    def test_request_withdrawal_otp(self):
+        url = reverse('withdrawal_request_otp')
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.withdrawal_otp)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Withdrawal Authorization Code', mail.outbox[0].subject)
+
+    def test_create_withdrawal_without_otp_fails(self):
         from apps.core.models import PlatformSettings
         from apps.wallet.services import credit_wallet
         from apps.wallet.models import WalletTransaction
@@ -103,13 +129,48 @@ class TransactionViewTests(APITestCase):
             'wallet_address': 'TXYZ123'
         }
         response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('otp', response.data)
+
+    def test_create_withdrawal_success(self):
+        from apps.core.models import PlatformSettings
+        from apps.wallet.services import credit_wallet
+        from apps.wallet.models import WalletTransaction
+        from apps.accounts.services import send_withdrawal_otp_email
+        
+        PlatformSettings.objects.update_or_create(key='MIN_WITHDRAWAL', defaults={'value': '10.00'})
+        PlatformSettings.objects.update_or_create(key='WITHDRAWAL_FEE', defaults={'value': '1.00'})
+        credit_wallet(self.user, Decimal('50.00'), WalletTransaction.Category.DEPOSIT)
+        
+        # Generate OTP
+        valid_otp = send_withdrawal_otp_email(self.user)
+        mail.outbox.clear()
+
+        url = reverse('withdrawal_list_create')
+        data = {
+            'amount': '15.00',
+            'withdrawal_type': Withdrawal.WithdrawalType.PROFIT,
+            'network': NetworkChoices.TRC20,
+            'wallet_address': 'TXYZ123',
+            'otp': valid_otp,
+        }
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Verify OTP was cleared
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.withdrawal_otp)
+
+        # Verify notification email sent
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Withdrawal Request Received', mail.outbox[0].subject)
 
 
 class TransactionAdminTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(email='adminuser@example.com', username='adminuser')
         self.admin = User.objects.create_superuser(email='super@example.com', username='super', password='123')
+        mail.outbox.clear()
         
     def test_approve_withdrawal_admin_action(self):
         from apps.transactions.admin import WithdrawalAdmin
@@ -149,3 +210,7 @@ class TransactionAdminTests(TestCase):
         
         self.user.wallet.refresh_from_db()
         self.assertEqual(self.user.wallet.balance, Decimal('50.00'))
+
+        # Verify email notification sent
+        self.assertTrue(len(mail.outbox) >= 1)
+        self.assertIn('Payout Sent', mail.outbox[-1].subject)

@@ -72,6 +72,8 @@ class User(AbstractUser):
     is_email_verified = models.BooleanField(default=False, verbose_name=_('Is Email Verified'))
     email_otp = models.CharField(max_length=6, blank=True, null=True, verbose_name=_('Email OTP'))
     email_otp_expiry = models.DateTimeField(blank=True, null=True, verbose_name=_('Email OTP Expiry'))
+    withdrawal_otp = models.CharField(max_length=6, blank=True, null=True, verbose_name=_('Withdrawal OTP'))
+    withdrawal_otp_expiry = models.DateTimeField(blank=True, null=True, verbose_name=_('Withdrawal OTP Expiry'))
 
     # Profile
     phone_number = models.CharField(

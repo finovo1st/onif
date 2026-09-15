@@ -43,6 +43,10 @@ class InvestmentListCreateView(generics.ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         investment = serializer.save()
+
+        from apps.notifications.emails import notify_deposit_submitted
+        notify_deposit_submitted(investment)
+
         return Response(
             InvestmentSerializer(investment).data,
             status=status.HTTP_201_CREATED,

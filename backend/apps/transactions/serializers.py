@@ -19,12 +19,19 @@ class DepositSerializer(serializers.ModelSerializer):
 
 
 class WithdrawalSerializer(serializers.ModelSerializer):
+    otp = serializers.CharField(
+        write_only=True,
+        required=True,
+        error_messages={'required': 'Withdrawal authorization OTP is required.'},
+        help_text='One-time authorization code sent to registered email',
+    )
+
     class Meta:
         model = Withdrawal
         fields = [
             'id', 'amount', 'withdrawal_type', 'fee', 'capital_charge', 'net_amount',
             'network', 'wallet_address', 'txn_hash', 'status', 'reviewed_at',
-            'notes', 'created_at',
+            'notes', 'created_at', 'otp',
         ]
         read_only_fields = [
             'id', 'fee', 'capital_charge', 'net_amount', 'txn_hash',
@@ -54,7 +61,8 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'amount': 'Net amount after fees must be greater than 0.'})
 
         # Check wallet balance
-        user = self.context['request'].user
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
         try:
             wallet = user.wallet
             total_deduction = amount
@@ -62,8 +70,19 @@ class WithdrawalSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'amount': f'Insufficient wallet balance. Available: ${wallet.balance}'}
                 )
+        except serializers.ValidationError:
+            raise
         except Exception:
             raise serializers.ValidationError({'amount': 'Could not verify wallet balance.'})
+
+        # Verify withdrawal OTP on creation
+        if self.instance is None:
+            otp = attrs.pop('otp', None)
+            from apps.accounts.services import verify_withdrawal_otp
+            if not otp:
+                raise serializers.ValidationError({'otp': 'Withdrawal authorization OTP is required.'})
+            if not user or not verify_withdrawal_otp(user, otp):
+                raise serializers.ValidationError({'otp': 'Invalid or expired withdrawal OTP. Please request a new code.'})
 
         attrs['fee'] = fee
         attrs['capital_charge'] = capital_charge
@@ -71,5 +90,6 @@ class WithdrawalSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        validated_data.pop('otp', None)
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)

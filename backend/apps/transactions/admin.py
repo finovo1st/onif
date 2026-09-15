@@ -41,6 +41,9 @@ class DepositAdmin(admin.ModelAdmin):
                     deposit.reviewed_at = timezone.now()
                     deposit.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'updated_at'])
                     count += 1
+
+                    from apps.notifications.emails import notify_deposit_approved
+                    notify_deposit_approved(deposit)
             except Exception as exc:
                 self.message_user(request, f"Failed for {deposit.user}: {exc}", level='ERROR')
 
@@ -48,10 +51,17 @@ class DepositAdmin(admin.ModelAdmin):
 
     @admin.action(description='❌ Reject selected deposits')
     def reject_deposits(self, request, queryset):
-        updated = queryset.filter(status=Deposit.Status.PENDING).update(
-            status=Deposit.Status.REJECTED
-        )
-        self.message_user(request, f"{updated} deposit(s) rejected.")
+        from apps.notifications.emails import notify_deposit_rejected
+        count = 0
+        for deposit in queryset.filter(status=Deposit.Status.PENDING):
+            deposit.status = Deposit.Status.REJECTED
+            deposit.reviewed_by = request.user
+            deposit.reviewed_at = timezone.now()
+            deposit.notes = 'Manual deposit rejected by administrator.'
+            deposit.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'notes', 'updated_at'])
+            notify_deposit_rejected(deposit, deposit.notes)
+            count += 1
+        self.message_user(request, f"{count} deposit(s) rejected.")
 
 
 @admin.register(Withdrawal)
@@ -109,6 +119,9 @@ class WithdrawalAdmin(admin.ModelAdmin):
                         update_fields=['status', 'reviewed_by', 'reviewed_at', 'updated_at']
                     )
                     count += 1
+
+                    from apps.notifications.emails import notify_withdrawal_approved
+                    notify_withdrawal_approved(withdrawal)
             except ValueError as exc:
                 self.message_user(
                     request,
@@ -122,7 +135,14 @@ class WithdrawalAdmin(admin.ModelAdmin):
 
     @admin.action(description='❌ Reject selected withdrawals')
     def reject_withdrawals(self, request, queryset):
-        updated = queryset.filter(status=Withdrawal.Status.PENDING).update(
-            status=Withdrawal.Status.REJECTED
-        )
-        self.message_user(request, f"{updated} withdrawal(s) rejected.")
+        from apps.notifications.emails import notify_withdrawal_rejected
+        count = 0
+        for withdrawal in queryset.filter(status=Withdrawal.Status.PENDING):
+            withdrawal.status = Withdrawal.Status.REJECTED
+            withdrawal.reviewed_by = request.user
+            withdrawal.reviewed_at = timezone.now()
+            withdrawal.notes = 'Withdrawal request rejected by administrator.'
+            withdrawal.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'notes', 'updated_at'])
+            notify_withdrawal_rejected(withdrawal, withdrawal.notes)
+            count += 1
+        self.message_user(request, f"{count} withdrawal(s) rejected.")

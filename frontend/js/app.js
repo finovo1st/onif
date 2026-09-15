@@ -2259,17 +2259,70 @@ function updateWithdrawalFeeCalc() {
   document.getElementById('wdr-net-preview').innerText = `$${net.toFixed(2)}`;
 }
 
+let wdrOtpCooldownTimer = null;
+
+async function requestWithdrawalOTP(e) {
+  if (e) e.preventDefault();
+  const btn = document.getElementById('btn-request-wdr-otp');
+  if (btn && btn.disabled) return;
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+    }
+    await apiCall('/withdrawals/request-otp/', 'POST');
+    showToast('Withdrawal OTP sent to your registered email! Valid for 10 mins.');
+
+    const otpInput = document.getElementById('wdr-otp');
+    if (otpInput) otpInput.focus();
+
+    // 60-second cooldown timer
+    let secondsLeft = 60;
+    if (wdrOtpCooldownTimer) clearInterval(wdrOtpCooldownTimer);
+    if (btn) btn.innerText = `${secondsLeft}s`;
+
+    wdrOtpCooldownTimer = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(wdrOtpCooldownTimer);
+        wdrOtpCooldownTimer = null;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Resend Code';
+        }
+      } else {
+        if (btn) btn.innerText = `${secondsLeft}s`;
+      }
+    }, 1000);
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Get Code';
+    }
+    showToast(err.message || 'Failed to send OTP. Please try again.', true);
+  }
+}
+
 async function handleWithdrawSubmit(e) {
   e.preventDefault();
   const withdrawal_type = document.getElementById('wdr-type').value;
   const amount = Number(document.getElementById('wdr-amount').value);
   const network = document.getElementById('wdr-network').value;
   const wallet_address = document.getElementById('wdr-address').value;
+  const otp = (document.getElementById('wdr-otp')?.value || '').trim();
+
+  if (!otp) {
+    showToast('Please enter the 6-digit withdrawal verification code.', true);
+    return;
+  }
 
   try {
-    await apiCall('/withdrawals/', 'POST', { withdrawal_type, amount, network, wallet_address });
+    await apiCall('/withdrawals/', 'POST', { withdrawal_type, amount, network, wallet_address, otp });
     closeModal('modal-withdraw');
     showToast('Withdrawal request submitted! Awaiting Admin approval.');
+    const otpInput = document.getElementById('wdr-otp');
+    if (otpInput) otpInput.value = '';
     await loadAllAPIData();
   } catch (err) {
     showToast(err.message, true);

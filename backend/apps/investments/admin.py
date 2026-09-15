@@ -80,10 +80,17 @@ class InvestmentAdmin(admin.ModelAdmin):
 
     @admin.action(description='❌ Reject selected investments (deposit rejected)')
     def reject_investments(self, request, queryset):
-        updated = queryset.filter(
-            status=Investment.Status.DEPOSIT_PENDING
-        ).update(status=Investment.Status.REJECTED)
-        self.message_user(request, f"{updated} investment(s) rejected.")
+        from apps.notifications.emails import notify_deposit_rejected
+        count = 0
+        for inv in queryset.filter(status=Investment.Status.DEPOSIT_PENDING):
+            inv.status = Investment.Status.REJECTED
+            inv.approved_by = request.user
+            inv.approved_at = timezone.now()
+            inv.rejection_reason = 'Deposit proof was rejected by administrator.'
+            inv.save(update_fields=['status', 'approved_by', 'approved_at', 'rejection_reason', 'updated_at'])
+            notify_deposit_rejected(inv, inv.rejection_reason)
+            count += 1
+        self.message_user(request, f"{count} investment(s) rejected.")
 
     @admin.action(description='🚫 Cancel selected investments')
     def cancel_investments(self, request, queryset):

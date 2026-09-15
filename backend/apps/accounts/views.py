@@ -218,6 +218,10 @@ class ChangePasswordView(APIView):
         user = request.user
         user.set_password(serializer.validated_data['new_password'])
         user.save(update_fields=['password'])
+
+        from apps.notifications.emails import notify_security_alert
+        notify_security_alert(user, 'Password Changed', 'Your account password was updated successfully.')
+
         return Response({'detail': 'Password changed successfully. Please log in again.'})
 
 
@@ -270,4 +274,8 @@ class ResetPasswordView(APIView):
 
         user.set_password(serializer.validated_data['new_password'])
         user.save(update_fields=['password'])
+
+        from apps.notifications.emails import notify_security_alert
+        notify_security_alert(user, 'Password Reset Completed', 'Your password was reset using a verified one-time code.')
+
         return Response({'detail': 'Password reset successfully. You can now log in.'})

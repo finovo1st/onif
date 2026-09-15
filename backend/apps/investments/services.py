@@ -166,18 +166,9 @@ def activate_investment(investment: Investment, admin_user) -> None:
         reference_id=str(investment.id),
     )
 
-    # In-app notification
-    from apps.notifications.models import Notification
-    Notification.objects.create(
-        user=investment.user,
-        title='Investment Approved',
-        message=(
-            f'Your deposit of ${investment.cost} has been verified. '
-            f'Your {investment.plan.name} investment (${investment.trading_capital} Trading Capital) is now active and earning ROI.'
-        ),
-        notification_type=Notification.NotificationType.INVESTMENT,
-        reference_id=str(investment.id),
-    )
+    # In-app notification and email confirmation
+    from apps.notifications.emails import notify_deposit_approved
+    notify_deposit_approved(investment)
 
 
 @transaction.atomic
@@ -330,6 +321,9 @@ def distribute_direct_income(investment: Investment) -> list:
                 is_paid=True,
             )
             commissions_created.append(comm)
+
+            from apps.notifications.emails import notify_referral_bonus
+            notify_referral_bonus(sponsor, investment.user, credited_amount, level)
         current_user = sponsor
 
     company_remainder = overhead_pool - total_distributed

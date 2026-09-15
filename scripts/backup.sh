@@ -15,11 +15,17 @@ BACKUP_DIR="${FINOVO_BACKUP_DIR:-/var/backups/finovo}"
 PROJECT_DIR="${FINOVO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 RETENTION_DAYS="${FINOVO_RETENTION_DAYS:-30}"
 
-# Load .env to pick up custom DB credentials (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-if [ -f "$PROJECT_DIR/.env" ]; then
+# Load .env — checks backend/.env first (where it lives in this project), then project root
+ENV_FILE=""
+if [ -f "$PROJECT_DIR/backend/.env" ]; then
+    ENV_FILE="$PROJECT_DIR/backend/.env"
+elif [ -f "$PROJECT_DIR/.env" ]; then
+    ENV_FILE="$PROJECT_DIR/.env"
+fi
+
+if [ -n "$ENV_FILE" ]; then
     set -a
-    # shellcheck disable=SC1090
-    eval "$(grep -v '^#' "$PROJECT_DIR/.env" | grep -v '^\s*$' | sed -e 's/\r$//' -e 's/^/export /')" 2>/dev/null || true
+    eval "$(grep -v '^#' "$ENV_FILE" | grep -v '^\s*$' | sed -e 's/\r$//' -e 's/^/export /')" 2>/dev/null || true
     set +a
 fi
 

@@ -15,6 +15,18 @@ BACKUP_DIR="${FINOVO_BACKUP_DIR:-/var/backups/finovo}"
 PROJECT_DIR="${FINOVO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 RETENTION_DAYS="${FINOVO_RETENTION_DAYS:-30}"
 
+# Load .env to pick up custom DB credentials (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    eval "$(grep -v '^#' "$PROJECT_DIR/.env" | grep -v '^\s*$' | sed -e 's/\r$//' -e 's/^/export /')" 2>/dev/null || true
+    set +a
+fi
+
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
+POSTGRES_DB="${POSTGRES_DB:-investment_db}"
+
 mkdir -p "$BACKUP_DIR/db"
 mkdir -p "$BACKUP_DIR/media"
 
@@ -33,7 +45,7 @@ fi
 # 2. Database Backup
 DB_FILE="$BACKUP_DIR/db/finovo_db_${TIMESTAMP}.sql.gz"
 echo "[1/3] Dumping PostgreSQL database..."
-docker exec "$DB_CONTAINER" pg_dump -U postgres -d investment_db --clean --if-exists | gzip > "$DB_FILE"
+docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$DB_CONTAINER" pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists | gzip > "$DB_FILE"
 
 if [ -s "$DB_FILE" ]; then
     DB_SIZE=$(du -h "$DB_FILE" | cut -f1)

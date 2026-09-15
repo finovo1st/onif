@@ -13,6 +13,17 @@ BACKUP_FILE="$1"
 MEDIA_FILE="${2:-}"
 PROJECT_DIR="${FINOVO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
+# Load .env to pick up custom DB credentials (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    eval "$(grep -v '^#' "$PROJECT_DIR/.env" | grep -v '^\s*$' | sed -e 's/\r$//' -e 's/^/export /')" 2>/dev/null || true
+    set +a
+fi
+
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
+POSTGRES_DB="${POSTGRES_DB:-investment_db}"
+
 if [ -z "$BACKUP_FILE" ] || [ ! -f "$BACKUP_FILE" ]; then
     echo "Usage: $0 <path_to_backup_file.sql.gz> [path_to_media_archive.tar.gz]"
     echo "Example: $0 /var/backups/finovo/db/finovo_db_20260904_120000.sql.gz"
@@ -61,7 +72,7 @@ if [ -z "$DB_CONTAINER" ]; then
 fi
 
 echo "[1/3] Decompressing and restoring database..."
-gunzip -c "$BACKUP_FILE" | docker exec -i "$DB_CONTAINER" psql -U postgres -d investment_db
+gunzip -c "$BACKUP_FILE" | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 # Restore Media Files if archive is available
 if [ -n "$MEDIA_FILE" ] && [ -f "$MEDIA_FILE" ]; then

@@ -1,5 +1,6 @@
 import base64
 import logging
+import threading
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from decimal import Decimal
@@ -116,10 +117,25 @@ def send_notification_email(
             )
             if html_content:
                 msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=False)
-            logger.info(f"[Notification] Email sent to {user.email}: '{subject}'")
+
+            backend_name = str(getattr(settings, 'EMAIL_BACKEND', ''))
+            if 'locmem' in backend_name:
+                # Synchronous dispatch in test suites to allow immediate outbox assertions
+                msg.send(fail_silently=False)
+                logger.info(f"[Notification] Email sent to {user.email}: '{subject}'")
+            else:
+                # Dispatch in a background daemon thread so the HTTP worker returns immediately
+                # and is never blocked or killed by Gunicorn WORKER TIMEOUT due to SMTP socket latency
+                def _dispatch():
+                    try:
+                        msg.send(fail_silently=False)
+                        logger.info(f"[Notification] Email sent to {user.email}: '{subject}'")
+                    except Exception as err:
+                        logger.warning(f"[Notification] Failed to send email to {user.email}: {err}")
+
+                threading.Thread(target=_dispatch, daemon=True).start()
         except Exception as exc:
-            logger.warning(f"[Notification] Failed to send email to {user.email}: {exc}")
+            logger.warning(f"[Notification] Failed to initialize email for {user.email}: {exc}")
 
     return notif
 
@@ -182,10 +198,10 @@ def notify_deposit_approved(obj):
 
     send_notification_email(
         user=user,
-        title='Deposit Approved & Investment Active!',
+        title='Deposit Approved & Investment Active',
         message=(
-            f"Great news! Your deposit of ${amount} has been verified and confirmed. "
-            f"Your {plan_name} portfolio is now active and generating returns."
+            f"Your deposit of ${amount} has been verified and confirmed. "
+            f"Your {plan_name} portfolio is now active."
         ),
         notification_type=Notification.NotificationType.DEPOSIT,
         email_subject=f"[FINOVO] Deposit Approved - ${amount} Credited Successfully",
@@ -359,7 +375,7 @@ def notify_kyc_status_changed(user, status: str, reason: Optional[str] = None):
     if is_approved:
         title = 'KYC Verification Approved'
         message = (
-            "Congratulations! Your identity documents have been verified and approved by our compliance team. "
+            "Your identity documents have been verified and approved by our compliance team. "
             "All account restrictions have been lifted."
         )
         badge_type = 'green'
@@ -489,17 +505,18 @@ def notify_referral_bonus(user, from_user, amount: Decimal, level: int):
 
     send_notification_email(
         user=user,
-        title='Referral Bonus Received!',
+        title='Referral Commission Processed',
         message=(
-            f"Congratulations! You received a Level {level} referral bonus of ${amount} USDT "
+            f"You received a Level {level} referral commission of ${amount} USDT "
             f"from activity by {from_name}."
         ),
         notification_type=Notification.NotificationType.REFERRAL,
-        email_subject=f"[FINOVO] Referral Bonus Received: +${amount} USDT",
+        email_subject=f"[FINOVO] Referral Commission Processed: +${amount} USDT",
         badge_text='Commission Earned',
         badge_type='green',
         details=details,
         reference_id=str(user.id),
+        send_email=False,
     )
 
 

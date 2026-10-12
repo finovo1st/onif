@@ -355,6 +355,7 @@ export default function AdminScreen({ onNavigate }) {
         await apiCall('/admin-panel/funds/adjust/', 'POST', {
           action: adjustType,
           amount: amt,
+          reason: adjustReason || `Corporate Treasury ${adjustType}`,
           description: adjustReason || `Corporate Treasury ${adjustType}`,
         });
       }

@@ -2704,7 +2704,13 @@ function renderAdminFundsSummary(summary) {
   }
   const totalCashSub = document.getElementById('adm-funds-stat-total-cash-sub');
   if (totalCashSub) {
-    totalCashSub.innerText = `Total Plan Inflows (Gross Deposits)`;
+    const netAdj = Number(summary.net_adjustments ?? summary.total_adjustments ?? 0);
+    if (netAdj !== 0) {
+      const sign = netAdj > 0 ? '+' : '-';
+      totalCashSub.innerText = `Plan Inflows (${sign}$${Math.abs(netAdj).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Adj)`;
+    } else {
+      totalCashSub.innerText = `Total Plan Inflows (Gross Deposits)`;
+    }
   }
 
   // 2. Total Trading Capital
@@ -2859,17 +2865,33 @@ function openAdminFundsAdjustModal() {
 function updateTreasuryModalPreview() {
   const summary = state.admin?.fundsSummary || {};
   const currentBal = Number(summary.balance || 0);
+  const currentCash = Number(summary.total_cash || 0);
+  const currentRemaining = Number(summary.remaining_funds || 0);
+
   const action = document.getElementById('adm-funds-adj-action')?.value || 'CREDIT';
   const amount = parseFloat(document.getElementById('adm-funds-adj-amount')?.value || 0) || 0;
-  const newBal = action === 'CREDIT' ? (currentBal + amount) : (currentBal - amount);
+  const delta = action === 'CREDIT' ? amount : -amount;
+
+  const newBal = currentBal + delta;
+  const newCash = currentCash + delta;
+  const newRemaining = currentRemaining + delta;
 
   const curEl = document.getElementById('adm-funds-adj-preview-current');
   const projEl = document.getElementById('adm-funds-adj-preview-projected');
+  const cashEl = document.getElementById('adm-funds-adj-preview-cash');
+  const remEl = document.getElementById('adm-funds-adj-preview-remaining');
 
   if (curEl) curEl.innerText = `$${currentBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (projEl) {
     projEl.innerText = `$${newBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     projEl.style.color = newBal >= 0 ? '#34d399' : '#f87171';
+  }
+  if (cashEl) {
+    cashEl.innerText = `$${newCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (remEl) {
+    remEl.innerText = `$${newRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    remEl.style.color = newRemaining >= 0 ? '#10b981' : '#f87171';
   }
 }
 
@@ -2904,9 +2926,12 @@ async function handleCompanyFundsAdjustSubmit(event) {
     showToast(res.detail || 'Company wallet adjustment applied successfully.');
     closeModal('modal-admin-funds-adjust');
 
-    // Reload funds ledger and summary
+    // Reload funds ledger, summary, and sync overview telemetry
     loadAdminFunds();
     loadAdminFundsSummary();
+    if (typeof loadAdminOverview === 'function') {
+      loadAdminOverview();
+    }
   } catch (err) {
     showToast(err.message, true);
   } finally {

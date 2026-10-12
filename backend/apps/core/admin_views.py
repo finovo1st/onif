@@ -911,6 +911,98 @@ class AdminCompanyFundsLedgerView(generics.ListAPIView):
         return qs
 
 
+def get_company_funds_telemetry(wallet=None):
+    if wallet is None:
+        wallet = CompanyWallet.get_wallet()
+    qs = CompanyWalletTransaction.objects.all()
+
+    total_credits = qs.filter(
+        transaction_type=CompanyWalletTransaction.TransactionType.CREDIT
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    total_debits = qs.filter(
+        transaction_type=CompanyWalletTransaction.TransactionType.DEBIT
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    total_investment_remainders = qs.filter(
+        category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    total_withdrawal_fees = qs.filter(
+        category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    credit_adjustments = qs.filter(
+        category=CompanyWalletTransaction.Category.ADJUSTMENT,
+        transaction_type=CompanyWalletTransaction.TransactionType.CREDIT
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    debit_adjustments = qs.filter(
+        category=CompanyWalletTransaction.Category.ADJUSTMENT,
+        transaction_type=CompanyWalletTransaction.TransactionType.DEBIT
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    net_adjustments = credit_adjustments - debit_adjustments
+
+    total_count = qs.count()
+
+    # Company Cash Flow Telemetry (Real accounts only)
+    total_plan_amounts = Investment.objects.filter(
+        status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
+        user__is_demo=False,
+    ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
+
+    total_trading_capital = Investment.objects.filter(
+        status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
+        user__is_demo=False,
+    ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
+
+    try:
+        total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
+    except Exception:
+        total_generation = Decimal('0.00')
+
+    total_withdrawals = Withdrawal.objects.filter(
+        status=Withdrawal.Status.APPROVED,
+        user__is_demo=False,
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    total_net_withdrawals = Withdrawal.objects.filter(
+        status=Withdrawal.Status.APPROVED,
+        user__is_demo=False,
+    ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
+
+    # Total cash = Total plan inflows (gross package deposits) + Net corporate adjustments
+    total_cash = total_plan_amounts + net_adjustments
+    # Remaining funds = Total Cash − Total Trading Capital + Total Generation − Net Withdrawals
+    remaining_funds = total_cash - total_trading_capital + total_generation - total_net_withdrawals
+
+    treasury_balance = wallet.balance - total_generation
+
+    return {
+        'balance': float(treasury_balance),
+        'company_wallet_balance': float(treasury_balance),
+        'net_funds': float(remaining_funds),
+        'total_credits': float(total_credits),
+        'total_debits': float(total_debits),
+        'total_investment_remainders': float(total_investment_remainders),
+        'total_withdrawal_fees': float(total_withdrawal_fees),
+        'total_adjustments': float(net_adjustments),
+        'credit_adjustments': float(credit_adjustments),
+        'debit_adjustments': float(debit_adjustments),
+        'net_adjustments': float(net_adjustments),
+        'total_count': total_count,
+        'total_plan_amounts': float(total_plan_amounts),
+        'total_trading_capital': float(total_trading_capital),
+        'remaining_funds': float(remaining_funds),
+        'total_generation': float(total_generation),
+        'total_withdrawals': float(total_withdrawals),
+        'total_net_withdrawals': float(total_net_withdrawals),
+        'total_cash': float(total_cash),
+        'updated_at': wallet.updated_at,
+    }
+
+
 class AdminCompanyFundsSummaryView(APIView):
     """
     GET /api/v1/admin-panel/funds/summary/
@@ -919,81 +1011,7 @@ class AdminCompanyFundsSummaryView(APIView):
     permission_classes = [IsAdminRoleOrStaff]
 
     def get(self, request):
-        wallet = CompanyWallet.get_wallet()
-        qs = CompanyWalletTransaction.objects.all()
-
-        total_credits = qs.filter(
-            transaction_type=CompanyWalletTransaction.TransactionType.CREDIT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_debits = qs.filter(
-            transaction_type=CompanyWalletTransaction.TransactionType.DEBIT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_investment_remainders = qs.filter(
-            category=CompanyWalletTransaction.Category.INVESTMENT_REMAINDER
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_withdrawal_fees = qs.filter(
-            category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_adjustments = qs.filter(
-            category=CompanyWalletTransaction.Category.ADJUSTMENT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_count = qs.count()
-
-        # Company Cash Flow Telemetry (Real accounts only)
-        total_plan_amounts = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
-            user__is_demo=False,
-        ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
-
-        total_trading_capital = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED],
-            user__is_demo=False,
-        ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
-
-        try:
-            total_generation = Decimal(PlatformSettings.get('TOTAL_GENERATION_AMOUNT', '0.00'))
-        except Exception:
-            total_generation = Decimal('0.00')
-
-        total_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED,
-            user__is_demo=False,
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_net_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED,
-            user__is_demo=False,
-        ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
-
-        # Total cash = Total plan inflows (gross package deposits)
-        total_cash = total_plan_amounts
-        # Remaining funds = Total Cash − Total Trading Capital + Total Generation − Net Withdrawals
-        remaining_funds = total_cash - total_trading_capital + total_generation - total_net_withdrawals
-
-        treasury_balance = wallet.balance - total_generation
-
-        return Response({
-            'balance': float(treasury_balance),
-            'total_credits': float(total_credits),
-            'total_debits': float(total_debits),
-            'total_investment_remainders': float(total_investment_remainders),
-            'total_withdrawal_fees': float(total_withdrawal_fees),
-            'total_adjustments': float(total_adjustments),
-            'total_count': total_count,
-            'total_plan_amounts': float(total_plan_amounts),
-            'total_trading_capital': float(total_trading_capital),
-            'remaining_funds': float(remaining_funds),
-            'total_generation': float(total_generation),
-            'total_withdrawals': float(total_withdrawals),
-            'total_net_withdrawals': float(total_net_withdrawals),
-            'total_cash': float(total_cash),
-            'updated_at': wallet.updated_at,
-        })
+        return Response(get_company_funds_telemetry())
 
 
 class AdminCompanyFundsGenerationView(APIView):
@@ -1082,42 +1100,9 @@ class AdminCompanyFundsGenerationView(APIView):
                 extra_data={'company_generation_adjusted': True}
             )
 
-        # Recalculate company cash flow metrics (mirrors AdminCompanyFundsSummaryView formula)
-        total_plan_amounts = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
-        ).aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
-
-        total_trading_capital = Investment.objects.filter(
-            status__in=[Investment.Status.ACTIVE, Investment.Status.COMPLETED]
-        ).aggregate(total=Sum('trading_capital'))['total'] or Decimal('0.00')
-
-        total_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        total_net_withdrawals = Withdrawal.objects.filter(
-            status=Withdrawal.Status.APPROVED
-        ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
-
-        total_withdrawal_fees = CompanyWalletTransaction.objects.filter(
-            category=CompanyWalletTransaction.Category.WITHDRAWAL_FEE
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-        # Total cash = Total plan inflows (gross package deposits)
-        total_cash = total_plan_amounts
-        remaining_funds = total_cash - total_trading_capital + new_generation - total_net_withdrawals
-
-        return Response({
-            'detail': f'Total generation successfully updated to ${new_generation:,.2f}.',
-            'total_generation': float(new_generation),
-            'total_plan_amounts': float(total_plan_amounts),
-            'total_trading_capital': float(total_trading_capital),
-            'remaining_funds': float(remaining_funds),
-            'total_withdrawals': float(total_withdrawals),
-            'total_net_withdrawals': float(total_net_withdrawals),
-            'total_withdrawal_fees': float(total_withdrawal_fees),
-            'total_cash': float(total_cash),
-        }, status=status.HTTP_200_OK)
+        telemetry = get_company_funds_telemetry()
+        telemetry['detail'] = f'Total generation successfully updated to ${new_generation:,.2f}.'
+        return Response(telemetry, status=status.HTTP_200_OK)
 
 
 class AdminCompanyFundsAdjustView(APIView):
@@ -1176,9 +1161,8 @@ class AdminCompanyFundsAdjustView(APIView):
                 }
             )
 
-        return Response({
-            'detail': f"Company wallet {action.lower()} of ${amount} applied successfully.",
-            'balance': float(txn.balance_after),
-            'transaction': AdminCompanyWalletTransactionSerializer(txn).data,
-        }, status=status.HTTP_200_OK)
+        telemetry = get_company_funds_telemetry()
+        telemetry['detail'] = f"Company wallet {action.lower()} of ${amount:,.2f} applied successfully."
+        telemetry['transaction'] = AdminCompanyWalletTransactionSerializer(txn).data
+        return Response(telemetry, status=status.HTTP_200_OK)
 

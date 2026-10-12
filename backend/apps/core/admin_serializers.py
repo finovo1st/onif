@@ -293,7 +293,15 @@ class AdminCompanyFundsAdjustmentSerializer(serializers.Serializer):
     """Manual admin credit or debit adjustment to company funds."""
     action = serializers.ChoiceField(choices=['CREDIT', 'DEBIT'])
     amount = serializers.DecimalField(max_digits=18, decimal_places=2, min_value=Decimal('0.01'))
-    reason = serializers.CharField(max_length=255, required=True)
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    description = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        reason = (attrs.get('reason') or attrs.get('description') or '').strip()
+        if not reason:
+            raise serializers.ValidationError({'reason': 'A reason or description is required for this adjustment.'})
+        attrs['reason'] = reason
+        return attrs
 
 
 class AdminCompanyFundsGenerationSerializer(serializers.Serializer):

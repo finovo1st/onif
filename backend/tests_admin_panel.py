@@ -310,6 +310,52 @@ class AdminPanelTestCase(TestCase):
             ).exists()
         )
 
+        # 8. Adjust company funds: CREDIT $100
+        res_adj = self.client.post(
+            '/api/v1/admin-panel/funds/adjust/',
+            {
+                'action': 'CREDIT',
+                'amount': '100.00',
+                'reason': 'Corporate treasury injection'
+            },
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_adj.status_code, 200)
+        adj_data = res_adj.json()
+        self.assertEqual(adj_data['balance'], 100.0)
+        self.assertEqual(adj_data['total_cash'], 600.0)
+        self.assertEqual(adj_data['remaining_funds'], 301.0)
+
+        # 9. Adjust company funds: DEBIT $40
+        res_adj2 = self.client.post(
+            '/api/v1/admin-panel/funds/adjust/',
+            {
+                'action': 'DEBIT',
+                'amount': '40.00',
+                'reason': 'Corporate treasury debit'
+            },
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_adj2.status_code, 200)
+        adj2_data = res_adj2.json()
+        self.assertEqual(adj2_data['balance'], 60.0)
+        self.assertEqual(adj2_data['total_cash'], 560.0)
+        self.assertEqual(adj2_data['remaining_funds'], 261.0)
+
+        # 10. Verify summary endpoint reflects adjustments
+        res_adj_summary = self.client.get(
+            '/api/v1/admin-panel/funds/summary/',
+            HTTP_AUTHORIZATION=f'Bearer {self.admin_token}'
+        )
+        self.assertEqual(res_adj_summary.status_code, 200)
+        summary_data = res_adj_summary.json()
+        self.assertEqual(summary_data['balance'], 60.0)
+        self.assertEqual(summary_data['total_cash'], 560.0)
+        self.assertEqual(summary_data['remaining_funds'], 261.0)
+        self.assertEqual(summary_data['net_adjustments'], 60.0)
+
 
 
 if __name__ == '__main__':

@@ -27,8 +27,16 @@ let state = {
   pagination: {
     ledger: { next: null, previous: null, count: 0 },
     team: { next: null, previous: null, count: 0 },
+    investments: { next: null, previous: null, count: 0 },
+    deposits: { next: null, previous: null, count: 0 },
+    withdrawals: { next: null, previous: null, count: 0 },
+    commissions: { next: null, previous: null, count: 0 },
+    tickets: { next: null, previous: null, count: 0 },
     adminUsers: { next: null, previous: null, count: 0 },
-    adminFunds: { next: null, previous: null, count: 0 }
+    adminFunds: { next: null, previous: null, count: 0 },
+    adminInvestments: { next: null, previous: null, count: 0 },
+    adminWithdrawals: { next: null, previous: null, count: 0 },
+    adminTickets: { next: null, previous: null, count: 0 }
   },
 };
 
@@ -182,6 +190,19 @@ function hideAuthOverlay() {
   const el = document.getElementById('auth-screen');
   if (el) el.style.display = 'none';
 
+  // Stop auth canvas animation & remove listener
+  const canvas = document.getElementById('authCanvas');
+  if (canvas) {
+    if (canvas._intervalId) {
+      clearInterval(canvas._intervalId);
+      canvas._intervalId = null;
+    }
+    if (canvas._resizeHandler) {
+      window.removeEventListener('resize', canvas._resizeHandler);
+      canvas._resizeHandler = null;
+    }
+  }
+
   // Restore main app elements
   const mainWrapper = document.querySelector('.main-wrapper');
   if (mainWrapper) mainWrapper.style.display = 'flex';
@@ -313,6 +334,11 @@ async function loadAllAPIData() {
     }
 
     state.investments = Array.isArray(investmentsData) ? investmentsData : (investmentsData.results || []);
+    if (investmentsData && !Array.isArray(investmentsData)) {
+      state.pagination.investments = { next: investmentsData.next, previous: investmentsData.previous, count: investmentsData.count };
+    } else {
+      state.pagination.investments = { next: null, previous: null, count: state.investments.length };
+    }
     state.plans = Array.isArray(plansData) ? plansData : (plansData.results || []);
     state.ledger = Array.isArray(ledgerData) ? ledgerData : (ledgerData.results || []);
     if (ledgerData && !Array.isArray(ledgerData)) {
@@ -325,9 +351,29 @@ async function loadAllAPIData() {
       state.pagination.team = { next: teamData.next, previous: teamData.previous, count: teamData.count };
     }
     state.commissions = Array.isArray(commData) ? commData : (commData.results || []);
+    if (commData && !Array.isArray(commData)) {
+      state.pagination.commissions = { next: commData.next, previous: commData.previous, count: commData.count };
+    } else {
+      state.pagination.commissions = { next: null, previous: null, count: state.commissions.length };
+    }
     state.deposits = Array.isArray(depositsData) ? depositsData : (depositsData.results || []);
+    if (depositsData && !Array.isArray(depositsData)) {
+      state.pagination.deposits = { next: depositsData.next, previous: depositsData.previous, count: depositsData.count };
+    } else {
+      state.pagination.deposits = { next: null, previous: null, count: state.deposits.length };
+    }
     state.withdrawals = Array.isArray(withdrawalsData) ? withdrawalsData : (withdrawalsData.results || []);
+    if (withdrawalsData && !Array.isArray(withdrawalsData)) {
+      state.pagination.withdrawals = { next: withdrawalsData.next, previous: withdrawalsData.previous, count: withdrawalsData.count };
+    } else {
+      state.pagination.withdrawals = { next: null, previous: null, count: state.withdrawals.length };
+    }
     state.tickets = Array.isArray(ticketsData) ? ticketsData : (ticketsData.results || []);
+    if (ticketsData && !Array.isArray(ticketsData)) {
+      state.pagination.tickets = { next: ticketsData.next, previous: ticketsData.previous, count: ticketsData.count };
+    } else {
+      state.pagination.tickets = { next: null, previous: null, count: state.tickets.length };
+    }
     state.levelStats = Array.isArray(levelsData) ? levelsData : (levelsData.results || []);
 
     renderAllViews();
@@ -517,11 +563,11 @@ function renderActiveInvestmentsList() {
     return;
   }
 
-  activeItems.forEach(inv => {
+  const cards = activeItems.map(inv => {
     const credited = Number(inv.total_credited || 0);
     const maxRet = Number(inv.max_return || inv.amount * 3);
     const pct = maxRet > 0 ? Math.min(100, (credited / maxRet) * 100) : 0;
-    container.innerHTML += `
+    return `
       <div style="margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px;">
           <b style="color: var(--text-main);">${inv.plan_name || 'Plan'} ($${Number(inv.amount).toFixed(2)})</b>
@@ -535,6 +581,7 @@ function renderActiveInvestmentsList() {
       </div>
     `;
   });
+  container.innerHTML = cards.join('');
 }
 
 function renderInvestmentPlansCards() {
@@ -553,7 +600,7 @@ function renderInvestmentPlansCards() {
 
   const plansToRender = (state.plans && state.plans.length > 0) ? state.plans : defaultTiers;
 
-  plansToRender.forEach((plan, idx) => {
+  const cards = plansToRender.map((plan, idx) => {
     const pkgNum = plan.name ? (plan.name.replace(/[^0-9]/g, '') || (idx + 1)) : (idx + 1);
     const cost = Number(plan.cost || plan.minimum_amount || 120);
     const tradingCap = Number(plan.trading_capital || cost);
@@ -562,7 +609,7 @@ function renderInvestmentPlansCards() {
     const profitCap = `${maxFactor}X`;
     const duration = plan.duration_weeks ? `${plan.duration_weeks} WEEKS` : 'FLEXIBLE';
 
-    container.innerHTML += `
+    return `
       <div class="luxury-pkg-card" onclick="openInvestModal('${plan.id}', '${plan.name || ('Package ' + pkgNum)}', ${cost}, ${tradingCap}, ${maxReturn})" title="Click to Invest in ${plan.name}">
         <!-- Top Right Gold Ribbon -->
         <div class="pkg-ribbon">
@@ -576,7 +623,7 @@ function renderInvestmentPlansCards() {
             <div class="pkg-logo-wrap">
               <svg class="pkg-logo-icon" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#f3d078" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="#d4af37" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L2 17" stroke="#d4af37" stroke-width="2" stroke-linejoin="round"/>
                 <path d="M2 12L12 17L22 12" stroke="#e5b955" stroke-width="2" stroke-linejoin="round"/>
               </svg>
               <span class="pkg-brand-title">FINOVO</span>
@@ -699,6 +746,7 @@ function renderInvestmentPlansCards() {
       </div>
     `;
   });
+  container.innerHTML = cards.join('');
 }
 
 function renderMyInvestmentsTable() {
@@ -716,16 +764,17 @@ function renderMyInvestmentsTable() {
         </td>
       </tr>
     `;
+    renderPaginationControls('investments-pagination', state.pagination.investments, loadInvestmentsData);
     return;
   }
 
-  state.investments.forEach(inv => {
+  const rows = state.investments.map(inv => {
     const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleString() : 'N/A';
     const credited = Number(inv.total_credited || 0);
     const maxRet = Number(inv.max_return || inv.amount * 3);
     const pct = maxRet > 0 ? Math.min(100, (credited / maxRet) * 100) : 0;
     const isDepositPending = inv.status === 'DEPOSIT_PENDING';
-    tbody.innerHTML += `
+    return `
       <tr>
         <td><b>${inv.plan_name || 'Plan'}</b></td>
         <td style="font-weight: 700; font-family: var(--font-mono);">$${Number(inv.amount).toFixed(2)}</td>
@@ -738,6 +787,25 @@ function renderMyInvestmentsTable() {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('investments-pagination', state.pagination.investments, loadInvestmentsData);
+}
+
+async function loadInvestmentsData(overrideUrl = null) {
+  let url = overrideUrl || '/investments/';
+  try {
+    const data = await apiCall(url);
+    const investmentsData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.investments = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.investments = { next: null, previous: null, count: investmentsData.length };
+    }
+    state.investments = investmentsData;
+    renderMyInvestmentsTable();
+  } catch (err) {
+    showToast(err.message, true);
+  }
 }
 
 function renderLedgerTable(items, elementId) {
@@ -759,11 +827,11 @@ function renderLedgerTable(items, elementId) {
     return;
   }
 
-  items.forEach(item => {
+  const rows = items.map(item => {
     const isCredit = item.transaction_type === 'CREDIT';
     const color = isCredit ? 'var(--accent-green)' : 'var(--accent-danger)';
     const dateStr = item.created_at ? new Date(item.created_at).toLocaleString() : 'Recent';
-    tbody.innerHTML += `
+    return `
       <tr>
         <td><span class="badge ${isCredit ? 'badge-approved' : 'badge-rejected'}">${item.transaction_type}</span></td>
         <td><b>${item.category}</b></td>
@@ -773,6 +841,7 @@ function renderLedgerTable(items, elementId) {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
 }
 
 async function loadLedgerData(overrideUrl = null) {
@@ -821,11 +890,13 @@ function resetWalletLedgerFilters() {
 }
 
 function renderDepositsTable() {
-  // Deposits are now part of investments — show investment deposit status here
   const tbody = document.getElementById('deposits-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
-  if (state.investments.length === 0) {
+  const depItems = (state.deposits && state.deposits.length > 0) ? state.deposits : state.investments;
+
+  if (depItems.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="padding: 0;">
@@ -836,10 +907,11 @@ function renderDepositsTable() {
         </td>
       </tr>
     `;
+    renderPaginationControls('deposits-pagination', state.pagination.deposits, loadDepositsData);
     return;
   }
 
-  state.investments.forEach(inv => {
+  const rows = depItems.map(inv => {
     const dateStr = inv.deposit_submitted_at
       ? new Date(inv.deposit_submitted_at).toLocaleString()
       : (inv.created_at ? new Date(inv.created_at).toLocaleString() : 'N/A');
@@ -853,7 +925,7 @@ function renderDepositsTable() {
       ? `<img src="${inv.deposit_proof_url}" class="proof-thumbnail" onclick="openLightbox('${inv.deposit_proof_url}')" title="Click to enlarge proof screenshot">`
       : `<span style="font-size:11px; color:var(--mute);">TxID Only</span>`;
 
-    tbody.innerHTML += `
+    return `
       <tr>
         <td><b>${inv.plan_name || 'Plan'}</b></td>
         <td style="font-weight: 700; font-family: var(--font-mono);">$${Number(inv.amount).toFixed(2)}</td>
@@ -869,10 +941,36 @@ function renderDepositsTable() {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('deposits-pagination', state.pagination.deposits, loadDepositsData);
+}
+
+async function loadDepositsData(overrideUrl = null) {
+  let url = overrideUrl || '/deposits/';
+  try {
+    let data;
+    try {
+      data = await apiCall(url);
+    } catch (e) {
+      url = overrideUrl || '/investments/';
+      data = await apiCall(url);
+    }
+    const depositsData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.deposits = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.deposits = { next: null, previous: null, count: depositsData.length };
+    }
+    state.deposits = depositsData;
+    renderDepositsTable();
+  } catch (err) {
+    showToast(err.message, true);
+  }
 }
 
 function renderWithdrawalsTable() {
   const tbody = document.getElementById('withdrawals-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (state.withdrawals.length === 0) {
@@ -886,12 +984,13 @@ function renderWithdrawalsTable() {
         </td>
       </tr>
     `;
+    renderPaginationControls('withdrawals-pagination', state.pagination.withdrawals, loadWithdrawalsData);
     return;
   }
 
-  state.withdrawals.forEach(wdr => {
+  const rows = state.withdrawals.map(wdr => {
     const dateStr = wdr.created_at ? new Date(wdr.created_at).toLocaleString() : 'N/A';
-    tbody.innerHTML += `
+    return `
       <tr>
         <td><b>${wdr.withdrawal_type}</b></td>
         <td style="font-weight: 700; font-family: var(--font-mono);">$${Number(wdr.amount).toFixed(2)}</td>
@@ -901,6 +1000,25 @@ function renderWithdrawalsTable() {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('withdrawals-pagination', state.pagination.withdrawals, loadWithdrawalsData);
+}
+
+async function loadWithdrawalsData(overrideUrl = null) {
+  let url = overrideUrl || '/withdrawals/';
+  try {
+    const data = await apiCall(url);
+    const withdrawalsData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.withdrawals = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.withdrawals = { next: null, previous: null, count: withdrawalsData.length };
+    }
+    state.withdrawals = withdrawalsData;
+    renderWithdrawalsTable();
+  } catch (err) {
+    showToast(err.message, true);
+  }
 }
 
 let teamSearchTimeout = null;
@@ -990,11 +1108,11 @@ function renderTeamTable() {
       </tr>
     `;
   } else {
-    state.team.forEach(m => {
+    const rows = state.team.map(m => {
       const dateJoined = m.date_joined ? new Date(m.date_joined).toLocaleDateString() : 'N/A';
       const sponsorDisplay = m.sponsor_name || m.sponsor_email || (m.level === 1 ? 'You (Direct)' : 'Sponsor');
       const levelBadgeClass = m.level === 1 ? 'badge-approved' : (m.level === 2 ? 'badge-active' : 'badge-pending');
-      teamTbody.innerHTML += `
+      return `
         <tr>
           <td>
             <b style="color: var(--text);">${escapeHtml(m.email)}</b>
@@ -1010,6 +1128,7 @@ function renderTeamTable() {
         </tr>
       `;
     });
+    teamTbody.innerHTML = rows.join('');
   }
   if (state.pagination && state.pagination.team) {
     renderPaginationControls('referral-team-pagination', state.pagination.team, loadTeamData);
@@ -1034,14 +1153,14 @@ function renderReferralView() {
     { level: 5, dir_req: 8, roi_req: 10, total_refers: 0, total_investment: 0, direct_income: 0, roi_income: 0 }
   ];
 
-  levelsData.forEach(stats => {
+  const levelsHtml = levelsData.map(stats => {
     const dirReq = stats.dir_req !== undefined ? stats.dir_req : (stats.level === 1 ? 0 : (stats.level - 1) * 2);
     const roiReq = stats.roi_req !== undefined ? stats.roi_req : (stats.level * 2);
 
     const isDirUnlocked = stats.is_direct_unlocked !== undefined ? stats.is_direct_unlocked : (currentDirLvl >= stats.level);
     const isRoiUnlocked = stats.is_roi_unlocked !== undefined ? stats.is_roi_unlocked : (currentRoiLvl >= stats.level);
 
-    container.innerHTML += `
+    return `
       <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); margin-bottom: 12px; padding: 14px 16px; border: 1px solid var(--line-light);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
           <div>
@@ -1077,14 +1196,20 @@ function renderReferralView() {
         </div>
       </div>
     `;
-  });
+  }).join('');
+  container.innerHTML = levelsHtml;
 
   // Downline Team Table & Level Filter Pills
   renderTeamTable();
   updateTeamLevelPills();
 
   // Commissions Table
+  renderCommissionsTable();
+}
+
+function renderCommissionsTable() {
   const commTbody = document.getElementById('referral-commissions-tbody');
+  if (!commTbody) return;
   commTbody.innerHTML = '';
 
   if (state.commissions.length === 0) {
@@ -1098,26 +1223,48 @@ function renderReferralView() {
         </td>
       </tr>
     `;
-  } else {
-    state.commissions.forEach(c => {
-      const dateStr = c.created_at ? new Date(c.created_at).toLocaleString() : 'N/A';
-      const fromUser = c.from_user_email || (typeof c.from_user === 'object' ? c.from_user.email : c.from_user) || 'Downline User';
-      commTbody.innerHTML += `
-        <tr>
-          <td><b>${c.commission_type === 'DIRECT' ? 'Direct Income' : 'ROI Income'}</b></td>
-          <td><span class="badge badge-active">Level ${c.level}</span></td>
-          <td style="font-size: 13px;">${fromUser}</td>
-          <td style="color: var(--gold); font-weight: 700; font-family: var(--font-mono);">+$${Number(c.amount).toFixed(2)}</td>
-          <td><span class="badge badge-approved">${c.is_paid ? 'Paid to Wallet' : 'Pending'}</span></td>
-          <td style="font-size: 12px; color: var(--text-muted);">${dateStr}</td>
-        </tr>
-      `;
-    });
+    renderPaginationControls('referral-commissions-pagination', state.pagination.commissions, loadCommissionsData);
+    return;
+  }
+
+  const rows = state.commissions.map(c => {
+    const dateStr = c.created_at ? new Date(c.created_at).toLocaleString() : 'N/A';
+    const fromUser = c.from_user_email || (typeof c.from_user === 'object' ? c.from_user.email : c.from_user) || 'Downline User';
+    return `
+      <tr>
+        <td><b>${c.commission_type === 'DIRECT' ? 'Direct Income' : 'ROI Income'}</b></td>
+        <td><span class="badge badge-active">Level ${c.level}</span></td>
+        <td style="font-size: 13px;">${escapeHtml(fromUser)}</td>
+        <td style="color: var(--gold); font-weight: 700; font-family: var(--font-mono);">+$${Number(c.amount).toFixed(2)}</td>
+        <td><span class="badge badge-approved">${c.is_paid ? 'Paid to Wallet' : 'Pending'}</span></td>
+        <td style="font-size: 12px; color: var(--text-muted);">${dateStr}</td>
+      </tr>
+    `;
+  });
+  commTbody.innerHTML = rows.join('');
+  renderPaginationControls('referral-commissions-pagination', state.pagination.commissions, loadCommissionsData);
+}
+
+async function loadCommissionsData(overrideUrl = null) {
+  let url = overrideUrl || '/referrals/commissions/';
+  try {
+    const data = await apiCall(url);
+    const commData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.commissions = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.commissions = { next: null, previous: null, count: commData.length };
+    }
+    state.commissions = commData;
+    renderCommissionsTable();
+  } catch (err) {
+    showToast(err.message, true);
   }
 }
 
 function renderSupportTicketsTable() {
   const tbody = document.getElementById('support-tickets-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (state.tickets.length === 0) {
@@ -1131,21 +1278,41 @@ function renderSupportTicketsTable() {
         </td>
       </tr>
     `;
+    renderPaginationControls('support-tickets-pagination', state.pagination.tickets, loadSupportTicketsData);
     return;
   }
 
-  state.tickets.forEach(t => {
+  const rows = state.tickets.map(t => {
     const dateStr = t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A';
     const statusLower = (t.status || 'OPEN').toLowerCase();
-    tbody.innerHTML += `
+    return `
       <tr style="cursor: pointer;" onclick="openTicketThreadModal('${t.id}')">
-        <td><b style="color: var(--gold-soft);">${t.subject}</b> <span style="font-size: 11px; color: var(--mute);">(Click to view thread)</span></td>
-        <td>${t.category || 'General'}</td>
-        <td><span class="badge badge-${statusLower}">${t.status || 'OPEN'}</span></td>
+        <td><b style="color: var(--gold-soft);">${escapeHtml(t.subject || '')}</b> <span style="font-size: 11px; color: var(--mute);">(Click to view thread)</span></td>
+        <td>${escapeHtml(t.category || 'General')}</td>
+        <td><span class="badge badge-${statusLower}">${escapeHtml(t.status || 'OPEN')}</span></td>
         <td style="font-size: 12px; color: var(--text-muted);">${dateStr}</td>
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('support-tickets-pagination', state.pagination.tickets, loadSupportTicketsData);
+}
+
+async function loadSupportTicketsData(overrideUrl = null) {
+  let url = overrideUrl || '/support/tickets/';
+  try {
+    const data = await apiCall(url);
+    const ticketsData = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.tickets = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.tickets = { next: null, previous: null, count: ticketsData.length };
+    }
+    state.tickets = ticketsData;
+    renderSupportTicketsTable();
+  } catch (err) {
+    showToast(err.message, true);
+  }
 }
 
 // Support Ticket Thread Modal Functions
@@ -1941,8 +2108,16 @@ function handleLogout() {
   state.pagination = {
     ledger: { next: null, previous: null, count: 0 },
     team: { next: null, previous: null, count: 0 },
+    investments: { next: null, previous: null, count: 0 },
+    deposits: { next: null, previous: null, count: 0 },
+    withdrawals: { next: null, previous: null, count: 0 },
+    commissions: { next: null, previous: null, count: 0 },
+    tickets: { next: null, previous: null, count: 0 },
     adminUsers: { next: null, previous: null, count: 0 },
-    adminFunds: { next: null, previous: null, count: 0 }
+    adminFunds: { next: null, previous: null, count: 0 },
+    adminInvestments: { next: null, previous: null, count: 0 },
+    adminWithdrawals: { next: null, previous: null, count: 0 },
+    adminTickets: { next: null, previous: null, count: 0 }
   };
   state.team = [];
   state.commissions = [];
@@ -3023,18 +3198,27 @@ function filterAdminInvestments() {
   loadAdminInvestments();
 }
 
-async function loadAdminInvestments() {
-  const statusFilter = document.getElementById('adm-inv-filter-status')?.value || 'DEPOSIT_PENDING';
-  const search = document.getElementById('adm-inv-search')?.value.trim() || '';
+async function loadAdminInvestments(overrideUrl = null) {
+  let url = overrideUrl;
+  if (typeof url !== 'string') {
+    const statusFilter = document.getElementById('adm-inv-filter-status')?.value || 'DEPOSIT_PENDING';
+    const search = document.getElementById('adm-inv-search')?.value.trim() || '';
 
-  let url = `/admin-panel/investments/?status=${encodeURIComponent(statusFilter)}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
+    url = `/admin-panel/investments/?status=${encodeURIComponent(statusFilter)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+  }
 
   try {
     const data = await apiCall(url);
     const investments = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.adminInvestments = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.adminInvestments = { next: null, previous: null, count: investments.length };
+    }
     state.admin.investments = investments;
     renderAdminInvestments(investments);
+    renderPaginationControls('adm-investments-pagination', state.pagination.adminInvestments, loadAdminInvestments);
   } catch (err) {
     showToast(err.message, true);
   }
@@ -3046,10 +3230,11 @@ function renderAdminInvestments(investments) {
 
   if (investments.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--mute);">No investments found for the selected criteria.</td></tr>`;
+    renderPaginationControls('adm-investments-pagination', state.pagination.adminInvestments, loadAdminInvestments);
     return;
   }
 
-  investments.forEach(inv => {
+  const rows = investments.map(inv => {
     const isPending = inv.status === 'DEPOSIT_PENDING' || inv.status === 'PENDING';
     const proofThumb = inv.deposit_proof_url
       ? `<img src="${inv.deposit_proof_url}" class="proof-thumbnail" onclick="event.stopPropagation(); openLightbox('${inv.deposit_proof_url}')" title="Click to enlarge proof screenshot">`
@@ -3058,7 +3243,7 @@ function renderAdminInvestments(investments) {
     const txShort = inv.deposit_txn_hash ? `${inv.deposit_txn_hash.slice(0, 10)}...` : 'N/A';
     const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleString() : 'N/A';
 
-    tbody.innerHTML += `
+    return `
       <tr onclick="openProofModal('${inv.id}')" style="cursor:pointer;" title="Click to view complete investment dossier & proof">
         <td>
           <div style="font-weight:600; color:var(--text);">${inv.user_email}</div>
@@ -3090,6 +3275,8 @@ function renderAdminInvestments(investments) {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('adm-investments-pagination', state.pagination.adminInvestments, loadAdminInvestments);
 }
 
 // ─── 3. Admin Withdrawals Queue ───
@@ -3097,18 +3284,27 @@ function filterAdminWithdrawals() {
   loadAdminWithdrawals();
 }
 
-async function loadAdminWithdrawals() {
+async function loadAdminWithdrawals(overrideUrl = null) {
   const statusFilter = document.getElementById('adm-wdr-filter-status')?.value || 'PENDING';
   const search = document.getElementById('adm-wdr-search')?.value.trim() || '';
 
-  let url = `/admin-panel/withdrawals/?status=${encodeURIComponent(statusFilter)}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
+  let url = overrideUrl;
+  if (typeof url !== 'string') {
+    url = `/admin-panel/withdrawals/?status=${encodeURIComponent(statusFilter)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+  }
 
   try {
     const data = await apiCall(url);
     const withdrawals = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.adminWithdrawals = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.adminWithdrawals = { next: null, previous: null, count: withdrawals.length };
+    }
     state.admin.withdrawals = withdrawals;
     renderAdminWithdrawals(withdrawals);
+    renderPaginationControls('adm-withdrawals-pagination', state.pagination.adminWithdrawals, loadAdminWithdrawals);
   } catch (err) {
     showToast(err.message, true);
   }
@@ -3120,15 +3316,16 @@ function renderAdminWithdrawals(withdrawals) {
 
   if (withdrawals.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:32px; color:var(--mute);">No withdrawals found for the selected criteria.</td></tr>`;
+    renderPaginationControls('adm-withdrawals-pagination', state.pagination.adminWithdrawals, loadAdminWithdrawals);
     return;
   }
 
-  withdrawals.forEach(wdr => {
+  const rows = withdrawals.map(wdr => {
     const isPending = wdr.status === 'PENDING';
     const dateStr = wdr.created_at ? new Date(wdr.created_at).toLocaleString() : 'N/A';
     const addrShort = wdr.wallet_address ? `${wdr.wallet_address.slice(0, 8)}...${wdr.wallet_address.slice(-6)}` : 'N/A';
 
-    tbody.innerHTML += `
+    return `
       <tr onclick="openWithdrawalDetailModal('${wdr.id}')" style="cursor:pointer;" title="Click to view full withdrawal inspector">
         <td>
           <div style="font-weight:600; color:var(--text);">${wdr.user_email}</div>
@@ -3158,6 +3355,8 @@ function renderAdminWithdrawals(withdrawals) {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('adm-withdrawals-pagination', state.pagination.adminWithdrawals, loadAdminWithdrawals);
 }
 
 // ─── Pagination Utilities ───
@@ -3324,18 +3523,27 @@ function filterAdminTickets() {
   loadAdminTickets();
 }
 
-async function loadAdminTickets() {
-  const statusFilter = document.getElementById('adm-tkt-filter-status')?.value || 'OPEN';
-  const search = document.getElementById('adm-tkt-search')?.value.trim() || '';
+async function loadAdminTickets(overrideUrl = null) {
+  let url = overrideUrl;
+  if (typeof url !== 'string') {
+    const statusFilter = document.getElementById('adm-tkt-filter-status')?.value || 'OPEN';
+    const search = document.getElementById('adm-tkt-search')?.value.trim() || '';
 
-  let url = `/admin-panel/tickets/?status=${encodeURIComponent(statusFilter)}`;
-  if (search) url += `&search=${encodeURIComponent(search)}`;
+    url = `/admin-panel/tickets/?status=${encodeURIComponent(statusFilter)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+  }
 
   try {
     const data = await apiCall(url);
     const tickets = Array.isArray(data) ? data : (data.results || []);
+    if (data && !Array.isArray(data)) {
+      state.pagination.adminTickets = { next: data.next, previous: data.previous, count: data.count };
+    } else {
+      state.pagination.adminTickets = { next: null, previous: null, count: tickets.length };
+    }
     state.admin.tickets = tickets;
     renderAdminTickets(tickets);
+    renderPaginationControls('adm-tickets-pagination', state.pagination.adminTickets, loadAdminTickets);
   } catch (err) {
     showToast(err.message, true);
   }
@@ -3343,25 +3551,27 @@ async function loadAdminTickets() {
 
 function renderAdminTickets(tickets) {
   const tbody = document.getElementById('adm-tickets-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (tickets.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--mute);">No tickets found for the selected filter.</td></tr>`;
+    renderPaginationControls('adm-tickets-pagination', state.pagination.adminTickets, loadAdminTickets);
     return;
   }
 
-  tickets.forEach(tkt => {
+  const rows = tickets.map(tkt => {
     const dateStr = tkt.updated_at ? new Date(tkt.updated_at).toLocaleString() : 'N/A';
-    tbody.innerHTML += `
+    return `
       <tr>
         <td>
-          <div style="font-weight:600; color:var(--text);">${tkt.user_email}</div>
-          <div style="font-size:11px; color:var(--mute);">@${tkt.user_username || 'user'}</div>
+          <div style="font-weight:600; color:var(--text);">${escapeHtml(tkt.user_email || '')}</div>
+          <div style="font-size:11px; color:var(--mute);">@${escapeHtml(tkt.user_username || 'user')}</div>
         </td>
-        <td><b style="color:var(--text);">${tkt.subject}</b></td>
-        <td><span class="badge badge-approved" style="font-size:10px;">${tkt.category}</span></td>
+        <td><b style="color:var(--text);">${escapeHtml(tkt.subject || '')}</b></td>
+        <td><span class="badge badge-approved" style="font-size:10px;">${escapeHtml(tkt.category || '')}</span></td>
         <td style="font-family:var(--font-mono); font-weight:600;">${tkt.replies_count || 0} msgs</td>
-        <td><span class="badge badge-${(tkt.status || 'open').toLowerCase().replace('_', '-')}">${tkt.status}</span></td>
+        <td><span class="badge badge-${(tkt.status || 'open').toLowerCase().replace('_', '-')}">${escapeHtml(tkt.status || 'OPEN')}</span></td>
         <td style="font-size:12px; color:var(--mute);">${dateStr}</td>
         <td style="text-align:right;">
           <button class="btn btn-sm btn-primary" onclick="openAdminTicketModal('${tkt.id}')">Open Thread</button>
@@ -3369,6 +3579,8 @@ function renderAdminTickets(tickets) {
       </tr>
     `;
   });
+  tbody.innerHTML = rows.join('');
+  renderPaginationControls('adm-tickets-pagination', state.pagination.adminTickets, loadAdminTickets);
 }
 
 // ─── 6. Admin Platform Settings & Plans ───

@@ -75,33 +75,7 @@
   document.querySelectorAll(SELECTORS).forEach(el => observer.observe(el));
 })();
 
-/* ── 3b. Hero Parallax on scroll ─────────────────────────── */
-(function initHeroParallax() {
-  const hero = document.getElementById('hero');
-  const heroCopy = document.querySelector('.hero-copy');
-  const heroVisual = document.querySelector('.hero-visual');
-  if (!hero || !heroCopy || !heroVisual) return;
-
-  let ticking = false;
-  const onScroll = () => {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        const scrolled = window.scrollY;
-        const heroH = hero.offsetHeight;
-        if (scrolled < heroH) {
-          const pct = scrolled / heroH;
-          heroCopy.style.transform = `translateY(${pct * 40}px)`;
-          heroCopy.style.opacity = String(1 - pct * 0.6);
-          heroVisual.style.transform = `translateY(${pct * 20}px)`;
-        }
-        ticking = false;
-      });
-      ticking = true;
-    }
-  };
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-})();
+/* ── 3b. Hero Parallax disabled for smooth 60fps scrolling ── */
 
 
 /* ── 4. Number Count-Up Animation ─────────────────────────── */
@@ -409,10 +383,7 @@ function formatNumber(n, decimals) {
     ctx.lineTo(lastX, lastY);
     ctx.strokeStyle = '#C6993D';
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#C6993D';
-    ctx.shadowBlur = 12;
     ctx.stroke();
-    ctx.shadowBlur = 0; // reset
 
     // 5. Draw Strategy Execution Milestones & Pulse Rings
     for (let i = 0; i < strategyMilestones.length; i++) {
@@ -446,10 +417,7 @@ function formatNumber(n, decimals) {
     ctx.beginPath();
     ctx.arc(lastX, lastY, 4.5, 0, Math.PI * 2);
     ctx.fillStyle = '#DFBD69';
-    ctx.shadowColor = '#DFBD69';
-    ctx.shadowBlur = 14;
     ctx.fill();
-    ctx.shadowBlur = 0;
 
     // Horizontal guide line for current price
     ctx.setLineDash([3, 4]);
@@ -477,12 +445,29 @@ function formatNumber(n, decimals) {
     ctx.lineTo(scanlineX, height);
     ctx.stroke();
 
-    requestAnimationFrame(draw);
+    if (isCanvasVisible) {
+      animFrameId = requestAnimationFrame(draw);
+    }
   }
 
-  window.addEventListener('resize', resize);
+  let isCanvasVisible = true;
+  let animFrameId = null;
+
+  const canvasObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      isCanvasVisible = entry.isIntersecting;
+      if (isCanvasVisible && !animFrameId) {
+        animFrameId = requestAnimationFrame(draw);
+      } else if (!isCanvasVisible && animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+    });
+  }, { threshold: 0.05 });
+  canvasObserver.observe(canvas);
+
+  window.addEventListener('resize', resize, { passive: true });
   resize();
-  requestAnimationFrame(draw);
 })();
 
 /* ── 9. Stagger Children Reveal ──────────────────────────── */

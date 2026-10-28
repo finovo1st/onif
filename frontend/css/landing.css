@@ -324,7 +324,6 @@ section + section {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(198, 153, 61, 0.05) 0%, transparent 70%);
   pointer-events: none;
-  animation: hero-glow-pulse 8s ease-in-out infinite alternate;
 }
 
 #hero::after {
@@ -337,12 +336,6 @@ section + section {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(198, 153, 61, 0.04) 0%, transparent 70%);
   pointer-events: none;
-  animation: hero-glow-pulse 10s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes hero-glow-pulse {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.15) translate(2%, 3%); }
 }
 
 .hero-grid {
@@ -373,12 +366,6 @@ section + section {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--emerald-soft);
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.7); }
 }
 
 .hero-title {

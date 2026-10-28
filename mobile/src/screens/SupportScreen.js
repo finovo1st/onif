@@ -15,6 +15,8 @@ import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
+import PaginationControls from '../components/PaginationControls';
+import { parsePaginatedResponse } from '../utils/pagination';
 
 export default function SupportScreen({ onNavigate }) {
   const [refreshing, setRefreshing] = useState(false);
@@ -26,19 +28,29 @@ export default function SupportScreen({ onNavigate }) {
   const [message, setMessage] = useState('');
 
   const [tickets, setTickets] = useState([]);
+  const [ticketPage, setTicketPage] = useState(1);
+  const [ticketTotalPages, setTicketTotalPages] = useState(1);
+  const [ticketCount, setTicketCount] = useState(0);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
 
   // Thread Modal State
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [threadModalVisible, setThreadModalVisible] = useState(false);
 
-  const loadTickets = async () => {
+  const loadTickets = async (page = 1) => {
+    setTicketsLoading(true);
     try {
-      const data = await apiCall('/support/tickets/').catch(() => []);
-      const ticketList = Array.isArray(data) ? data : (data?.results || []);
-      setTickets(ticketList);
+      const data = await apiCall(`/support/tickets/?page=${page}`).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setTickets(parsed.results);
+      setTicketPage(parsed.currentPage);
+      setTicketTotalPages(parsed.totalPages);
+      setTicketCount(parsed.count);
     } catch (err) {
       console.warn('Support ticket load error:', err.message);
+    } finally {
+      setTicketsLoading(false);
     }
   };
 
@@ -275,7 +287,7 @@ export default function SupportScreen({ onNavigate }) {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.eyebrow}>HISTORY</Text>
-          <Text style={styles.cardTitle}>Your Support Tickets ({tickets.length})</Text>
+          <Text style={styles.cardTitle}>Your Support Tickets ({ticketCount || tickets.length})</Text>
         </View>
 
         {tickets.length === 0 ? (
@@ -307,6 +319,15 @@ export default function SupportScreen({ onNavigate }) {
             </TouchableOpacity>
           ))
         )}
+
+        <PaginationControls
+          currentPage={ticketPage}
+          totalPages={ticketTotalPages}
+          totalCount={ticketCount}
+          onPageChange={loadTickets}
+          loading={ticketsLoading}
+          label="tickets"
+        />
       </View>
 
       {/* Ticket Thread & Reply Modal */}

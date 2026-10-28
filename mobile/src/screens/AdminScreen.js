@@ -18,6 +18,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall, DEFAULT_API_HOST } from '../config/api';
 import colors from '../theme/colors';
+import PaginationControls from '../components/PaginationControls';
+import { parsePaginatedResponse } from '../utils/pagination';
 
 const getAdminQRPreview = (address, customQr) => {
   if (customQr && typeof customQr === 'string' && customQr.trim()) {
@@ -148,6 +150,129 @@ export default function AdminScreen({ onNavigate }) {
   });
   const [plansList, setPlansList] = useState([]);
 
+  // ─── PAGINATION STATES FOR ADMIN TABS ───
+  const [fundsPage, setFundsPage] = useState(1);
+  const [fundsTotalPages, setFundsTotalPages] = useState(1);
+  const [fundsCount, setFundsCount] = useState(0);
+  const [fundsLoading, setFundsLoading] = useState(false);
+
+  const [depositsPage, setDepositsPage] = useState(1);
+  const [depositsTotalPages, setDepositsTotalPages] = useState(1);
+  const [depositsCount, setDepositsCount] = useState(0);
+  const [depositsLoading, setDepositsLoading] = useState(false);
+
+  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+  const [withdrawalsTotalPages, setWithdrawalsTotalPages] = useState(1);
+  const [withdrawalsCount, setWithdrawalsCount] = useState(0);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersCount, setUsersCount] = useState(0);
+  const [usersLoading, setUsersLoading] = useState(false);
+
+  const [supportPage, setSupportPage] = useState(1);
+  const [supportTotalPages, setSupportTotalPages] = useState(1);
+  const [supportCount, setSupportCount] = useState(0);
+  const [supportLoading, setSupportLoading] = useState(false);
+
+  // ─── PAGINATED LOADERS ───
+  const loadAdminFunds = async (page = 1, cat = fundsCategoryFilter, q = fundsSearchQuery) => {
+    setFundsLoading(true);
+    try {
+      let url = `/admin-panel/funds/?page=${page}`;
+      if (cat && cat !== 'all') url += `&category=${encodeURIComponent(cat)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const data = await apiCall(url).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setFundsTransactions(parsed.results);
+      setFundsPage(parsed.currentPage);
+      setFundsTotalPages(parsed.totalPages);
+      setFundsCount(parsed.count);
+    } catch (err) {
+      console.warn('Admin funds load error:', err.message);
+    } finally {
+      setFundsLoading(false);
+    }
+  };
+
+  const loadAdminDeposits = async (page = 1, status = depositFilter, q = depositSearchQuery) => {
+    setDepositsLoading(true);
+    try {
+      let url = `/admin-panel/investments/?page=${page}`;
+      if (status && status !== 'all') url += `&status=${encodeURIComponent(status)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const data = await apiCall(url).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setDeposits(parsed.results);
+      setDepositsPage(parsed.currentPage);
+      setDepositsTotalPages(parsed.totalPages);
+      setDepositsCount(parsed.count);
+    } catch (err) {
+      console.warn('Admin deposits load error:', err.message);
+    } finally {
+      setDepositsLoading(false);
+    }
+  };
+
+  const loadAdminWithdrawals = async (page = 1, status = withdrawalFilter, q = withdrawalSearchQuery) => {
+    setWithdrawalsLoading(true);
+    try {
+      let url = `/admin-panel/withdrawals/?page=${page}`;
+      if (status && status !== 'all') url += `&status=${encodeURIComponent(status)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const data = await apiCall(url).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setWithdrawals(parsed.results);
+      setWithdrawalsPage(parsed.currentPage);
+      setWithdrawalsTotalPages(parsed.totalPages);
+      setWithdrawalsCount(parsed.count);
+    } catch (err) {
+      console.warn('Admin withdrawals load error:', err.message);
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  };
+
+  const loadAdminUsers = async (page = 1, role = userRoleFilter, kyc = userKycFilter, q = userSearchQuery) => {
+    setUsersLoading(true);
+    try {
+      let url = `/admin-panel/users/?page=${page}`;
+      if (role) url += `&role=${encodeURIComponent(role)}`;
+      if (kyc) url += `&kyc_status=${encodeURIComponent(kyc)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const data = await apiCall(url).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setUsersList(parsed.results);
+      setUsersPage(parsed.currentPage);
+      setUsersTotalPages(parsed.totalPages);
+      setUsersCount(parsed.count);
+    } catch (err) {
+      console.warn('Admin users load error:', err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const loadAdminSupport = async (page = 1, status = supportFilter, q = supportSearchQuery) => {
+    setSupportLoading(true);
+    try {
+      let url = `/admin-panel/tickets/?page=${page}`;
+      if (status && status !== 'all') url += `&status=${encodeURIComponent(status)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const data = await apiCall(url).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setSupportTickets(parsed.results);
+      setSupportPage(parsed.currentPage);
+      setSupportTotalPages(parsed.totalPages);
+      setSupportCount(parsed.count);
+    } catch (err) {
+      console.warn('Admin support load error:', err.message);
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
   // ─── DATA LOADER ───
   const loadAdminData = async () => {
     try {
@@ -182,33 +307,18 @@ export default function AdminScreen({ onNavigate }) {
         });
       }
 
-      // 2. Corporate Treasury Summary & Ledger
+      // 2. Corporate Treasury Summary
       const summary = await apiCall('/admin-panel/funds/summary/').catch(() => null);
       if (summary) setFundsSummary(summary);
 
-      const fetchedFunds = await apiCall('/admin-panel/funds/').catch(() => []);
-      const fundsList = Array.isArray(fetchedFunds) ? fetchedFunds : (fetchedFunds?.results || []);
-      setFundsTransactions(fundsList);
-
-      // 3. Investments
-      const fetchedDeps = await apiCall('/admin-panel/investments/').catch(() => []);
-      const depList = Array.isArray(fetchedDeps) ? fetchedDeps : (fetchedDeps?.results || []);
-      setDeposits(depList);
-
-      // 4. Withdrawals
-      const fetchedWdrs = await apiCall('/admin-panel/withdrawals/').catch(() => []);
-      const wdrList = Array.isArray(fetchedWdrs) ? fetchedWdrs : (fetchedWdrs?.results || []);
-      setWithdrawals(wdrList);
-
-      // 5. Users
-      const fetchedUsers = await apiCall('/admin-panel/users/').catch(() => []);
-      const userList = Array.isArray(fetchedUsers) ? fetchedUsers : (fetchedUsers?.results || []);
-      setUsersList(userList);
-
-      // 6. Support Tickets
-      const fetchedTickets = await apiCall('/admin-panel/tickets/').catch(() => []);
-      const ticketList = Array.isArray(fetchedTickets) ? fetchedTickets : (fetchedTickets?.results || []);
-      setSupportTickets(ticketList);
+      // Load paginated datasets in parallel
+      await Promise.all([
+        loadAdminFunds(1, fundsCategoryFilter, fundsSearchQuery),
+        loadAdminDeposits(1, depositFilter, depositSearchQuery),
+        loadAdminWithdrawals(1, withdrawalFilter, withdrawalSearchQuery),
+        loadAdminUsers(1, userRoleFilter, userKycFilter, userSearchQuery),
+        loadAdminSupport(1, supportFilter, supportSearchQuery),
+      ]);
 
       // 7. Investment Plans
       const plans = await apiCall('/investments/plans/').catch(() => []);
@@ -614,82 +724,7 @@ export default function AdminScreen({ onNavigate }) {
     }
   };
 
-  // ─── FILTERING LOGIC (MATCHING FRONTEND) ───
-  const filteredDeposits = deposits.filter((d) => {
-    const s = String(d.status || '').toUpperCase();
-    if (depositFilter === 'DEPOSIT_PENDING' && s !== 'DEPOSIT_PENDING' && s !== 'PENDING') return false;
-    if (depositFilter === 'ACTIVE' && s !== 'ACTIVE' && s !== 'APPROVED') return false;
-    if (depositFilter === 'COMPLETED' && s !== 'COMPLETED') return false;
-    if (depositFilter === 'REJECTED' && s !== 'REJECTED') return false;
 
-    if (depositSearchQuery) {
-      const q = depositSearchQuery.toLowerCase();
-      const email = String(d.user_email || '').toLowerCase();
-      const tx = String(d.deposit_txn_hash || d.txn_hash || '').toLowerCase();
-      const id = String(d.id || '').toLowerCase();
-      return email.includes(q) || tx.includes(q) || id.includes(q);
-    }
-    return true;
-  });
-
-  const filteredWithdrawals = withdrawals.filter((w) => {
-    const s = String(w.status || '').toUpperCase();
-    if (withdrawalFilter === 'PENDING' && s !== 'PENDING') return false;
-    if (withdrawalFilter === 'APPROVED' && s !== 'APPROVED' && s !== 'COMPLETED') return false;
-    if (withdrawalFilter === 'REJECTED' && s !== 'REJECTED') return false;
-
-    if (withdrawalSearchQuery) {
-      const q = withdrawalSearchQuery.toLowerCase();
-      const email = String(w.user_email || '').toLowerCase();
-      const addr = String(w.wallet_address || '').toLowerCase();
-      return email.includes(q) || addr.includes(q);
-    }
-    return true;
-  });
-
-  const filteredUsers = usersList.filter((u) => {
-    if (userRoleFilter && String(u.role || '').toUpperCase() !== userRoleFilter.toUpperCase()) return false;
-    if (userKycFilter && String(u.kyc_status || '').toUpperCase() !== userKycFilter.toUpperCase()) return false;
-
-    if (userSearchQuery) {
-      const q = userSearchQuery.toLowerCase();
-      return (
-        String(u.email || '').toLowerCase().includes(q) ||
-        String(u.username || '').toLowerCase().includes(q) ||
-        String(u.first_name || '').toLowerCase().includes(q) ||
-        String(u.last_name || '').toLowerCase().includes(q) ||
-        String(u.referral_code || '').toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
-
-  const filteredTickets = supportTickets.filter((t) => {
-    const s = String(t.status || '').toUpperCase();
-    if (supportFilter === 'OPEN' && s !== 'OPEN') return false;
-    if (supportFilter === 'IN_PROGRESS' && s !== 'IN_PROGRESS') return false;
-    if (supportFilter === 'RESOLVED' && s !== 'RESOLVED') return false;
-    if (supportFilter === 'CLOSED' && s !== 'CLOSED') return false;
-
-    if (supportSearchQuery) {
-      const q = supportSearchQuery.toLowerCase();
-      const email = String(t.user_email || '').toLowerCase();
-      const sub = String(t.subject || '').toLowerCase();
-      return email.includes(q) || sub.includes(q);
-    }
-    return true;
-  });
-
-  const filteredFunds = fundsTransactions.filter((tx) => {
-    if (fundsCategoryFilter !== 'all' && String(tx.category || tx.action || '').toUpperCase() !== fundsCategoryFilter.toUpperCase()) return false;
-    if (fundsSearchQuery) {
-      const q = fundsSearchQuery.toLowerCase();
-      const desc = String(tx.description || '').toLowerCase();
-      const ref = String(tx.reference_id || tx.id || '').toLowerCase();
-      return desc.includes(q) || ref.includes(q);
-    }
-    return true;
-  });
 
   return (
     <ScrollView
@@ -1026,7 +1061,10 @@ export default function AdminScreen({ onNavigate }) {
             <TextInput
               style={styles.searchInput}
               value={fundsSearchQuery}
-              onChangeText={setFundsSearchQuery}
+              onChangeText={(txt) => {
+                setFundsSearchQuery(txt);
+                loadAdminFunds(1, fundsCategoryFilter, txt);
+              }}
               placeholder="Search by description, reference ID..."
               placeholderTextColor={colors.textDim}
             />
@@ -1043,7 +1081,10 @@ export default function AdminScreen({ onNavigate }) {
                   <TouchableOpacity
                     key={item.id}
                     style={[styles.filterPill, fundsCategoryFilter === item.id && styles.filterPillActive]}
-                    onPress={() => setFundsCategoryFilter(item.id)}
+                    onPress={() => {
+                      setFundsCategoryFilter(item.id);
+                      loadAdminFunds(1, item.id, fundsSearchQuery);
+                    }}
                   >
                     <Text style={[styles.filterPillText, fundsCategoryFilter === item.id && styles.filterPillTextActive]}>
                       {item.label}
@@ -1062,14 +1103,14 @@ export default function AdminScreen({ onNavigate }) {
                 <Text style={styles.cardTitle}>Company Treasury Ledger</Text>
               </View>
               <Text style={{ fontSize: 11, color: colors.goldSoft, fontWeight: '700' }}>
-                {filteredFunds.length} Entries
+                {fundsCount || fundsTransactions.length} Entries
               </Text>
             </View>
 
-            {filteredFunds.length === 0 ? (
+            {fundsTransactions.length === 0 ? (
               <Text style={styles.emptyNoticeText}>No corporate fund transactions found.</Text>
             ) : (
-              filteredFunds.map((tx) => (
+              fundsTransactions.map((tx) => (
                 <View key={tx.id} style={styles.ledgerItem}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -1096,6 +1137,15 @@ export default function AdminScreen({ onNavigate }) {
                 </View>
               ))
             )}
+
+            <PaginationControls
+              currentPage={fundsPage}
+              totalPages={fundsTotalPages}
+              totalCount={fundsCount}
+              onPageChange={(p) => loadAdminFunds(p, fundsCategoryFilter, fundsSearchQuery)}
+              loading={fundsLoading}
+              label="entries"
+            />
           </View>
         </View>
       )}
@@ -1108,7 +1158,10 @@ export default function AdminScreen({ onNavigate }) {
           <TextInput
             style={styles.searchInput}
             value={depositSearchQuery}
-            onChangeText={setDepositSearchQuery}
+            onChangeText={(txt) => {
+              setDepositSearchQuery(txt);
+              loadAdminDeposits(1, depositFilter, txt);
+            }}
             placeholder="Search by email, TxID, or Investment ID..."
             placeholderTextColor={colors.textDim}
           />
@@ -1126,7 +1179,10 @@ export default function AdminScreen({ onNavigate }) {
                 <TouchableOpacity
                   key={f.id}
                   style={[styles.filterPill, depositFilter === f.id && styles.filterPillActive]}
-                  onPress={() => setDepositFilter(f.id)}
+                  onPress={() => {
+                    setDepositFilter(f.id);
+                    loadAdminDeposits(1, f.id, depositSearchQuery);
+                  }}
                 >
                   <Text style={[styles.filterPillText, depositFilter === f.id && styles.filterPillTextActive]}>
                     {f.label}
@@ -1136,12 +1192,12 @@ export default function AdminScreen({ onNavigate }) {
             </View>
           </ScrollView>
 
-          {filteredDeposits.length === 0 ? (
+          {deposits.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={{ color: colors.textMuted }}>No deposit records matching current filters.</Text>
             </View>
           ) : (
-            filteredDeposits.map((dep) => {
+            deposits.map((dep) => {
               const statusStr = String(dep.status || '').toUpperCase();
               const isPending = statusStr === 'PENDING' || statusStr === 'DEPOSIT_PENDING';
               const isApproved = statusStr === 'APPROVED' || statusStr === 'ACTIVE' || statusStr === 'COMPLETED';
@@ -1248,6 +1304,15 @@ export default function AdminScreen({ onNavigate }) {
               );
             })
           )}
+
+          <PaginationControls
+            currentPage={depositsPage}
+            totalPages={depositsTotalPages}
+            totalCount={depositsCount}
+            onPageChange={(p) => loadAdminDeposits(p, depositFilter, depositSearchQuery)}
+            loading={depositsLoading}
+            label="deposits"
+          />
         </View>
       )}
 
@@ -1259,7 +1324,10 @@ export default function AdminScreen({ onNavigate }) {
           <TextInput
             style={styles.searchInput}
             value={withdrawalSearchQuery}
-            onChangeText={setWithdrawalSearchQuery}
+            onChangeText={(txt) => {
+              setWithdrawalSearchQuery(txt);
+              loadAdminWithdrawals(1, withdrawalFilter, txt);
+            }}
             placeholder="Search by email, destination wallet address..."
             placeholderTextColor={colors.textDim}
           />
@@ -1276,7 +1344,10 @@ export default function AdminScreen({ onNavigate }) {
                 <TouchableOpacity
                   key={f.id}
                   style={[styles.filterPill, withdrawalFilter === f.id && styles.filterPillActive]}
-                  onPress={() => setWithdrawalFilter(f.id)}
+                  onPress={() => {
+                    setWithdrawalFilter(f.id);
+                    loadAdminWithdrawals(1, f.id, withdrawalSearchQuery);
+                  }}
                 >
                   <Text style={[styles.filterPillText, withdrawalFilter === f.id && styles.filterPillTextActive]}>
                     {f.label}
@@ -1286,12 +1357,12 @@ export default function AdminScreen({ onNavigate }) {
             </View>
           </ScrollView>
 
-          {filteredWithdrawals.length === 0 ? (
+          {withdrawals.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={{ color: colors.textMuted }}>No withdrawal requests matching current filters.</Text>
             </View>
           ) : (
-            filteredWithdrawals.map((wdr) => {
+            withdrawals.map((wdr) => {
               const statusStr = String(wdr.status || '').toUpperCase();
               const isPending = statusStr === 'PENDING';
               const isCompleted = statusStr === 'COMPLETED' || statusStr === 'APPROVED';
@@ -1385,6 +1456,15 @@ export default function AdminScreen({ onNavigate }) {
               );
             })
           )}
+
+          <PaginationControls
+            currentPage={withdrawalsPage}
+            totalPages={withdrawalsTotalPages}
+            totalCount={withdrawalsCount}
+            onPageChange={(p) => loadAdminWithdrawals(p, withdrawalFilter, withdrawalSearchQuery)}
+            loading={withdrawalsLoading}
+            label="withdrawals"
+          />
         </View>
       )}
 
@@ -1396,7 +1476,10 @@ export default function AdminScreen({ onNavigate }) {
           <TextInput
             style={styles.searchInput}
             value={userSearchQuery}
-            onChangeText={setUserSearchQuery}
+            onChangeText={(txt) => {
+              setUserSearchQuery(txt);
+              loadAdminUsers(1, userRoleFilter, userKycFilter, txt);
+            }}
             placeholder="Search name, email, username, ref code..."
             placeholderTextColor={colors.textDim}
           />
@@ -1414,7 +1497,10 @@ export default function AdminScreen({ onNavigate }) {
                 <TouchableOpacity
                   key={r.id}
                   style={[styles.filterPill, userRoleFilter === r.id && styles.filterPillActive]}
-                  onPress={() => setUserRoleFilter(r.id)}
+                  onPress={() => {
+                    setUserRoleFilter(r.id);
+                    loadAdminUsers(1, r.id, userKycFilter, userSearchQuery);
+                  }}
                 >
                   <Text style={[styles.filterPillText, userRoleFilter === r.id && styles.filterPillTextActive]}>
                     {r.label}
@@ -1424,12 +1510,12 @@ export default function AdminScreen({ onNavigate }) {
             </View>
           </ScrollView>
 
-          {filteredUsers.length === 0 ? (
+          {usersList.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={{ color: colors.textMuted }}>No user accounts found matching filters.</Text>
             </View>
           ) : (
-            filteredUsers.map((u) => {
+            usersList.map((u) => {
               const teamMembersCount = u.team_total_members !== undefined ? u.team_total_members : (u.direct_team_count || 0);
               const totalInvestedAmount = u.total_invested !== undefined ? u.total_invested : (u.total_deposited || 0);
 
@@ -1508,6 +1594,15 @@ export default function AdminScreen({ onNavigate }) {
               );
             })
           )}
+
+          <PaginationControls
+            currentPage={usersPage}
+            totalPages={usersTotalPages}
+            totalCount={usersCount}
+            onPageChange={(p) => loadAdminUsers(p, userRoleFilter, userKycFilter, userSearchQuery)}
+            loading={usersLoading}
+            label="users"
+          />
         </View>
       )}
 
@@ -1519,7 +1614,10 @@ export default function AdminScreen({ onNavigate }) {
           <TextInput
             style={styles.searchInput}
             value={supportSearchQuery}
-            onChangeText={setSupportSearchQuery}
+            onChangeText={(txt) => {
+              setSupportSearchQuery(txt);
+              loadAdminSupport(1, supportFilter, txt);
+            }}
             placeholder="Search ticket subject, user email..."
             placeholderTextColor={colors.textDim}
           />
@@ -1537,7 +1635,10 @@ export default function AdminScreen({ onNavigate }) {
                 <TouchableOpacity
                   key={f.id}
                   style={[styles.filterPill, supportFilter === f.id && styles.filterPillActive]}
-                  onPress={() => setSupportFilter(f.id)}
+                  onPress={() => {
+                    setSupportFilter(f.id);
+                    loadAdminSupport(1, f.id, supportSearchQuery);
+                  }}
                 >
                   <Text style={[styles.filterPillText, supportFilter === f.id && styles.filterPillTextActive]}>
                     {f.label}
@@ -1547,12 +1648,12 @@ export default function AdminScreen({ onNavigate }) {
             </View>
           </ScrollView>
 
-          {filteredTickets.length === 0 ? (
+          {supportTickets.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={{ color: colors.textMuted }}>No support tickets matching filters.</Text>
             </View>
           ) : (
-            filteredTickets.map((t) => (
+            supportTickets.map((t) => (
               <View key={t.id} style={styles.ticketCard}>
                 <View style={styles.ticketHeader}>
                   <View style={{ flex: 1 }}>
@@ -1590,6 +1691,15 @@ export default function AdminScreen({ onNavigate }) {
               </View>
             ))
           )}
+
+          <PaginationControls
+            currentPage={supportPage}
+            totalPages={supportTotalPages}
+            totalCount={supportCount}
+            onPageChange={(p) => loadAdminSupport(p, supportFilter, supportSearchQuery)}
+            loading={supportLoading}
+            label="tickets"
+          />
         </View>
       )}
 

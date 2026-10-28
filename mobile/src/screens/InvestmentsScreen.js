@@ -19,6 +19,8 @@ import { AuthContext } from '../context/AuthContext';
 import { apiCall, DEFAULT_API_HOST } from '../config/api';
 import colors from '../theme/colors';
 import { copyToClipboard } from '../utils/clipboard';
+import PaginationControls from '../components/PaginationControls';
+import { parsePaginatedResponse } from '../utils/pagination';
 
 const getDepositQRUrl = (address, customQr = '') => {
   if (customQr && typeof customQr === 'string' && customQr.trim()) {
@@ -105,6 +107,10 @@ export default function InvestmentsScreen({ onNavigate }) {
 
   const [plans, setPlans] = useState(DEFAULT_TIERS);
   const [investments, setInvestments] = useState([]);
+  const [invPage, setInvPage] = useState(1);
+  const [invTotalPages, setInvTotalPages] = useState(1);
+  const [invCount, setInvCount] = useState(0);
+  const [invLoading, setInvLoading] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [investAmount, setInvestAmount] = useState('');
@@ -124,6 +130,22 @@ export default function InvestmentsScreen({ onNavigate }) {
     TRC20_QR: '',
   });
 
+  const loadInvestmentsData = async (page = 1) => {
+    setInvLoading(true);
+    try {
+      const data = await apiCall(`/investments/?page=${page}`).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setInvestments(parsed.results);
+      setInvPage(parsed.currentPage);
+      setInvTotalPages(parsed.totalPages);
+      setInvCount(parsed.count);
+    } catch (err) {
+      console.warn('Investments load error:', err.message);
+    } finally {
+      setInvLoading(false);
+    }
+  };
+
   const loadPlansAndInvestments = async () => {
     try {
       const fetchedPlans = await apiCall('/investments/plans/').catch(() => []);
@@ -134,9 +156,7 @@ export default function InvestmentsScreen({ onNavigate }) {
         setPlans(DEFAULT_TIERS);
       }
 
-      const fetchedInvestments = await apiCall('/investments/').catch(() => []);
-      const invList = Array.isArray(fetchedInvestments) ? fetchedInvestments : (fetchedInvestments?.results || []);
-      setInvestments(invList);
+      await loadInvestmentsData(1);
 
       const walletData = await apiCall('/dashboard/deposit-wallets/').catch(() => null);
       if (walletData) {
@@ -461,6 +481,15 @@ export default function InvestmentsScreen({ onNavigate }) {
             </View>
           ))
         )}
+
+        <PaginationControls
+          currentPage={invPage}
+          totalPages={invTotalPages}
+          totalCount={invCount}
+          onPageChange={loadInvestmentsData}
+          loading={invLoading}
+          label="investments"
+        />
       </View>
 
       {/* 2-Step Buy Investment Modal */}

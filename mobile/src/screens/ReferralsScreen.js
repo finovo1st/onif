@@ -13,6 +13,8 @@ import { AuthContext } from '../context/AuthContext';
 import { apiCall, APP_DOMAIN } from '../config/api';
 import colors from '../theme/colors';
 import { copyToClipboard } from '../utils/clipboard';
+import PaginationControls from '../components/PaginationControls';
+import { parsePaginatedResponse } from '../utils/pagination';
 
 export default function ReferralsScreen() {
   const { user } = useContext(AuthContext);
@@ -28,9 +30,58 @@ export default function ReferralsScreen() {
   });
 
   const [team, setTeam] = useState([]);
+  const [teamPage, setTeamPage] = useState(1);
+  const [teamTotalPages, setTeamTotalPages] = useState(1);
+  const [teamCount, setTeamCount] = useState(0);
+  const [teamLoading, setTeamLoading] = useState(false);
+
   const [commissions, setCommissions] = useState([]);
+  const [commPage, setCommPage] = useState(1);
+  const [commTotalPages, setCommTotalPages] = useState(1);
+  const [commCount, setCommCount] = useState(0);
+  const [commLoading, setCommLoading] = useState(false);
+
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [levelStats, setLevelStats] = useState([]);
+
+  const loadTeamData = async (page = 1, lvl = selectedLevel, q = searchQuery) => {
+    setTeamLoading(true);
+    try {
+      let endpoint = `/referrals/team/?page=${page}`;
+      if (lvl && lvl !== 'all') {
+        endpoint += `&level=${encodeURIComponent(lvl)}`;
+      }
+      if (q && q.trim()) {
+        endpoint += `&search=${encodeURIComponent(q.trim())}`;
+      }
+      const data = await apiCall(endpoint).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setTeam(parsed.results);
+      setTeamPage(parsed.currentPage);
+      setTeamTotalPages(parsed.totalPages);
+      setTeamCount(parsed.count);
+    } catch (err) {
+      console.warn('Team data load error:', err.message);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+  const loadCommissionsData = async (page = 1) => {
+    setCommLoading(true);
+    try {
+      const data = await apiCall(`/referrals/commissions/?page=${page}`).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setCommissions(parsed.results);
+      setCommPage(parsed.currentPage);
+      setCommTotalPages(parsed.totalPages);
+      setCommCount(parsed.count);
+    } catch (err) {
+      console.warn('Commissions data load error:', err.message);
+    } finally {
+      setCommLoading(false);
+    }
+  };
 
   const loadReferralData = async () => {
     try {
@@ -47,17 +98,14 @@ export default function ReferralsScreen() {
         });
       }
 
-      const teamData = await apiCall('/referrals/team/').catch(() => []);
-      const teamList = Array.isArray(teamData) ? teamData : (teamData?.results || []);
-      setTeam(teamList);
-
-      const commData = await apiCall('/referrals/commissions/').catch(() => []);
-      const commList = Array.isArray(commData) ? commData : (commData?.results || []);
-      setCommissions(commList);
-
       const levelsData = await apiCall('/referrals/levels/').catch(() => []);
       const levelsList = Array.isArray(levelsData) ? levelsData : (levelsData?.results || []);
       setLevelStats(levelsList);
+
+      await Promise.all([
+        loadTeamData(1, selectedLevel, searchQuery),
+        loadCommissionsData(1),
+      ]);
     } catch (err) {
       console.warn('Referrals data load error:', err.message);
     }
@@ -267,7 +315,7 @@ export default function ReferralsScreen() {
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.eyebrow}>TEAM NETWORK</Text>
-            <Text style={styles.cardTitle}>My Downline Team ({filteredTeam.length})</Text>
+            <Text style={styles.cardTitle}>My Downline Team ({teamCount || team.length})</Text>
           </View>
         </View>
 
@@ -279,7 +327,10 @@ export default function ReferralsScreen() {
             return (
               <TouchableOpacity
                 key={lvl}
-                onPress={() => setSelectedLevel(lvl)}
+                onPress={() => {
+                  setSelectedLevel(lvl);
+                  loadTeamData(1, lvl, searchQuery);
+                }}
                 style={{
                   backgroundColor: isSel ? colors.goldSoft : 'rgba(255,255,255,0.06)',
                   paddingHorizontal: 12,
@@ -306,17 +357,20 @@ export default function ReferralsScreen() {
         <TextInput
           style={styles.searchInput}
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={(txt) => {
+            setSearchQuery(txt);
+            loadTeamData(1, selectedLevel, txt);
+          }}
           placeholder="Search team by email or username..."
           placeholderTextColor={colors.textDim}
         />
 
-        {filteredTeam.length === 0 ? (
+        {team.length === 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: 13, paddingVertical: 12 }}>
             No downline members found for this level/search.
           </Text>
         ) : (
-          filteredTeam.map((m, idx) => (
+          team.map((m, idx) => (
             <View key={m.id || idx} style={styles.memberRow}>
               <View style={{ flex: 1, paddingRight: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -342,6 +396,15 @@ export default function ReferralsScreen() {
             </View>
           ))
         )}
+
+        <PaginationControls
+          currentPage={teamPage}
+          totalPages={teamTotalPages}
+          totalCount={teamCount}
+          onPageChange={(p) => loadTeamData(p, selectedLevel, searchQuery)}
+          loading={teamLoading}
+          label="members"
+        />
       </View>
 
       {/* Earned Referral Commissions Ledger */}
@@ -376,6 +439,15 @@ export default function ReferralsScreen() {
             </View>
           ))
         )}
+
+        <PaginationControls
+          currentPage={commPage}
+          totalPages={commTotalPages}
+          totalCount={commCount}
+          onPageChange={(p) => loadCommissionsData(p)}
+          loading={commLoading}
+          label="commissions"
+        />
       </View>
     </ScrollView>
   );

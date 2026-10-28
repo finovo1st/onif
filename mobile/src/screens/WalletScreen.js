@@ -16,6 +16,8 @@ import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../config/api';
 import colors from '../theme/colors';
+import PaginationControls from '../components/PaginationControls';
+import { parsePaginatedResponse } from '../utils/pagination';
 
 export default function WalletScreen({ onNavigate }) {
   const [refreshing, setRefreshing] = useState(false);
@@ -29,8 +31,23 @@ export default function WalletScreen({ onNavigate }) {
   });
 
   const [deposits, setDeposits] = useState([]);
+  const [depositsPage, setDepositsPage] = useState(1);
+  const [depositsTotalPages, setDepositsTotalPages] = useState(1);
+  const [depositsCount, setDepositsCount] = useState(0);
+  const [depositsLoading, setDepositsLoading] = useState(false);
+
   const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+  const [withdrawalsTotalPages, setWithdrawalsTotalPages] = useState(1);
+  const [withdrawalsCount, setWithdrawalsCount] = useState(0);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+
   const [ledger, setLedger] = useState([]);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerTotalPages, setLedgerTotalPages] = useState(1);
+  const [ledgerCount, setLedgerCount] = useState(0);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [ledgerTypeFilter, setLedgerTypeFilter] = useState('all'); // 'all' | 'CREDIT' | 'DEBIT'
 
   // Withdrawal Modal State
   const [wdrModalVisible, setWdrModalVisible] = useState(false);
@@ -65,6 +82,58 @@ export default function WalletScreen({ onNavigate }) {
     }
   };
 
+  const loadDeposits = async (page = 1) => {
+    setDepositsLoading(true);
+    try {
+      const data = await apiCall(`/investments/?page=${page}`).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setDeposits(parsed.results);
+      setDepositsPage(parsed.currentPage);
+      setDepositsTotalPages(parsed.totalPages);
+      setDepositsCount(parsed.count);
+    } catch (err) {
+      console.warn('Deposits page fetch error:', err.message);
+    } finally {
+      setDepositsLoading(false);
+    }
+  };
+
+  const loadWithdrawals = async (page = 1) => {
+    setWithdrawalsLoading(true);
+    try {
+      const data = await apiCall(`/withdrawals/?page=${page}`).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setWithdrawals(parsed.results);
+      setWithdrawalsPage(parsed.currentPage);
+      setWithdrawalsTotalPages(parsed.totalPages);
+      setWithdrawalsCount(parsed.count);
+    } catch (err) {
+      console.warn('Withdrawals page fetch error:', err.message);
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  };
+
+  const loadLedger = async (page = 1, typeFilter = ledgerTypeFilter) => {
+    setLedgerLoading(true);
+    try {
+      let endpoint = `/wallet/transactions/?page=${page}`;
+      if (typeFilter && typeFilter !== 'all') {
+        endpoint += `&transaction_type=${encodeURIComponent(typeFilter)}`;
+      }
+      const data = await apiCall(endpoint).catch(() => null);
+      const parsed = parsePaginatedResponse(data, page);
+      setLedger(parsed.results);
+      setLedgerPage(parsed.currentPage);
+      setLedgerTotalPages(parsed.totalPages);
+      setLedgerCount(parsed.count);
+    } catch (err) {
+      console.warn('Ledger page fetch error:', err.message);
+    } finally {
+      setLedgerLoading(false);
+    }
+  };
+
   const loadWalletData = async () => {
     try {
       const data = await apiCall('/dashboard/').catch(() => null);
@@ -77,18 +146,11 @@ export default function WalletScreen({ onNavigate }) {
         });
       }
 
-      // All deposits in Finovo are structured investment plan subscriptions
-      const invs = await apiCall('/investments/').catch(() => []);
-      const invList = Array.isArray(invs) ? invs : (invs?.results || []);
-      setDeposits(invList);
-
-      const wdrs = await apiCall('/withdrawals/').catch(() => []);
-      const wdrList = Array.isArray(wdrs) ? wdrs : (wdrs?.results || []);
-      setWithdrawals(wdrList);
-
-      const txs = await apiCall('/wallet/transactions/').catch(() => []);
-      const txList = Array.isArray(txs) ? txs : (txs?.results || []);
-      setLedger(txList);
+      await Promise.all([
+        loadDeposits(1),
+        loadWithdrawals(1),
+        loadLedger(1, ledgerTypeFilter),
+      ]);
     } catch (err) {
       console.warn('Wallet data fetch error:', err.message);
     }
@@ -283,6 +345,15 @@ export default function WalletScreen({ onNavigate }) {
             </View>
           ))
         )}
+
+        <PaginationControls
+          currentPage={depositsPage}
+          totalPages={depositsTotalPages}
+          totalCount={depositsCount}
+          onPageChange={loadDeposits}
+          loading={depositsLoading}
+          label="deposits"
+        />
       </View>
 
       {/* Withdrawals History Card */}
@@ -320,6 +391,15 @@ export default function WalletScreen({ onNavigate }) {
             </View>
           ))
         )}
+
+        <PaginationControls
+          currentPage={withdrawalsPage}
+          totalPages={withdrawalsTotalPages}
+          totalCount={withdrawalsCount}
+          onPageChange={loadWithdrawals}
+          loading={withdrawalsLoading}
+          label="withdrawals"
+        />
       </View>
 
       {/* Complete Wallet Ledger Card */}
@@ -329,6 +409,32 @@ export default function WalletScreen({ onNavigate }) {
             <Text style={styles.eyebrow}>ACCOUNTING</Text>
             <Text style={styles.cardTitle}>Complete Wallet Ledger</Text>
           </View>
+        </View>
+
+        {/* Ledger Type Filter Buttons */}
+        <View style={styles.ledgerFilterRow}>
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'CREDIT', label: 'Credits (+)' },
+            { id: 'DEBIT', label: 'Debits (-)' },
+          ].map((tab) => {
+            const isActive = ledgerTypeFilter === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                style={[styles.ledgerFilterBtn, isActive && styles.ledgerFilterBtnActive]}
+                onPress={() => {
+                  setLedgerTypeFilter(tab.id);
+                  loadLedger(1, tab.id);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.ledgerFilterBtnText, isActive && styles.ledgerFilterBtnTextActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {ledger.length === 0 ? (
@@ -369,6 +475,15 @@ export default function WalletScreen({ onNavigate }) {
             );
           })
         )}
+
+        <PaginationControls
+          currentPage={ledgerPage}
+          totalPages={ledgerTotalPages}
+          totalCount={ledgerCount}
+          onPageChange={(p) => loadLedger(p, ledgerTypeFilter)}
+          loading={ledgerLoading}
+          label="transactions"
+        />
       </View>
 
       {/* WITHDRAWAL MODAL */}
@@ -854,6 +969,32 @@ const styles = StyleSheet.create({
     color: '#030507',
     fontWeight: '700',
     fontSize: 13,
+  },
+  ledgerFilterRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  ledgerFilterBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5.5,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: colors.bgCardBorder,
+  },
+  ledgerFilterBtnActive: {
+    backgroundColor: 'rgba(198, 153, 61, 0.18)',
+    borderColor: colors.goldSoft,
+  },
+  ledgerFilterBtnText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  ledgerFilterBtnTextActive: {
+    color: colors.goldSoft,
+    fontWeight: '700',
   },
 });
 
